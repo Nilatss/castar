@@ -1,0 +1,106 @@
+{
+  "common": {
+    "appName": "CaStar",
+    "save": "Saqlash",
+    "cancel": "Bekor qilish",
+    "delete": "O'chirish",
+    "edit": "Tahrirlash",
+    "add": "Qo'shish",
+    "search": "Qidirish",
+    "loading": "Yuklanmoqda...",
+    "error": "Xatolik",
+    "success": "Muvaffaqiyatli",
+    "confirm": "Tasdiqlash",
+    "back": "Orqaga",
+    "next": "Keyingisi",
+    "done": "Tayyor",
+    "all": "Hammasi",
+    "none": "Hech biri"
+  },
+  "auth": {
+    "welcome": "Xush kelibsiz",
+    "subtitle": "Moliyaviy savodxonligingiz shu yerdan boshlanadi",
+    "loginWithTelegram": "Telegram",
+    "continueWithPhone": "Telefon raqami bilan davom etish",
+    "continueWithEmail": "Email bilan davom etish",
+    "orContinueWith": "YOKI DAVOM ETING",
+    "privacyNote": "\"Davom etish\" tugmasini bosish orqali siz bizning Maxfiylik siyosatimiz va Foydalanish shartlarimizga rozilik bildirasiz"
+  },
+  "tabs": {
+    "home": "Bosh sahifa",
+    "budget": "Byudjet",
+    "analytics": "Tahlil",
+    "profile": "Profil"
+  },
+  "home": {
+    "balance": "Balans",
+    "income": "Daromad",
+    "expense": "Xarajat",
+    "recentTransactions": "Oxirgi tranzaksiyalar",
+    "seeAll": "Hammasini ko'rish",
+    "addTransaction": "Tranzaksiya qo'shish"
+  },
+  "transactions": {
+    "title": "Tranzaksiyalar",
+    "addIncome": "Daromad qo'shish",
+    "addExpense": "Xarajat qo'shish",
+    "amount": "Miqdor",
+    "category": "Kategoriya",
+    "account": "Hisob",
+    "date": "Sana",
+    "description": "Tavsif",
+    "voiceInput": "Ovozli kiritish",
+    "noTransactions": "Hali tranzaksiyalar yo'q"
+  },
+  "budget": {
+    "title": "Byudjetlar",
+    "createBudget": "Byudjet yaratish",
+    "familyBudget": "Oilaviy byudjet",
+    "personalBudget": "Shaxsiy byudjet",
+    "spent": "Sarflangan",
+    "remaining": "Qolgan",
+    "limit": "Limit",
+    "period": "Davr",
+    "daily": "Kunlik",
+    "weekly": "Haftalik",
+    "monthly": "Oylik",
+    "yearly": "Yillik",
+    "noBudgets": "Hali byudjetlar yo'q"
+  },
+  "analytics": {
+    "title": "Tahlil",
+    "thisWeek": "Bu hafta",
+    "thisMonth": "Bu oy",
+    "thisQuarter": "Bu chorak",
+    "thisYear": "Bu yil",
+    "incomeVsExpense": "Daromad va Xarajat",
+    "byCategory": "Kategoriya bo'yicha",
+    "trend": "Trend"
+  },
+  "profile": {
+    "title": "Profil",
+    "settings": "Sozlamalar",
+    "categories": "Kategoriyalar",
+    "language": "Til",
+    "currency": "Valyuta",
+    "theme": "Mavzu",
+    "notifications": "Bildirishnomalar",
+    "about": "Dastur haqida"
+  },
+  "categories": {
+    "food": "Oziq-ovqat",
+    "transport": "Transport",
+    "housing": "Uy-joy",
+    "utilities": "Kommunal xizmatlar",
+    "entertainment": "Ko'ngilochar",
+    "health": "Salomatlik",
+    "education": "Ta'lim",
+    "clothing": "Kiyim",
+    "gifts": "Sovg'alar",
+    "other_expense": "Boshqa xarajatlar",
+    "salary": "Maosh",
+    "freelance": "Frilanserlik",
+    "investments": "Investitsiyalar",
+    "other_income": "Boshqa daromadlar"
+  }
+}

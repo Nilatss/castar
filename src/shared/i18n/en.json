@@ -1,0 +1,106 @@
+{
+  "common": {
+    "appName": "CaStar",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "search": "Search",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "done": "Done",
+    "all": "All",
+    "none": "None"
+  },
+  "auth": {
+    "welcome": "Welcome",
+    "subtitle": "Your financial literacy starts here",
+    "loginWithTelegram": "Telegram",
+    "continueWithPhone": "Continue with Phone",
+    "continueWithEmail": "Continue with Email",
+    "orContinueWith": "OR CONTINUE WITH",
+    "privacyNote": "By pressing on \"Continue with...\" you agree to our Privacy Policy and Terms and Conditions"
+  },
+  "tabs": {
+    "home": "Home",
+    "budget": "Budget",
+    "analytics": "Analytics",
+    "profile": "Profile"
+  },
+  "home": {
+    "balance": "Balance",
+    "income": "Income",
+    "expense": "Expense",
+    "recentTransactions": "Recent Transactions",
+    "seeAll": "See All",
+    "addTransaction": "Add Transaction"
+  },
+  "transactions": {
+    "title": "Transactions",
+    "addIncome": "Add Income",
+    "addExpense": "Add Expense",
+    "amount": "Amount",
+    "category": "Category",
+    "account": "Account",
+    "date": "Date",
+    "description": "Description",
+    "voiceInput": "Voice Input",
+    "noTransactions": "No transactions yet"
+  },
+  "budget": {
+    "title": "Budgets",
+    "createBudget": "Create Budget",
+    "familyBudget": "Family Budget",
+    "personalBudget": "Personal Budget",
+    "spent": "Spent",
+    "remaining": "Remaining",
+    "limit": "Limit",
+    "period": "Period",
+    "daily": "Daily",
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "noBudgets": "No budgets yet"
+  },
+  "analytics": {
+    "title": "Analytics",
+    "thisWeek": "This Week",
+    "thisMonth": "This Month",
+    "thisQuarter": "This Quarter",
+    "thisYear": "This Year",
+    "incomeVsExpense": "Income vs Expense",
+    "byCategory": "By Category",
+    "trend": "Trend"
+  },
+  "profile": {
+    "title": "Profile",
+    "settings": "Settings",
+    "categories": "Categories",
+    "language": "Language",
+    "currency": "Currency",
+    "theme": "Theme",
+    "notifications": "Notifications",
+    "about": "About"
+  },
+  "categories": {
+    "food": "Food",
+    "transport": "Transport",
+    "housing": "Housing",
+    "utilities": "Utilities",
+    "entertainment": "Entertainment",
+    "health": "Health",
+    "education": "Education",
+    "clothing": "Clothing",
+    "gifts": "Gifts",
+    "other_expense": "Other Expenses",
+    "salary": "Salary",
+    "freelance": "Freelance",
+    "investments": "Investments",
+    "other_income": "Other Income"
+  }
+}

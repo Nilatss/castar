@@ -1,0 +1,106 @@
+{
+  "common": {
+    "appName": "CaStar",
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "delete": "Удалить",
+    "edit": "Редактировать",
+    "add": "Добавить",
+    "search": "Поиск",
+    "loading": "Загрузка...",
+    "error": "Ошибка",
+    "success": "Успешно",
+    "confirm": "Подтвердить",
+    "back": "Назад",
+    "next": "Далее",
+    "done": "Готово",
+    "all": "Все",
+    "none": "Ничего"
+  },
+  "auth": {
+    "welcome": "Добро пожаловать",
+    "subtitle": "Ваша финансовая грамотность начинается здесь",
+    "loginWithTelegram": "Telegram",
+    "continueWithPhone": "Продолжить с телефоном",
+    "continueWithEmail": "Продолжить с Email",
+    "orContinueWith": "ИЛИ ПРОДОЛЖИТЕ С",
+    "privacyNote": "Нажимая \"Продолжить с...\", вы соглашаетесь с нашей Политикой конфиденциальности и Условиями использования"
+  },
+  "tabs": {
+    "home": "Главная",
+    "budget": "Бюджет",
+    "analytics": "Аналитика",
+    "profile": "Профиль"
+  },
+  "home": {
+    "balance": "Баланс",
+    "income": "Доход",
+    "expense": "Расход",
+    "recentTransactions": "Последние транзакции",
+    "seeAll": "Смотреть все",
+    "addTransaction": "Добавить транзакцию"
+  },
+  "transactions": {
+    "title": "Транзакции",
+    "addIncome": "Добавить доход",
+    "addExpense": "Добавить расход",
+    "amount": "Сумма",
+    "category": "Категория",
+    "account": "Счёт",
+    "date": "Дата",
+    "description": "Описание",
+    "voiceInput": "Голосовой ввод",
+    "noTransactions": "Транзакций пока нет"
+  },
+  "budget": {
+    "title": "Бюджеты",
+    "createBudget": "Создать бюджет",
+    "familyBudget": "Семейный бюджет",
+    "personalBudget": "Личный бюджет",
+    "spent": "Потрачено",
+    "remaining": "Осталось",
+    "limit": "Лимит",
+    "period": "Период",
+    "daily": "Ежедневно",
+    "weekly": "Еженедельно",
+    "monthly": "Ежемесячно",
+    "yearly": "Ежегодно",
+    "noBudgets": "Бюджетов пока нет"
+  },
+  "analytics": {
+    "title": "Аналитика",
+    "thisWeek": "Эта неделя",
+    "thisMonth": "Этот месяц",
+    "thisQuarter": "Этот квартал",
+    "thisYear": "Этот год",
+    "incomeVsExpense": "Доходы и расходы",
+    "byCategory": "По категориям",
+    "trend": "Тренд"
+  },
+  "profile": {
+    "title": "Профиль",
+    "settings": "Настройки",
+    "categories": "Категории",
+    "language": "Язык",
+    "currency": "Валюта",
+    "theme": "Тема",
+    "notifications": "Уведомления",
+    "about": "О приложении"
+  },
+  "categories": {
+    "food": "Еда",
+    "transport": "Транспорт",
+    "housing": "Жильё",
+    "utilities": "Коммунальные услуги",
+    "entertainment": "Развлечения",
+    "health": "Здоровье",
+    "education": "Образование",
+    "clothing": "Одежда",
+    "gifts": "Подарки",
+    "other_expense": "Прочие расходы",
+    "salary": "Зарплата",
+    "freelance": "Фриланс",
+    "investments": "Инвестиции",
+    "other_income": "Прочий доход"
+  }
+}
