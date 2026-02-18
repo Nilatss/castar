@@ -1,5 +1,5 @@
 /**
- * CaStar Design System — Colors
+ * Castar Design System — Colors
  * Source: Figma UI Kit
  */
 

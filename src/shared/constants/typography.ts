@@ -1,5 +1,5 @@
 /**
- * CaStar Design System — Typography
+ * Castar Design System — Typography
  * Font: Inter (Regular 400, Medium 500, SemiBold 600, Bold 700)
  */
 

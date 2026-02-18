@@ -1,0 +1,13 @@
+name = "castar-auth"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+[vars]
+# Non-secret config
+CORS_ORIGIN = "*"
+
+# Secrets (set via `wrangler secret put`):
+# BOT_TOKEN — Telegram bot token from @BotFather
+# JWT_SECRET — random string for JWT signing
+# RESEND_API_KEY — Resend.com API key for email verification
+# ESKIZ_TOKEN — (optional) Eskiz.uz SMS API token; if absent, phone codes are logged to Worker console

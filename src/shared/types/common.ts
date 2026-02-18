@@ -1,5 +1,5 @@
 /**
- * CaStar — Core TypeScript types
+ * Castar — Core TypeScript types
  */
 
 // === Enums as union types ===

@@ -1,5 +1,5 @@
 /**
- * CaStar — Currency conversion service
+ * Castar — Currency conversion service
  * Uses frankfurter.app (free, no API key) for exchange rates.
  * Caches rates locally.
  */

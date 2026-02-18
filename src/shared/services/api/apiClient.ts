@@ -1,5 +1,5 @@
 /**
- * CaStar — API Client
+ * Castar — API Client
  * Currently a stub for future backend integration.
  * All data operations go through local SQLite for now.
  */

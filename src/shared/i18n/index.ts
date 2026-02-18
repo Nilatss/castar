@@ -5,17 +5,27 @@ import * as Localization from 'expo-localization';
 import uz from './uz.json';
 import ru from './ru.json';
 import en from './en.json';
+import be from './be.json';
+import uk from './uk.json';
+import kk from './kk.json';
+import de from './de.json';
+import az from './az.json';
 
 const resources = {
-  uz: { translation: uz },
   ru: { translation: ru },
+  uz: { translation: uz },
   en: { translation: en },
+  be: { translation: be },
+  uk: { translation: uk },
+  kk: { translation: kk },
+  de: { translation: de },
+  az: { translation: az },
 };
 
-// Detect device language, fallback to 'uz'
-const deviceLang = Localization.getLocales()[0]?.languageCode ?? 'uz';
-const supportedLangs = ['uz', 'ru', 'en'];
-const detectedLang = supportedLangs.includes(deviceLang) ? deviceLang : 'uz';
+// Detect device language, fallback to 'en'
+const deviceLang = Localization.getLocales()[0]?.languageCode ?? 'en';
+const supportedLangs = ['ru', 'uz', 'en', 'be', 'uk', 'kk', 'de', 'az'];
+const detectedLang = supportedLangs.includes(deviceLang) ? deviceLang : 'en';
 
 i18n.use(initReactI18next).init({
   resources,
