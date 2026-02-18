@@ -1,13 +1,15 @@
-name = "castar-auth"
+name = "castar-api"
 main = "src/index.ts"
-compatibility_date = "2024-01-01"
+compatibility_date = "2025-02-14"
+compatibility_flags = ["nodejs_compat"]
 
-[vars]
-# Non-secret config
-CORS_ORIGIN = "*"
+[[d1_databases]]
+binding = "DB"
+database_name = "castar-db"
+database_id = "placeholder-replace-after-d1-create"
 
 # Secrets (set via `wrangler secret put`):
-# BOT_TOKEN — Telegram bot token from @BotFather
-# JWT_SECRET — random string for JWT signing
-# RESEND_API_KEY — Resend.com API key for email verification
-# ESKIZ_TOKEN — (optional) Eskiz.uz SMS API token; if absent, phone codes are logged to Worker console
+# JWT_SECRET
+# RESEND_API_KEY
+# ESKIZ_TOKEN
+# TELEGRAM_BOT_TOKEN
