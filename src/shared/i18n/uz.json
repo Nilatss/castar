@@ -15,7 +15,9 @@
     "next": "Keyingisi",
     "done": "Tayyor",
     "all": "Hammasi",
-    "none": "Hech biri"
+    "none": "Hech biri",
+    "on": "Yoniq",
+    "off": "O'chiq"
   },
   "auth": {
     "welcome": "Xush kelibsiz",
@@ -30,7 +32,8 @@
     "home": "Bosh sahifa",
     "budget": "Byudjet",
     "analytics": "Tahlil",
-    "profile": "Profil"
+    "profile": "Profil",
+    "categories": "Kategoriyalar"
   },
   "home": {
     "balance": "Balans",
@@ -38,19 +41,30 @@
     "expense": "Xarajat",
     "recentTransactions": "Oxirgi tranzaksiyalar",
     "seeAll": "Hammasini ko'rish",
-    "addTransaction": "Tranzaksiya qo'shish"
+    "addTransaction": "Tranzaksiya qo'shish",
+    "no_transactions": "Hali tranzaksiyalar yo'q",
+    "no_transactions_desc": "Birinchi tranzaksiyangizni qo'shing",
+    "add_first": "Tranzaksiya qo'shish"
   },
   "transactions": {
     "title": "Tranzaksiyalar",
     "addIncome": "Daromad qo'shish",
     "addExpense": "Xarajat qo'shish",
+    "income": "Daromad",
+    "expense": "Xarajat",
     "amount": "Miqdor",
     "category": "Kategoriya",
     "account": "Hisob",
     "date": "Sana",
+    "time": "Vaqt",
+    "currency": "Valyuta",
+    "type": "Turi",
+    "detail": "Tranzaksiya tafsilotlari",
     "description": "Tavsif",
     "voiceInput": "Ovozli kiritish",
-    "noTransactions": "Hali tranzaksiyalar yo'q"
+    "noTransactions": "Hali tranzaksiyalar yo'q",
+    "notFound": "Tranzaksiya topilmadi",
+    "deleteConfirm": "Bu tranzaksiyani o'chirishni xohlaysizmi?"
   },
   "budget": {
     "title": "Byudjetlar",
@@ -65,17 +79,33 @@
     "weekly": "Haftalik",
     "monthly": "Oylik",
     "yearly": "Yillik",
-    "noBudgets": "Hali byudjetlar yo'q"
+    "noBudgets": "Hali byudjetlar yo'q",
+    "notFound": "Byudjet topilmadi",
+    "totalBudgeted": "Jami rejalashtirilgan",
+    "totalSpent": "Jami sarflangan",
+    "dailyAvg": "Kunlik o'rtacha",
+    "exceeded": "Byudjet oshirildi!",
+    "warning": "Byudjet limitiga yaqinlashmoqda",
+    "deleteBudget": "Byudjetni o'chirish",
+    "deleteConfirm": "Bu byudjetni o'chirishni xohlaysizmi?",
+    "budgetName": "Byudjet nomi",
+    "namePlaceholder": "masalan, Oylik ovqat"
   },
   "analytics": {
     "title": "Tahlil",
+    "week": "Hafta",
+    "month": "Oy",
+    "quarter": "Chorak",
+    "year": "Yil",
     "thisWeek": "Bu hafta",
     "thisMonth": "Bu oy",
     "thisQuarter": "Bu chorak",
     "thisYear": "Bu yil",
     "incomeVsExpense": "Daromad va Xarajat",
     "byCategory": "Kategoriya bo'yicha",
-    "trend": "Trend"
+    "trend": "Trend",
+    "savingsRate": "Jamg'arma darajasi",
+    "noData": "Bu davr uchun ma'lumot yo'q"
   },
   "profile": {
     "title": "Profil",
@@ -85,7 +115,16 @@
     "currency": "Valyuta",
     "theme": "Mavzu",
     "notifications": "Bildirishnomalar",
-    "about": "Dastur haqida"
+    "about": "Dastur haqida",
+    "guest": "Mehmon",
+    "logout": "Chiqish"
+  },
+  "settings": {
+    "language": "Til",
+    "currency": "Valyuta",
+    "theme": "Mavzu",
+    "notifications": "Bildirishnomalar",
+    "dark": "Qorong'u"
   },
   "categories": {
     "food": "Oziq-ovqat",
@@ -101,6 +140,15 @@
     "salary": "Maosh",
     "freelance": "Frilanserlik",
     "investments": "Investitsiyalar",
-    "other_income": "Boshqa daromadlar"
+    "other_income": "Boshqa daromadlar",
+    "default": "Standart",
+    "custom": "maxsus kategoriyalar",
+    "noCategories": "Kategoriyalar yo'q",
+    "createCategory": "Kategoriya yaratish",
+    "newCategory": "Yangi kategoriya",
+    "categoryName": "Kategoriya nomi",
+    "namePlaceholder": "masalan, Oziq-ovqat",
+    "icon": "Belgi",
+    "color": "Rang"
   }
 }

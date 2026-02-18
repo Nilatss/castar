@@ -15,7 +15,9 @@
     "next": "Далее",
     "done": "Готово",
     "all": "Все",
-    "none": "Ничего"
+    "none": "Ничего",
+    "on": "Вкл",
+    "off": "Выкл"
   },
   "auth": {
     "welcome": "Добро пожаловать",
@@ -30,7 +32,8 @@
     "home": "Главная",
     "budget": "Бюджет",
     "analytics": "Аналитика",
-    "profile": "Профиль"
+    "profile": "Профиль",
+    "categories": "Категории"
   },
   "home": {
     "balance": "Баланс",
@@ -38,19 +41,30 @@
     "expense": "Расход",
     "recentTransactions": "Последние транзакции",
     "seeAll": "Смотреть все",
-    "addTransaction": "Добавить транзакцию"
+    "addTransaction": "Добавить транзакцию",
+    "no_transactions": "Транзакций пока нет",
+    "no_transactions_desc": "Добавьте первую транзакцию",
+    "add_first": "Добавить транзакцию"
   },
   "transactions": {
     "title": "Транзакции",
     "addIncome": "Добавить доход",
     "addExpense": "Добавить расход",
+    "income": "Доход",
+    "expense": "Расход",
     "amount": "Сумма",
     "category": "Категория",
     "account": "Счёт",
     "date": "Дата",
+    "time": "Время",
+    "currency": "Валюта",
+    "type": "Тип",
+    "detail": "Детали транзакции",
     "description": "Описание",
     "voiceInput": "Голосовой ввод",
-    "noTransactions": "Транзакций пока нет"
+    "noTransactions": "Транзакций пока нет",
+    "notFound": "Транзакция не найдена",
+    "deleteConfirm": "Вы уверены, что хотите удалить эту транзакцию?"
   },
   "budget": {
     "title": "Бюджеты",
@@ -65,17 +79,33 @@
     "weekly": "Еженедельно",
     "monthly": "Ежемесячно",
     "yearly": "Ежегодно",
-    "noBudgets": "Бюджетов пока нет"
+    "noBudgets": "Бюджетов пока нет",
+    "notFound": "Бюджет не найден",
+    "totalBudgeted": "Всего запланировано",
+    "totalSpent": "Всего потрачено",
+    "dailyAvg": "Средний расход/день",
+    "exceeded": "Бюджет превышен!",
+    "warning": "Приближение к лимиту бюджета",
+    "deleteBudget": "Удалить бюджет",
+    "deleteConfirm": "Вы уверены, что хотите удалить этот бюджет?",
+    "budgetName": "Название бюджета",
+    "namePlaceholder": "напр. Еда за месяц"
   },
   "analytics": {
     "title": "Аналитика",
+    "week": "Неделя",
+    "month": "Месяц",
+    "quarter": "Квартал",
+    "year": "Год",
     "thisWeek": "Эта неделя",
     "thisMonth": "Этот месяц",
     "thisQuarter": "Этот квартал",
     "thisYear": "Этот год",
     "incomeVsExpense": "Доходы и расходы",
     "byCategory": "По категориям",
-    "trend": "Тренд"
+    "trend": "Тренд",
+    "savingsRate": "Норма сбережений",
+    "noData": "Нет данных за этот период"
   },
   "profile": {
     "title": "Профиль",
@@ -85,7 +115,16 @@
     "currency": "Валюта",
     "theme": "Тема",
     "notifications": "Уведомления",
-    "about": "О приложении"
+    "about": "О приложении",
+    "guest": "Гость",
+    "logout": "Выйти"
+  },
+  "settings": {
+    "language": "Язык",
+    "currency": "Валюта",
+    "theme": "Тема",
+    "notifications": "Уведомления",
+    "dark": "Тёмная"
   },
   "categories": {
     "food": "Еда",
@@ -101,6 +140,15 @@
     "salary": "Зарплата",
     "freelance": "Фриланс",
     "investments": "Инвестиции",
-    "other_income": "Прочий доход"
+    "other_income": "Прочий доход",
+    "default": "По умолчанию",
+    "custom": "пользовательских категорий",
+    "noCategories": "Нет категорий",
+    "createCategory": "Создать категорию",
+    "newCategory": "Новая категория",
+    "categoryName": "Название категории",
+    "namePlaceholder": "напр. Продукты",
+    "icon": "Иконка",
+    "color": "Цвет"
   }
 }

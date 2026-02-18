@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'react-native';
 import { colors } from '../../shared/constants';
+import { getDatabase, runMigrations, seedDefaults } from '../../shared/services/database';
+import { useAuthStore } from '../../features/auth/store/authStore';
 
 // Initialize i18n
 import '../../shared/i18n';
@@ -29,6 +31,26 @@ const navigationTheme = {
 };
 
 export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
+  const migrationsRan = useRef(false);
+  const userId = useAuthStore((s) => s.userId);
+
+  // Run migrations once on mount
+  useEffect(() => {
+    if (!migrationsRan.current) {
+      const db = getDatabase();
+      runMigrations(db);
+      migrationsRan.current = true;
+    }
+  }, []);
+
+  // Seed defaults when userId becomes available
+  useEffect(() => {
+    if (userId) {
+      const db = getDatabase();
+      seedDefaults(db, userId);
+    }
+  }, [userId]);
+
   return (
     <NavigationContainer theme={navigationTheme}>
       <StatusBar barStyle="light-content" backgroundColor={colors.background} />
