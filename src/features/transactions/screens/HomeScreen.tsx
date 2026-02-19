@@ -103,7 +103,7 @@ export const HomeScreen = () => {
           icon={cat?.icon ?? '?'}
           iconColor={cat?.color ?? '#808080'}
           title={cat?.name ?? t('categories.other_expense')}
-          subtitle={tx.description}
+          subtitle={tx.description ?? undefined}
           amount={tx.amount}
           currency={tx.currency}
           type={tx.type}

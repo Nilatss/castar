@@ -33,16 +33,18 @@ export const useCategoryStore = create<CategoryStore>((set) => ({
     const existing = categoryRepository.findByUser(userId);
     const category: Category = {
       id: uuid(),
+      remoteId: null,
       userId,
       name: dto.name,
       icon: dto.icon,
       color: dto.color,
       type: dto.type,
       isDefault: false,
-      parentId: dto.parentId,
+      parentId: dto.parentId ?? null,
       sortOrder: existing.length,
       createdAt: now,
       updatedAt: now,
+      syncedAt: null,
     };
 
     categoryRepository.insert(category);

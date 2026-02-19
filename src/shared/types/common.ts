@@ -47,74 +47,74 @@ export interface FamilyMember {
 
 export interface Category {
   id: string;
-  remoteId?: string;
+  remoteId: string | null;
   userId: string;
   name: string;
   icon: string;
   color: string;
   type: TransactionType;
   isDefault: boolean;
-  parentId?: string;
+  parentId: string | null;
   sortOrder: number;
   createdAt: number;
   updatedAt: number;
-  syncedAt?: number;
+  syncedAt: number | null;
 }
 
 export interface Account {
   id: string;
-  remoteId?: string;
+  remoteId: string | null;
   userId: string;
   name: string;
   type: AccountType;
   currency: Currency;
   balance: number;
-  icon?: string;
-  color?: string;
+  icon: string | null;
+  color: string | null;
   isArchived: boolean;
   createdAt: number;
   updatedAt: number;
-  syncedAt?: number;
+  syncedAt: number | null;
 }
 
 export interface Transaction {
   id: string;
-  remoteId?: string;
+  remoteId: string | null;
   userId: string;
   accountId: string;
   categoryId: string;
-  familyGroupId?: string;
+  familyGroupId: string | null;
   type: TransactionType;
   amount: number;
   currency: Currency;
-  amountInDefault?: number;
-  exchangeRate?: number;
-  description?: string;
+  amountInDefault: number | null;
+  exchangeRate: number | null;
+  description: string | null;
   date: number;
   isRecurring: boolean;
-  recurringId?: string;
+  recurringId: string | null;
   voiceInput: boolean;
   createdAt: number;
   updatedAt: number;
-  syncedAt?: number;
+  syncedAt: number | null;
 }
 
 export interface Budget {
   id: string;
-  remoteId?: string;
+  remoteId: string | null;
   userId: string;
-  familyGroupId?: string;
-  categoryId?: string;
+  familyGroupId: string | null;
+  categoryId: string | null;
   name: string;
   amount: number;
   currency: Currency;
   period: BudgetPeriod;
   startDate: number;
-  endDate?: number;
+  endDate: number | null;
   isActive: boolean;
   createdAt: number;
   updatedAt: number;
-  syncedAt?: number;
+  syncedAt: number | null;
   // Computed (not stored in DB)
   spent?: number;
   remaining?: number;
@@ -129,7 +129,7 @@ export interface RecurringTransaction {
   type: TransactionType;
   amount: number;
   currency: Currency;
-  description?: string;
+  description: string | null;
   frequency: BudgetPeriod;
   nextDate: number;
   isActive: boolean;
@@ -153,7 +153,7 @@ export interface SyncQueueItem {
   data: string; // JSON
   createdAt: number;
   attempts: number;
-  lastError?: string;
+  lastError: string | null;
 }
 
 // === Voice Input ===

@@ -71,18 +71,20 @@ export const useBudgetStore = create<BudgetStore>((set) => ({
     const now = Date.now();
     const budget: Budget = {
       id: uuid(),
+      remoteId: null,
       userId,
-      familyGroupId: dto.familyGroupId,
-      categoryId: dto.categoryId,
+      familyGroupId: dto.familyGroupId ?? null,
+      categoryId: dto.categoryId ?? null,
       name: dto.name,
       amount: dto.amount,
       currency: dto.currency,
       period: dto.period,
       startDate: dto.startDate,
-      endDate: dto.endDate,
+      endDate: dto.endDate ?? null,
       isActive: true,
       createdAt: now,
       updatedAt: now,
+      syncedAt: null,
     };
 
     budgetRepository.insert(budget);

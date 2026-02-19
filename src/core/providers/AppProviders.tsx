@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'react-native';
 import { colors } from '../../shared/constants';
-import { getDatabase, runMigrations, seedDefaults } from '../../shared/services/database';
+import { runMigrations, seedDefaults } from '../../shared/services/database';
 import { useAuthStore } from '../../features/auth/store/authStore';
 
 // Initialize i18n
@@ -37,8 +37,7 @@ export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
   // Run migrations once on mount
   useEffect(() => {
     if (!migrationsRan.current) {
-      const db = getDatabase();
-      runMigrations(db);
+      runMigrations();
       migrationsRan.current = true;
     }
   }, []);
@@ -46,8 +45,7 @@ export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
   // Seed defaults when userId becomes available
   useEffect(() => {
     if (userId) {
-      const db = getDatabase();
-      seedDefaults(db, userId);
+      seedDefaults(userId);
     }
   }, [userId]);
 

@@ -42,19 +42,24 @@ export const useTransactionStore = create<TransactionStore>((set, get) => ({
     const now = Date.now();
     const transaction: Transaction = {
       id: uuid(),
+      remoteId: null,
       userId,
       accountId: dto.accountId,
       categoryId: dto.categoryId,
-      familyGroupId: dto.familyGroupId,
+      familyGroupId: dto.familyGroupId ?? null,
       type: dto.type,
       amount: dto.amount,
       currency: dto.currency,
-      description: dto.description,
+      amountInDefault: null,
+      exchangeRate: null,
+      description: dto.description ?? null,
       date: dto.date,
       isRecurring: false,
+      recurringId: null,
       voiceInput: dto.voiceInput ?? false,
       createdAt: now,
       updatedAt: now,
+      syncedAt: null,
     };
 
     transactionRepository.insert(transaction);

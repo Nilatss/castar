@@ -1,50 +1,52 @@
 import { v4 as uuid } from 'uuid';
-import type { SQLiteDatabase } from 'expo-sqlite';
+import { eq, count } from 'drizzle-orm';
+import { db } from './connection';
+import { categories, accounts } from './schema';
 import { defaultCategories } from '../../constants';
 
-export function seedDefaults(db: SQLiteDatabase, userId: string): void {
-  // Check if categories already exist for this user
-  const existing = db.getFirstSync<{ cnt: number }>(
-    'SELECT COUNT(*) as cnt FROM categories WHERE user_id = ?',
-    userId
-  );
+export function seedDefaults(userId: string): void {
+  const [existing] = db
+    .select({ cnt: count() })
+    .from(categories)
+    .where(eq(categories.userId, userId))
+    .all();
+
   if (existing && existing.cnt > 0) return;
 
   const now = Date.now();
 
-  db.execSync('BEGIN TRANSACTION');
-  try {
+  db.transaction((tx) => {
     // Seed default categories
-    for (let i = 0; i < defaultCategories.length; i++) {
-      const cat = defaultCategories[i];
-      db.runSync(
-        `INSERT INTO categories (id, user_id, name, icon, color, type, is_default, sort_order, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?)`,
-        uuid(),
-        userId,
-        cat.nameKey,
-        cat.icon,
-        cat.color,
-        cat.type,
-        i,
-        now,
-        now
-      );
-    }
+    tx.insert(categories)
+      .values(
+        defaultCategories.map((cat, i) => ({
+          id: uuid(),
+          userId,
+          name: cat.nameKey,
+          icon: cat.icon,
+          color: cat.color,
+          type: cat.type as 'income' | 'expense' | 'transfer',
+          isDefault: true,
+          sortOrder: i,
+          createdAt: now,
+          updatedAt: now,
+        }))
+      )
+      .run();
 
     // Seed default Cash account
-    db.runSync(
-      `INSERT INTO accounts (id, user_id, name, type, currency, balance, icon, created_at, updated_at)
-       VALUES (?, ?, 'Cash', 'cash', 'UZS', 0, '💵', ?, ?)`,
-      uuid(),
-      userId,
-      now,
-      now
-    );
-
-    db.execSync('COMMIT');
-  } catch (e) {
-    db.execSync('ROLLBACK');
-    throw e;
-  }
+    tx.insert(accounts)
+      .values({
+        id: uuid(),
+        userId,
+        name: 'Cash',
+        type: 'cash',
+        currency: 'UZS',
+        balance: 0,
+        icon: '💵',
+        createdAt: now,
+        updatedAt: now,
+      })
+      .run();
+  });
 }

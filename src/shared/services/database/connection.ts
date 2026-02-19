@@ -1,12 +1,10 @@
-import { openDatabaseSync, type SQLiteDatabase } from 'expo-sqlite';
+import { openDatabaseSync } from 'expo-sqlite';
+import { drizzle } from 'drizzle-orm/expo-sqlite';
+import * as schema from './schema';
 
-let db: SQLiteDatabase | null = null;
+const expoDb = openDatabaseSync('castar.db');
+expoDb.execSync('PRAGMA journal_mode = WAL');
+expoDb.execSync('PRAGMA foreign_keys = ON');
 
-export function getDatabase(): SQLiteDatabase {
-  if (!db) {
-    db = openDatabaseSync('castar.db');
-    db.execSync('PRAGMA journal_mode = WAL');
-    db.execSync('PRAGMA foreign_keys = ON');
-  }
-  return db;
-}
+export const db = drizzle(expoDb, { schema });
+export const rawDb = expoDb;
