@@ -29,7 +29,13 @@
     "plugins": [
       "expo-localization",
       "expo-secure-store",
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Castar needs access to your microphone for voice input of transactions."
+        }
+      ]
     ]
   }
 }
