@@ -36,12 +36,25 @@ auth.get('/telegram/callback', async (c) => {
     params[key] = value;
   });
 
+  console.log('[Telegram Callback] Params:', JSON.stringify(params));
+
   // 2. Validate HMAC-SHA256 hash + auth_date freshness
   const isValid = await validateTelegramAuth(params, c.env.TELEGRAM_BOT_TOKEN);
 
   if (!isValid) {
-    return c.json({ ok: false, error: 'Invalid Telegram auth data' }, 403);
+    console.log('[Telegram Callback] Validation FAILED');
+    return c.html(`<!DOCTYPE html>
+<html><head><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Castar — Auth Error</title>
+<style>body{display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;background:#101010;font-family:sans-serif;color:#fff;text-align:center}.container{padding:24px}h1{color:#F55858}a{color:#4B8DF5}</style>
+</head><body><div class="container">
+<h1>Auth Failed</h1>
+<p>Telegram auth validation failed.</p>
+<p><a href="${new URL(c.req.url).origin}/auth/telegram?bot=castar_bot">Try again</a></p>
+</div></body></html>`, 403);
   }
+
+  console.log('[Telegram Callback] Validation OK, user id:', params['id']);
 
   // 3. Build user object matching client TelegramUser shape
   const telegramUser = {
@@ -58,11 +71,26 @@ auth.get('/telegram/callback', async (c) => {
   // 5. Sign JWT (30 days expiry)
   const token = await signJwt(userId, c.env.JWT_SECRET);
 
-  // 6. Redirect to deep link: castar://auth/callback?token=...&user=...
+  // 6. Build deep link
   const userJson = encodeURIComponent(JSON.stringify(telegramUser));
   const deepLink = `castar://auth/callback?token=${token}&user=${userJson}`;
 
-  return c.redirect(deepLink, 302);
+  console.log('[Telegram Callback] Redirecting to deep link');
+
+  // 7. Return HTML page that attempts deep link with fallback
+  //    (some browsers block custom scheme redirects via 302)
+  return c.html(`<!DOCTYPE html>
+<html><head><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Castar — Redirecting...</title>
+<style>body{display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;background:#101010;font-family:sans-serif;color:#fff;text-align:center}.container{padding:24px}h1{font-size:24px;margin-bottom:16px}.btn{display:inline-block;padding:16px 32px;background:#4B8DF5;color:#fff;border-radius:12px;text-decoration:none;font-size:18px;font-weight:600;margin-top:16px}p{color:rgba(255,255,255,0.6);margin-top:12px}</style>
+</head><body><div class="container">
+<h1>✅ Authorized!</h1>
+<p>Redirecting to Castar...</p>
+<a class="btn" href="${deepLink}">Open Castar</a>
+<p style="margin-top:24px;font-size:12px">If the app doesn't open automatically, tap the button above.</p>
+</div>
+<script>window.location.href="${deepLink}";</script>
+</body></html>`);
 });
 
 // POST /auth/email/send-code
