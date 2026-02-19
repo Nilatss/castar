@@ -1,0 +1,16 @@
+name = "castar-api"
+main = "src/index.ts"
+compatibility_date = "2025-02-14"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "castar-db"
+database_id = "placeholder-replace-after-d1-create"
+
+# Secrets (set via `wrangler secret put`):
+# JWT_SECRET
+# RESEND_API_KEY
+# ESKIZ_TOKEN
+# TELEGRAM_BOT_TOKEN
+# GOOGLE_CLOUD_STT_KEY
