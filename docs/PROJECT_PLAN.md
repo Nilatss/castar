@@ -31,9 +31,10 @@
 | **Auth (JWT)** | jose | 6 | ✅ sign/verify работает |
 | **Email** | Resend.com | — | 🔲 stub |
 | **SMS** | Eskiz.uz | — | 🔲 stub |
-| **Voice (cloud)** | Google Cloud STT | V2 | ⏳ интеграция |
-| **Voice (offline)** | VOSK (react-native-vosk) | 2.1.7 | ⏳ интеграция |
-| **Аудио запись** | expo-av | — | ⏳ добавить |
+| **Voice (cloud)** | Google Cloud STT | V2 | ✅ клиент + бэкенд proxy |
+| **Voice (offline)** | VOSK (react-native-vosk) | 2.1.7 | ✅ клиент ready |
+| **Аудио запись** | expo-av | 16 | ✅ |
+| **Сеть** | @react-native-community/netinfo | 11.4 | ✅ |
 | **Графики** | react-native-gifted-charts | — | ⏳ установить (Фаза 2) |
 | **User Analytics** | PostHog (posthog-react-native) | — | ⏳ добавить |
 
@@ -71,18 +72,18 @@ src/
 │   │   ├── analytics/      # ⏳ PostHog (screen tracking, events, session replay)
 │   │   ├── sync/           # syncService (stub)
 │   │   ├── validation/     # ✅ Zod schemas (transaction, budget, category, account, recurring)
-│   │   └── voice/          # ✅ voiceParser (text) + ⏳ voiceService (Google STT + VOSK)
+│   │   └── voice/          # ✅ voiceParser + cloudRecognition + offlineRecognition + voiceService
 │   ├── types/              # common.ts, navigation.ts
 │   └── utils/              # formatCurrency, formatDate
 └── assets/
 
-backend/                    # 🔲 Scaffold — stubs, лежит в git, не задеплоен
+backend/                    # Scaffold — stubs + voice route (рабочий)
 ├── src/
-│   ├── index.ts            # Hono entry + CORS + health
-│   ├── types.ts            # Env, JwtPayload, Variables
+│   ├── index.ts            # Hono entry + CORS + health + voice route mount
+│   ├── types.ts            # Env (+ GOOGLE_CLOUD_STT_KEY), JwtPayload, Variables
 │   ├── middleware/auth.ts  # JWT verify (рабочий)
 │   ├── services/           # jwt ✅, email 🔲, sms 🔲, telegram 🔲
-│   └── routes/             # auth, transactions, categories, budgets, recurrings, settings, sync (все 501)
+│   └── routes/             # auth, transactions, categories, budgets, recurrings, settings, sync (501) + voice ✅
 ├── migrations/0001_initial.sql  # Полная D1 схема (7 таблиц, 15 индексов)
 ├── wrangler.toml
 └── package.json
@@ -101,9 +102,9 @@ Onboarding → [Telegram | Email → EmailVerify | Phone → PhoneVerify]
 
 **Zustand** — клиентское/локальное состояние (UI, фильтры, offline данные из SQLite):
 - **authStore** — isAuthenticated, isOnboarded, isPinVerified, token, userId, displayName, hasPin, telegramUser + SecureStore persistence
-- **transactionStore** — transactions[], filters, CRUD → **Drizzle/SQLite**
-- **budgetStore** — budgets[] + enrichBudget(spent/remaining/%), CRUD → **Drizzle/SQLite**
-- **categoryStore** — categories[], CRUD → **Drizzle/SQLite**
+- **transactionStore** — transactions[], filters, CRUD → **Drizzle/SQLite** (worktree)
+- **budgetStore** — budgets[] + enrichBudget(spent/remaining/%), CRUD → **Drizzle/SQLite** (worktree)
+- **categoryStore** — categories[], CRUD → **Drizzle/SQLite** (worktree)
 - **analyticsStore** — period, summary (stub)
 - **profileStore** — user, settings (in-memory)
 
@@ -203,6 +204,23 @@ Raw SQL + BaseRepository + 6 классов-репозиториев (~500 ст�
 - [x] `expo-sqlite` plugin добавлен в `app.json`
 - [x] TypeScript — 0 ошибок (`npx tsc --noEmit`)
 
+### Voice Recognition ✅ (worktree, коммиты `d148e22` + `11e39ac`)
+Полный service layer для голосового ввода транзакций (cloud + offline + unified).
+- [x] `expo-av` установлен — запись аудио (WAV 16kHz mono)
+- [x] `react-native-vosk@2.1.7` установлен — offline VOSK recognition
+- [x] `@react-native-community/netinfo@11.4.1` установлен — проверка сети
+- [x] `app.json` — expo-av plugin с microphonePermission
+- [x] `cloudRecognition.ts` — запись через expo-av → отправка на бэкенд proxy → Google Cloud STT V2
+- [x] `offlineRecognition.ts` — VOSK on-device, авто-загрузка моделей (~50MB), uz/ru/en
+- [x] `voiceService.ts` — auto-select cloud/offline по сети, fallback, state callbacks
+- [x] `backend/src/routes/voice.ts` — POST /api/voice/recognize (multipart audio → base64 → Google STT V2 → text+confidence)
+- [x] `backend/src/types.ts` — GOOGLE_CLOUD_STT_KEY добавлен в Env
+- [x] `backend/src/index.ts` — voice route замаунчен на /api/voice (public, без auth)
+- [x] `wrangler.toml` — GOOGLE_CLOUD_STT_KEY в секретах
+- [x] Google Cloud аккаунт создан, Speech-to-Text API включён, API key получен
+- [x] `tsconfig.json` — exclude backend/ из фронтового tsc (worktree)
+- [x] TypeScript — 0 ошибок (frontend + backend)
+
 ### Также сделано (коммит `12fc595`, main)
 - [x] `expo-sqlite` добавлен в package.json main repo
 - [x] `tsconfig.json` — exclude backend/ из фронтового tsc
@@ -212,8 +230,8 @@ Raw SQL + BaseRepository + 6 классов-репозиториев (~500 ст�
 ## 📋 Что нужно сделать
 
 ### Мерж worktree → main ⏳
-- [ ] Когда БД layer проверен и стабилен — смержить ветку `claude/blissful-elgamal` в main
-- [ ] Содержит: Drizzle ORM database layer, Zustand ↔ SQLite, Zod schemas, expo-sqlite
+- [ ] Когда всё проверено и стабильно — смержить ветку `claude/blissful-elgamal` в main
+- [ ] Содержит: Drizzle ORM database layer, Zustand ↔ SQLite, Zod schemas, expo-sqlite, Voice Recognition (cloud+offline+backend), project plan
 
 ### Фаза 2 — UI основных экранов ⏳ (ждёт дизайн)
 - [ ] Shared UI компоненты (Button, Input, Card, SegmentedControl, ProgressBar, CategoryIcon, EmptyState, TransactionItem)
@@ -247,7 +265,7 @@ Raw SQL + BaseRepository + 6 классов-репозиториев (~500 ст�
 - [ ] Использовать RQ для: серверные отчёты, справочники, shared data, поиск пользователей
 - [ ] Zustand остаётся для: offline данные (SQLite), UI state, auth state
 
-### Voice Recognition ⏳
+### Voice Recognition ✅
 Основная фича — голосовой ввод транзакций. Акцент на узбекский язык (самый востребованный).
 
 **Архитектура (гибридная):**
@@ -264,23 +282,28 @@ Text    → voiceParser.ts (уже готов — парсинг суммы, в�
 **Файлы:**
 ```
 src/shared/services/voice/
-├── voiceParser.ts          # ✅ готов — text → VoiceParseResult (amount, currency, type, category)
-├── voiceService.ts         # ⏳ unified interface (auto-select cloud/offline)
-├── cloudRecognition.ts     # ⏳ Google Cloud STT V2 (запись expo-av → REST API)
-└── offlineRecognition.ts   # ⏳ VOSK (react-native-vosk, on-device)
+├── voiceParser.ts          # ✅ text → VoiceParseResult (amount, currency, type, category)
+├── voiceService.ts         # ✅ unified interface (auto-select cloud/offline)
+├── cloudRecognition.ts     # ✅ Google Cloud STT V2 (запись expo-av → backend proxy)
+└── offlineRecognition.ts   # ✅ VOSK (react-native-vosk, on-device)
+
+backend/src/routes/voice.ts # ✅ POST /api/voice/recognize (proxy → Google STT V2)
 ```
 
 **Задачи:**
-- [ ] Установить `react-native-vosk` + скачать модели (uz, ru, en)
-- [ ] Установить `expo-av` для записи аудио
-- [ ] Написать `cloudRecognition.ts` — запись аудио → Google Cloud STT API
-- [ ] Написать `offlineRecognition.ts` — VOSK on-device recognition
-- [ ] Написать `voiceService.ts` — проверка сети → cloud или offline
-- [ ] Интегрировать в AddTransactionScreen (кнопка микрофона)
-- [ ] Google Cloud API key — через бэкенд (проксировать, не хранить в клиенте)
+- [x] Установить `react-native-vosk` + модели (uz, ru, en — авто-загрузка)
+- [x] Установить `expo-av` для записи аудио
+- [x] Установить `@react-native-community/netinfo` для проверки сети
+- [x] Написать `cloudRecognition.ts` — запись аудио → backend proxy → Google STT
+- [x] Написать `offlineRecognition.ts` — VOSK on-device recognition
+- [x] Написать `voiceService.ts` — проверка сети → cloud или offline
+- [x] Google Cloud API key — через бэкенд proxy (POST /api/voice/recognize)
+- [x] Google Cloud аккаунт + Speech-to-Text API включён + API key получен
+- [ ] Интегрировать в AddTransactionScreen (кнопка микрофона) — ждёт Фазу 2 (UI)
+- [ ] `wrangler secret put GOOGLE_CLOUD_STT_KEY` — при деплое бэкенда
 
 **Стоимость:**
-- Google Cloud STT: ~$0.02/мин, 60 мин/мес бесплатно, $300 кредитов новым
+- Google Cloud STT: ~$0.02/мин, 60 мин/мес бесплатно, $300 кредитов на 90 дней
 - VOSK: бесплатно (open source, Apache 2.0)
 - ~$0.09/мес на активного пользователя (~5 транзакций/день по 5 сек)
 
@@ -323,10 +346,13 @@ src/shared/services/voice/
 | main | `12fc595` | feat: add backend API scaffold (stubs) + expo-sqlite dep |
 | worktree | `8c27984` | feat: add SQLite database layer, all main screens, and Zustand DB integration |
 | worktree | `e7a2242` | feat: migrate database layer from raw SQL to Drizzle ORM |
+| worktree | `5df47d5` | docs: add comprehensive project plan with all architectural decisions |
+| worktree | `d148e22` | feat: add voice recognition service layer (Google Cloud STT + VOSK) |
+| worktree | `11e39ac` | feat: add voice recognition backend route (Google Cloud STT V2 proxy) |
 
 ---
 
-## ⚠️ PRD расхождения (все решены ✅)
+## ⚠️ PRD расхождения
 
 | PRD говорит | В коде реально | Решение |
 |------------|---------------|---------|
