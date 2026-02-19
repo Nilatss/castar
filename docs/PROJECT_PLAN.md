@@ -26,8 +26,8 @@
 | **Даты** | date-fns | 4 | ✅ |
 | **UUID** | uuid | 13 | ✅ |
 | **БД (локальная)** | expo-sqlite + Drizzle | 16 + 0.45 | ✅ |
-| **Бэкенд** | Cloudflare Workers + Hono | 4.7 | 🔲 scaffold (stubs) |
-| **БД (сервер)** | Cloudflare D1 (SQLite) | — | 🔲 миграция готова, не задеплоена |
+| **Бэкенд** | Cloudflare Workers + Hono | 4.7 | ✅ задеплоен (Telegram auth рабочий, остальное stubs) |
+| **БД (сервер)** | Cloudflare D1 (SQLite) | — | ✅ создана (WEUR), миграция готова |
 | **Auth (JWT)** | jose | 6 | ✅ sign/verify работает |
 | **Email** | Resend.com | — | 🔲 stub |
 | **SMS** | Eskiz.uz | — | 🔲 stub |
@@ -82,8 +82,8 @@ backend/                    # Scaffold — stubs + voice route (рабочий)
 │   ├── index.ts            # Hono entry + CORS + health + voice route mount
 │   ├── types.ts            # Env (+ GOOGLE_CLOUD_STT_KEY), JwtPayload, Variables
 │   ├── middleware/auth.ts  # JWT verify (рабочий)
-│   ├── services/           # jwt ✅, email 🔲, sms 🔲, telegram 🔲
-│   └── routes/             # auth, transactions, categories, budgets, recurrings, settings, sync (501) + voice ✅
+│   ├── services/           # jwt ✅, telegram ✅ (HMAC-SHA256), email 🔲, sms 🔲
+│   └── routes/             # auth (telegram ✅, email/phone 501), CRUD stubs (501) + voice ✅
 ├── migrations/0001_initial.sql  # Полная D1 схема (7 таблиц, 15 индексов)
 ├── wrangler.toml
 └── package.json
@@ -165,10 +165,10 @@ Onboarding → [Telegram | Email → EmailVerify | Phone → PhoneVerify]
 - [x] `backend/src/services/jwt.ts` — **рабочий** sign/verify через jose
 - [x] `backend/src/middleware/auth.ts` — **рабочий** JWT verify middleware
 - [x] `backend/src/index.ts` — Hono entry, CORS, health check, route mounting
-- [x] `backend/src/services/telegram.ts` — widget HTML готов, валидация stub
+- [x] `backend/src/services/telegram.ts` — ✅ widget HTML + HMAC-SHA256 валидация (Web Crypto API)
 - [x] `backend/src/services/email.ts` — stub (TODO: Resend.com API)
 - [x] `backend/src/services/sms.ts` — stub (TODO: Eskiz.uz API)
-- [x] `backend/src/routes/auth.ts` — 5 endpoints, возвращают 501
+- [x] `backend/src/routes/auth.ts` — ✅ Telegram callback рабочий (HMAC + JWT + deep link + HTML fallback), email/phone stubs (501)
 - [x] `backend/src/routes/transactions.ts` — CRUD stubs (501)
 - [x] `backend/src/routes/categories.ts` — CRUD stubs (501)
 - [x] `backend/src/routes/budgets.ts` — CRUD stubs (501)
@@ -232,6 +232,16 @@ Raw SQL + BaseRepository + 6 классов-репозиториев (~500 ст�
 - [x] PostHog аккаунт создан (EU instance, posthog.com)
 - [x] TypeScript — 0 ошибок
 
+### Backend Deploy ✅ (worktree, коммиты `8bce6ba` + `6346bec` + `44f3d5a`)
+Telegram HMAC-SHA256 валидация реализована, Worker задеплоен, D1 база создана.
+- [x] `backend/src/services/telegram.ts` — полная HMAC-SHA256 валидация через Web Crypto API (Cloudflare Workers)
+- [x] `backend/src/routes/auth.ts` — Telegram callback: validate → JWT → HTML page с deep link + fallback кнопка
+- [x] D1 база `castar-db` создана (регион WEUR, id: `e658fde0-7bbe-46ad-a52e-0c528bfba242`)
+- [x] `wrangler.toml` — обновлён с реальным D1 database ID, Worker name = `castar-auth`
+- [x] Секреты установлены: `JWT_SECRET`, `TELEGRAM_BOT_TOKEN`
+- [x] Worker задеплоен на `https://castar-auth.ivcswebofficial.workers.dev`
+- [x] Telegram auth протестирован — HMAC валидация проходит, deep link работает ✅
+
 ### Также сделано (коммит `12fc595`, main)
 - [x] `expo-sqlite` добавлен в package.json main repo
 - [x] `tsconfig.json` — exclude backend/ из фронтового tsc
@@ -242,9 +252,16 @@ Raw SQL + BaseRepository + 6 классов-репозиториев (~500 ст�
 
 ### Мерж worktree → main ⏳
 - [ ] Когда всё проверено и стабильно — смержить ветку `claude/blissful-elgamal` в main
-- [ ] Содержит: Drizzle ORM database layer, Zustand ↔ SQLite, Zod schemas, expo-sqlite, Voice Recognition (cloud+offline+backend), PostHog analytics, project plan
+- [ ] Содержит: Drizzle ORM database layer, Zustand ↔ SQLite, Zod schemas, expo-sqlite, Voice Recognition (cloud+offline+backend), PostHog analytics, Telegram HMAC-SHA256, project plan
 
 ### Фаза 2 — UI основных экранов ⏳ (ждёт дизайн)
+
+#### 🎨 Дизайн (нужно отрисовать скрины)
+- [ ] Состояние «Отправить повторный OTP код» — UI для resend кнопки с таймером (Email/Phone verify экраны)
+- [ ] Страница Telegram верификации — под наш дизайн (сейчас стандартный виджет Telegram на тёмном фоне)
+- [ ] Все основные экраны приложения (см. ниже)
+
+#### UI экраны
 - [ ] Shared UI компоненты (Button, Input, Card, SegmentedControl, ProgressBar, CategoryIcon, EmptyState, TransactionItem)
 - [ ] HomeScreen (карточка баланса, доход/расход, список транзакций)
 - [ ] AddTransactionScreen (калькулятор, категория, дата, описание)
@@ -264,14 +281,15 @@ Raw SQL + BaseRepository + 6 классов-репозиториев (~500 ст�
 - [x] ~~JWT service~~ ✅ рабочий
 - [x] ~~JWT middleware~~ ✅ рабочий
 - [x] ~~CORS, error handler~~ ✅
+- [x] ~~Заполнить telegram.ts: HMAC-SHA256 валидация~~ ✅ реализовано + задеплоено
+- [x] ~~Задеплоить на Cloudflare Workers + создать D1 базу~~ ✅ Worker `castar-auth` + D1 `castar-db` (WEUR)
 - [ ] Заполнить auth routes: OTP генерация, сохранение в D1, верификация
 - [ ] Заполнить email.ts: реальный вызов Resend.com API
 - [ ] Заполнить sms.ts: реальный вызов Eskiz.uz API
-- [ ] Заполнить telegram.ts: HMAC-SHA256 валидация
+- [ ] Применить D1 миграцию (`wrangler d1 execute castar-db --remote --file=migrations/0001_initial.sql`)
 - [ ] Заполнить CRUD routes: transactions, categories, budgets, recurrings, settings
 - [ ] Заполнить sync endpoint
 - [ ] Rate limiting
-- [ ] Задеплоить на Cloudflare Workers + создать D1 базу
 - [ ] Добавить `@tanstack/react-query` в клиент
 - [ ] Использовать RQ для: серверные отчёты, справочники, shared data, поиск пользователей
 - [ ] Zustand остаётся для: offline данные (SQLite), UI state, auth state
@@ -371,6 +389,10 @@ src/core/providers/
 | worktree | `11e39ac` | feat: add voice recognition backend route (Google Cloud STT V2 proxy) |
 | worktree | `421915f` | docs: update project plan with completed voice recognition |
 | worktree | `1cce887` | feat: add PostHog analytics integration (EU instance) |
+| worktree | `b4c6d40` | docs: update project plan with PostHog analytics |
+| worktree | `8bce6ba` | feat: implement Telegram HMAC-SHA256 validation + callback |
+| worktree | `6346bec` | chore: update wrangler.toml with real D1 database ID |
+| worktree | `44f3d5a` | fix: improve Telegram callback with HTML fallback page |
 
 ---
 
