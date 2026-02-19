@@ -36,7 +36,7 @@
 | **Аудио запись** | expo-av | 16 | ✅ |
 | **Сеть** | @react-native-community/netinfo | 11.4 | ✅ |
 | **Графики** | react-native-gifted-charts | — | ⏳ установить (Фаза 2) |
-| **User Analytics** | PostHog (posthog-react-native) | — | ⏳ добавить |
+| **User Analytics** | PostHog (posthog-react-native) | — | ✅ Provider + screen tracking |
 
 ---
 
@@ -47,7 +47,7 @@
 src/
 ├── core/
 │   ├── navigation/         # RootNavigator → Auth(11) | PinLock | Tabs(4)
-│   └── providers/          # AppProviders (NavContainer + i18n + auth init + DB migrations)
+│   └── providers/          # AppProviders (PostHogProvider + NavContainer + screen tracking + i18n + auth init + DB migrations)
 ├── features/
 │   ├── auth/               # 12 screens + 3 services + store
 │   ├── transactions/       # Home, AddTransaction, TransactionDetail
@@ -69,7 +69,7 @@ src/
 │   │   │   ├── migrations.ts  # bridge from legacy + migrate()
 │   │   │   ├── seed.ts        # seedDefaults(userId)
 │   │   │   └── index.ts       # barrel: *Repository aliases для совместимости со сторами
-│   │   ├── analytics/      # ⏳ PostHog (screen tracking, events, session replay)
+│   │   ├── analytics/      # ✅ PostHog (posthog.ts — API key + EU host)
 │   │   ├── sync/           # syncService (stub)
 │   │   ├── validation/     # ✅ Zod schemas (transaction, budget, category, account, recurring)
 │   │   └── voice/          # ✅ voiceParser + cloudRecognition + offlineRecognition + voiceService
@@ -221,6 +221,17 @@ Raw SQL + BaseRepository + 6 классов-репозиториев (~500 ст�
 - [x] `tsconfig.json` — exclude backend/ из фронтового tsc (worktree)
 - [x] TypeScript — 0 ошибок (frontend + backend)
 
+### PostHog Analytics ✅ (worktree, коммит `1cce887`)
+Интеграция PostHog для отслеживания поведения пользователей (EU instance, GDPR).
+- [x] `posthog-react-native` установлен (+ expo-file-system, @react-native-async-storage/async-storage)
+- [x] `src/shared/services/analytics/posthog.ts` — API key + EU host (`https://eu.i.posthog.com`)
+- [x] `PostHogProvider` добавлен в `AppProviders.tsx` (оборачивает всё приложение)
+- [x] Screen tracking через `onStateChange` в `NavigationContainer` (React Navigation v7 — ручной capture)
+- [x] `getActiveRouteName()` — рекурсивное извлечение активного экрана из вложенных навигаторов
+- [x] Autocapture отключён (`captureScreens: false`, `captureTouches: false`) — только ручной tracking
+- [x] PostHog аккаунт создан (EU instance, posthog.com)
+- [x] TypeScript — 0 ошибок
+
 ### Также сделано (коммит `12fc595`, main)
 - [x] `expo-sqlite` добавлен в package.json main repo
 - [x] `tsconfig.json` — exclude backend/ из фронтового tsc
@@ -231,7 +242,7 @@ Raw SQL + BaseRepository + 6 классов-репозиториев (~500 ст�
 
 ### Мерж worktree → main ⏳
 - [ ] Когда всё проверено и стабильно — смержить ветку `claude/blissful-elgamal` в main
-- [ ] Содержит: Drizzle ORM database layer, Zustand ↔ SQLite, Zod schemas, expo-sqlite, Voice Recognition (cloud+offline+backend), project plan
+- [ ] Содержит: Drizzle ORM database layer, Zustand ↔ SQLite, Zod schemas, expo-sqlite, Voice Recognition (cloud+offline+backend), PostHog analytics, project plan
 
 ### Фаза 2 — UI основных экранов ⏳ (ждёт дизайн)
 - [ ] Shared UI компоненты (Button, Input, Card, SegmentedControl, ProgressBar, CategoryIcon, EmptyState, TransactionItem)
@@ -307,7 +318,7 @@ backend/src/routes/voice.ts # ✅ POST /api/voice/recognize (proxy → Google ST
 - VOSK: бесплатно (open source, Apache 2.0)
 - ~$0.09/мес на активного пользователя (~5 транзакций/день по 5 сек)
 
-### User Analytics (PostHog) ⏳
+### User Analytics (PostHog) ✅
 Отслеживание поведения пользователей: экраны, клики, время, воронки, session replay.
 
 **Почему PostHog:**
@@ -316,16 +327,25 @@ backend/src/routes/voice.ts # ✅ POST /api/voice/recognize (proxy → Google ST
 - Feature flags, фуннели, retention — всё в одном
 - Авто-маскирование чувствительных данных в session replay
 
-**Пакет:** `posthog-react-native` (требует `expo prebuild`)
+**Пакет:** `posthog-react-native`
+
+**Файлы:**
+```
+src/shared/services/analytics/
+└── posthog.ts              # ✅ API key + EU host (https://eu.i.posthog.com)
+
+src/core/providers/
+└── AppProviders.tsx         # ✅ PostHogProvider + NavigationWrapper (screen tracking)
+```
 
 **Задачи:**
-- [ ] Установить `posthog-react-native`, `expo-file-system`, `@react-native-async-storage/async-storage`
-- [ ] Создать `src/shared/services/analytics/posthog.ts` — инициализация (EU instance)
-- [ ] Добавить PostHog Provider в `AppProviders.tsx`
-- [ ] Интегрировать screen tracking в `RootNavigator.tsx` (onStateChange)
-- [ ] Трекать ключевые события: добавление транзакции, создание бюджета, voice input, auth flow
-- [ ] Настроить session replay с маскировкой финансовых данных
-- [ ] Создать аккаунт на posthog.com (EU instance) и получить API key
+- [x] Установить `posthog-react-native`, `expo-file-system`, `@react-native-async-storage/async-storage`
+- [x] Создать `src/shared/services/analytics/posthog.ts` — API key + EU host
+- [x] Добавить PostHogProvider в `AppProviders.tsx`
+- [x] Screen tracking через `onStateChange` в NavigationContainer (React Nav v7 — ручной capture)
+- [x] Создать аккаунт на posthog.com (EU instance) и получить API key
+- [ ] Трекать ключевые события: добавление транзакции, создание бюджета, voice input, auth flow — ждёт Фазу 2 (UI)
+- [ ] Настроить session replay с маскировкой финансовых данных — ждёт Фазу 2 (UI)
 
 ### Фаза 5 — Продвинутые фичи
 - [ ] Семейные бюджеты (FamilyGroup, приглашения)
@@ -349,6 +369,8 @@ backend/src/routes/voice.ts # ✅ POST /api/voice/recognize (proxy → Google ST
 | worktree | `5df47d5` | docs: add comprehensive project plan with all architectural decisions |
 | worktree | `d148e22` | feat: add voice recognition service layer (Google Cloud STT + VOSK) |
 | worktree | `11e39ac` | feat: add voice recognition backend route (Google Cloud STT V2 proxy) |
+| worktree | `421915f` | docs: update project plan with completed voice recognition |
+| worktree | `1cce887` | feat: add PostHog analytics integration (EU instance) |
 
 ---
 
@@ -361,7 +383,7 @@ backend/src/routes/voice.ts # ✅ POST /api/voice/recognize (proxy → Google ST
 | Drizzle ORM | Drizzle ORM | ✅ Решено: миграция завершена |
 | expo-speech-recognition | Google Cloud STT + VOSK | ✅ Решено (см. таблицу ниже) |
 | react-native-gifted-charts | Нет | ✅ Решено: обязательно установить. Графики на каждом этапе — сколько, где, динамика расходов/доходов |
-| Нет аналитики поведения | Нет | ✅ Решено: PostHog (posthog-react-native) — EU хостинг, GDPR, session replay, 1M событий/мес бесплатно |
+| Нет аналитики поведения | PostHog ✅ | ✅ Решено: PostHog (posthog-react-native) — EU хостинг, GDPR, screen tracking, 1M событий/мес бесплатно |
 | React Native Paper | Кастомные компоненты | ✅ Решено: кастомные. Своя дизайн-система (dark #101010, Inter, spacing), Paper будет мешать |
 | React Hook Form + Zod | Только Zod | ✅ Решено: только Zod + useState. RHF добавить точечно если появятся сложные формы (15+ полей) |
 | DatabaseProvider, ThemeProvider | AppProviders.tsx | ✅ Решено: всё в AppProviders.tsx (NavContainer + StatusBar + i18n + auth init + DB migrations) |
