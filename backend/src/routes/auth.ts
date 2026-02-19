@@ -1,19 +1,21 @@
 /**
- * CaStar — Auth Routes
+ * Castar — Auth Routes
  *
  * Endpoints (matches client expectations from config.ts):
- * GET  /auth/telegram        — Telegram Login Widget page
- * POST /auth/email/send-code — Send 4-digit code via Resend.com
+ * GET  /auth/telegram          — Telegram Login Widget page
+ * GET  /auth/telegram/callback — Validate HMAC-SHA256 hash, sign JWT, redirect to deep link
+ * POST /auth/email/send-code   — Send 4-digit code via Resend.com
  * POST /auth/email/verify-code — Verify code, return JWT
- * POST /auth/phone/send-code — Send 4-digit code via Eskiz.uz
+ * POST /auth/phone/send-code   — Send 4-digit code via Eskiz.uz
  * POST /auth/phone/verify-code — Verify code, return JWT
  *
- * TODO: Implement real logic (OTP storage in D1, validation, JWT signing)
+ * TODO: Email/Phone OTP (Resend + Eskiz) — needs D1 for code storage
  */
 
 import { Hono } from 'hono';
 import type { Env, Variables } from '../types';
-import { getTelegramWidgetHtml } from '../services/telegram';
+import { getTelegramWidgetHtml, validateTelegramAuth } from '../services/telegram';
+import { signJwt } from '../services/jwt';
 
 const auth = new Hono<{ Bindings: Env; Variables: Variables }>();
 
@@ -26,13 +28,41 @@ auth.get('/telegram', (c) => {
 });
 
 // GET /auth/telegram/callback — handle Telegram widget callback
-auth.get('/telegram/callback', (c) => {
-  // TODO: Validate hash, find/create user, sign JWT, redirect to deep link
-  // const params = Object.fromEntries(new URL(c.req.url).searchParams);
-  // const valid = await validateTelegramAuth(params, c.env.TELEGRAM_BOT_TOKEN);
-  // const jwt = await signJwt(userId, c.env.JWT_SECRET);
-  // redirect to castar://auth/callback?token=${jwt}&user=${JSON.stringify(user)}
-  return c.json({ ok: false, error: 'Not implemented' }, 501);
+auth.get('/telegram/callback', async (c) => {
+  // 1. Extract all query params from Telegram widget redirect
+  const url = new URL(c.req.url);
+  const params: Record<string, string> = {};
+  url.searchParams.forEach((value, key) => {
+    params[key] = value;
+  });
+
+  // 2. Validate HMAC-SHA256 hash + auth_date freshness
+  const isValid = await validateTelegramAuth(params, c.env.TELEGRAM_BOT_TOKEN);
+
+  if (!isValid) {
+    return c.json({ ok: false, error: 'Invalid Telegram auth data' }, 403);
+  }
+
+  // 3. Build user object matching client TelegramUser shape
+  const telegramUser = {
+    id: params['id'] || '',
+    first_name: params['first_name'] || '',
+    last_name: params['last_name'] || '',
+    username: params['username'] || '',
+    photo_url: params['photo_url'] || '',
+  };
+
+  // 4. Use Telegram user ID as the userId for JWT
+  const userId = `tg_${telegramUser.id}`;
+
+  // 5. Sign JWT (30 days expiry)
+  const token = await signJwt(userId, c.env.JWT_SECRET);
+
+  // 6. Redirect to deep link: castar://auth/callback?token=...&user=...
+  const userJson = encodeURIComponent(JSON.stringify(telegramUser));
+  const deepLink = `castar://auth/callback?token=${token}&user=${userJson}`;
+
+  return c.redirect(deepLink, 302);
 });
 
 // POST /auth/email/send-code
