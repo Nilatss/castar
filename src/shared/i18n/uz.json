@@ -40,6 +40,8 @@
     "completeTelegramAuth": "Brauzerda autentifikatsiyani yakunlang va siz ilovaga qayta yo'naltirilasiz.",
     "openAgain": "Brauzerni qayta ochish",
     "waitingTelegram": "Telegram kutilmoqda",
+    "waitingLine1": "Kutilmoqda",
+    "waitingLine2": "Telegram",
     "telegramBrowserHint": "Brauzerda autentifikatsiyani yakunlang va siz ilovaga qayta yo'naltirilasiz.",
     "openTelegramAgain": "Telegramni qayta ochish",
     "createPin": "Pin kod",

@@ -40,6 +40,8 @@
     "completeTelegramAuth": "Complete authentication in the browser and you will be redirected back to the app.",
     "openAgain": "Open Browser Again",
     "waitingTelegram": "Waiting Telegram",
+    "waitingLine1": "Waiting",
+    "waitingLine2": "Telegram",
     "telegramBrowserHint": "Complete authentication in the browser and you will be redirected back to the app.",
     "openTelegramAgain": "Open Telegram again",
     "createPin": "Pin code",

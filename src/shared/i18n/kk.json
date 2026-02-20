@@ -40,6 +40,8 @@
     "completeTelegramAuth": "Браузерде аутентификацияны аяқтаңыз, сізді қолданбаға қайта бағыттайды.",
     "openAgain": "Браузерді қайта ашу",
     "waitingTelegram": "Telegram күтілуде",
+    "waitingLine1": "Күтілуде",
+    "waitingLine2": "Telegram",
     "telegramBrowserHint": "Браузерде аутентификацияны аяқтаңыз, сізді қолданбаға қайта бағыттайды.",
     "openTelegramAgain": "Telegram-ды қайта ашу",
     "createPin": "Пин-код",

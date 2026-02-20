@@ -296,10 +296,15 @@ export const TelegramAuthScreen = () => {
         ) : (
           /* Waiting state */
           <View style={styles.centerBlock}>
-            {/* Title with animated dots — 32 medium */}
+            {/* Line 1 — "Ожидание" / "Waiting" (always on its own line) */}
+            <Text style={styles.waitingTitle}>
+              {t('auth.waitingLine1') || 'Waiting'}
+            </Text>
+
+            {/* Line 2 — "Telegram..." with animated dots */}
             <View style={styles.titleRow}>
               <Text style={styles.waitingTitle}>
-                {t('auth.waitingTelegram') || 'Waiting Telegram'}
+                {t('auth.waitingLine2') || 'Telegram'}
               </Text>
               <Animated.Text style={[styles.waitingDots, dotsAnimatedStyle]}>
                 ...
@@ -311,17 +316,19 @@ export const TelegramAuthScreen = () => {
               {t('auth.telegramBrowserHint') ||
                 'Complete authentication in the browser and you will be redirected back to the app.'}
             </Text>
-
-            {/* Telegram icon — 60px below text block */}
-            <View style={styles.telegramIconWrap}>
-              <SvgXml xml={telegramIconSvg} width={48} height={48} />
-            </View>
           </View>
         )}
       </View>
 
-      {/* Bottom buttons */}
+      {/* Bottom section: TG icon + buttons */}
       <View style={[styles.bottomSection, { paddingBottom: insets.bottom + 32 }]}>
+        {/* Telegram icon — 60px below center text, above buttons */}
+        {!error && (
+          <View style={styles.telegramIconWrap}>
+            <SvgXml xml={telegramIconSvg} width={48} height={48} />
+          </View>
+        )}
+
         {/* Open Telegram again — secondary button style */}
         <TouchableOpacity
           style={styles.openAgainButton}
@@ -414,7 +421,7 @@ const styles = StyleSheet.create({
     maxWidth: 280,
   },
   telegramIconWrap: {
-    marginTop: 60,
+    marginBottom: 16,
   },
 
   // === Error state ===

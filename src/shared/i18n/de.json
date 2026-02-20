@@ -40,6 +40,8 @@
     "completeTelegramAuth": "Schließen Sie die Authentifizierung im Browser ab und Sie werden zurück zur App weitergeleitet.",
     "openAgain": "Browser erneut öffnen",
     "waitingTelegram": "Warten auf Telegram",
+    "waitingLine1": "Warten auf",
+    "waitingLine2": "Telegram",
     "telegramBrowserHint": "Schließen Sie die Authentifizierung im Browser ab und Sie werden zurück zur App weitergeleitet.",
     "openTelegramAgain": "Telegram erneut öffnen",
     "createPin": "Pin-Code",

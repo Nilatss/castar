@@ -40,6 +40,8 @@
     "completeTelegramAuth": "Завяршыце аўтарызацыю ў браўзеры, і вы будзеце перанакіраваны назад у праграму.",
     "openAgain": "Адкрыць браўзер зноў",
     "waitingTelegram": "Чаканне Telegram",
+    "waitingLine1": "Чаканне",
+    "waitingLine2": "Telegram",
     "telegramBrowserHint": "Завяршыце аўтарызацыю ў браўзеры, і вы будзеце перанакіраваны назад у праграму.",
     "openTelegramAgain": "Адкрыць Telegram зноў",
     "createPin": "Пін-код",
