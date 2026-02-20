@@ -19,9 +19,9 @@
     "retry": "Qayta urinish"
   },
   "auth": {
-    "welcome": "Xush kelibsiz",
-    "subtitle": "Moliyaviy savodxonligingiz shu yerdan boshlanadi",
-    "loginWithTelegram": "Telegram",
+    "welcome": "Castar",
+    "subtitle": "Ilovadan foydalanishni boshlash uchun Telegram orqali ro'yxatdan o'ting.",
+    "loginWithTelegram": "Telegram orqali kirish",
     "continueWithPhone": "Telefon raqami bilan davom etish",
     "continueWithEmail": "Email bilan davom etish",
     "orContinueWith": "YOKI DAVOM ETING",
@@ -43,7 +43,7 @@
     "waitingLine1": "Kutilmoqda",
     "waitingLine2": "Telegram",
     "telegramBrowserHint": "Brauzerda autentifikatsiyani yakunlang va siz ilovaga qayta yo'naltirilasiz.",
-    "openTelegramAgain": "Telegramni qayta ochish",
+    "openTelegramAgain": "Brauzerni qayta ochish",
     "createPin": "Pin kod",
     "createPinSubtitle": "Tez kirish uchun PIN-kod yarating",
     "confirmPin": "PIN-kodni tasdiqlang",

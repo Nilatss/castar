@@ -19,9 +19,9 @@
     "retry": "Қайталау"
   },
   "auth": {
-    "welcome": "Қош келдіңіз",
-    "subtitle": "Қаржылық сауаттылығыңыз осы жерден басталады",
-    "loginWithTelegram": "Telegram",
+    "welcome": "Castar",
+    "subtitle": "Қолданбаны пайдалану үшін Telegram арқылы тіркеліңіз.",
+    "loginWithTelegram": "Telegram арқылы кіру",
     "continueWithPhone": "Телефонмен жалғастыру",
     "continueWithEmail": "Email арқылы жалғастыру",
     "orContinueWith": "НЕМЕСЕ ЖАЛҒАСТЫРЫҢЫЗ",
@@ -43,7 +43,7 @@
     "waitingLine1": "Күтілуде",
     "waitingLine2": "Telegram",
     "telegramBrowserHint": "Браузерде аутентификацияны аяқтаңыз, сізді қолданбаға қайта бағыттайды.",
-    "openTelegramAgain": "Telegram-ды қайта ашу",
+    "openTelegramAgain": "Браузерді қайта ашу",
     "createPin": "Пин-код",
     "createPinSubtitle": "Жылдам кіру үшін PIN-код жасаңыз",
     "confirmPin": "PIN-кодты растаңыз",

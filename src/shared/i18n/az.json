@@ -19,9 +19,9 @@
     "retry": "Yenidən cəhd edin"
   },
   "auth": {
-    "welcome": "Xoş gəlmisiniz",
-    "subtitle": "Maliyyə savadlılığınız burada başlayır",
-    "loginWithTelegram": "Telegram",
+    "welcome": "Castar",
+    "subtitle": "Tətbiqdən istifadə etməyə başlamaq üçün Telegram vasitəsilə qeydiyyatdan keçin.",
+    "loginWithTelegram": "Telegram ilə daxil ol",
     "continueWithPhone": "Telefonla davam et",
     "continueWithEmail": "Email ilə davam et",
     "orContinueWith": "VƏ YA DAVAM EDİN",
@@ -43,7 +43,7 @@
     "waitingLine1": "Gözlənilir",
     "waitingLine2": "Telegram",
     "telegramBrowserHint": "Brauzerdə autentifikasiyanı tamamlayın və tətbiqə yönləndiriləcəksiniz.",
-    "openTelegramAgain": "Telegram-ı yenidən açın",
+    "openTelegramAgain": "Brauzeri yenidən açın",
     "createPin": "Pin kod",
     "createPinSubtitle": "Sürətli giriş üçün PIN-kod yaradın",
     "confirmPin": "PIN-kodu təsdiqləyin",

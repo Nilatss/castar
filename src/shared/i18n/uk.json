@@ -19,9 +19,9 @@
     "retry": "Повторити"
   },
   "auth": {
-    "welcome": "Ласкаво просимо",
-    "subtitle": "Ваша фінансова грамотність починається тут",
-    "loginWithTelegram": "Telegram",
+    "welcome": "Castar",
+    "subtitle": "Зареєструйтесь через Telegram, щоб почати використовувати додаток.",
+    "loginWithTelegram": "Увійти через Telegram",
     "continueWithPhone": "Продовжити з телефоном",
     "continueWithEmail": "Продовжити з Email",
     "orContinueWith": "АБО ПРОДОВЖІТЬ З",
@@ -43,7 +43,7 @@
     "waitingLine1": "Очікування",
     "waitingLine2": "Telegram",
     "telegramBrowserHint": "Завершіть автентифікацію у браузері, і вас буде перенаправлено назад до додатку.",
-    "openTelegramAgain": "Відкрити Telegram знову",
+    "openTelegramAgain": "Відкрити браузер знову",
     "createPin": "Пін-код",
     "createPinSubtitle": "Створіть PIN-код для швидкого входу",
     "confirmPin": "Підтвердіть PIN-код",

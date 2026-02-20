@@ -19,9 +19,9 @@
     "retry": "Erneut versuchen"
   },
   "auth": {
-    "welcome": "Willkommen",
-    "subtitle": "Ihre finanzielle Bildung beginnt hier",
-    "loginWithTelegram": "Telegram",
+    "welcome": "Castar",
+    "subtitle": "Registrieren Sie sich über Telegram, um die App zu nutzen.",
+    "loginWithTelegram": "Über Telegram anmelden",
     "continueWithPhone": "Mit Telefon fortfahren",
     "continueWithEmail": "Mit E-Mail fortfahren",
     "orContinueWith": "ODER FORTFAHREN MIT",
@@ -43,7 +43,7 @@
     "waitingLine1": "Warten auf",
     "waitingLine2": "Telegram",
     "telegramBrowserHint": "Schließen Sie die Authentifizierung im Browser ab und Sie werden zurück zur App weitergeleitet.",
-    "openTelegramAgain": "Telegram erneut öffnen",
+    "openTelegramAgain": "Browser erneut öffnen",
     "createPin": "Pin-Code",
     "createPinSubtitle": "Erstelle einen PIN-Code für die schnelle Anmeldung",
     "confirmPin": "PIN-Code bestätigen",

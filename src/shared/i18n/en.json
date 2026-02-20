@@ -19,9 +19,9 @@
     "retry": "Try Again"
   },
   "auth": {
-    "welcome": "Welcome",
-    "subtitle": "Your financial literacy starts here",
-    "loginWithTelegram": "Telegram",
+    "welcome": "Castar",
+    "subtitle": "Register via Telegram to start using the app.",
+    "loginWithTelegram": "Login via Telegram",
     "continueWithPhone": "Continue with Phone",
     "continueWithEmail": "Continue with Email",
     "orContinueWith": "OR CONTINUE WITH",
@@ -43,7 +43,7 @@
     "waitingLine1": "Waiting",
     "waitingLine2": "Telegram",
     "telegramBrowserHint": "Complete authentication in the browser and you will be redirected back to the app.",
-    "openTelegramAgain": "Open Telegram again",
+    "openTelegramAgain": "Open browser again",
     "createPin": "Pin code",
     "createPinSubtitle": "Create a PIN code for quick login",
     "confirmPin": "Confirm PIN code",

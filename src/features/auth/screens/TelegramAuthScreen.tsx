@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
     color: colors.white[40],
     textAlign: 'center',
     marginTop: 8,
-    width: 277,
+    width: scale(277),
   },
   spacer60: {
     height: 60,
@@ -480,6 +480,6 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.regular,
     fontSize: 16,
     lineHeight: 20,
-    color: colors.white[100],
+    color: colors.white[50],
   },
 });

@@ -105,6 +105,18 @@ const checkCircleSvg = `<svg width="24" height="24" viewBox="0 0 24 24" fill="no
 <path d="M8.5 12.5L10.5 14.5L15.5 9.5" stroke="#101010" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>`;
 
+// Telegram icon — from Figma Social Icons (48x48, white)
+const telegramIconSvg = `<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_163_654)">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M48 24C48 37.2548 37.2548 48 24 48C10.7452 48 0 37.2548 0 24C0 10.7452 10.7452 0 24 0C37.2548 0 48 10.7452 48 24ZM24.8601 17.7179C22.5257 18.6888 17.8603 20.6984 10.8638 23.7466C9.72766 24.1984 9.13251 24.6404 9.07834 25.0726C8.98677 25.803 9.90142 26.0906 11.1469 26.4822C11.3164 26.5355 11.4919 26.5907 11.6719 26.6492C12.8973 27.0475 14.5457 27.5135 15.4026 27.5321C16.1799 27.5489 17.0475 27.2284 18.0053 26.5707C24.5423 22.158 27.9168 19.9276 28.1286 19.8795C28.2781 19.8456 28.4852 19.803 28.6255 19.9277C28.7659 20.0524 28.7521 20.2886 28.7372 20.352C28.6466 20.7383 25.0562 24.0762 23.1982 25.8036C22.619 26.3421 22.2081 26.724 22.1242 26.8113C21.936 27.0067 21.7443 27.1915 21.56 27.3692C20.4215 28.4667 19.5678 29.2896 21.6072 30.6336C22.5873 31.2794 23.3715 31.8135 24.1539 32.3463C25.0084 32.9282 25.8606 33.5085 26.9632 34.2313C27.2442 34.4155 27.5125 34.6068 27.7738 34.7931C28.7681 35.5019 29.6615 36.1388 30.7652 36.0373C31.4065 35.9782 32.0689 35.3752 32.4053 33.5767C33.2004 29.3263 34.7633 20.1169 35.1244 16.3219C35.1561 15.9895 35.1163 15.5639 35.0843 15.3771C35.0523 15.1904 34.9855 14.9242 34.7427 14.7272C34.4552 14.4939 34.0113 14.4447 33.8127 14.4482C32.91 14.4641 31.5251 14.9456 24.8601 17.7179Z" fill="white"/>
+</g>
+<defs>
+<clipPath id="clip0_163_654">
+<rect width="48" height="48" fill="white"/>
+</clipPath>
+</defs>
+</svg>`;
+
 // ============================
 // Country flag emojis
 // ============================
@@ -302,62 +314,34 @@ export const OnboardingScreen = () => {
         </View>
       </TouchableOpacity>
 
-      <Animated.View style={[{ flex: 1 }, { opacity: contentOpacity }]}>
-        {/* Content — flex layout, pushed to bottom */}
-        <View style={[styles.content, { paddingBottom: insets.bottom + 32 }]}>
-          {/* Title block — fixed width 248 per Figma */}
-          <View style={styles.titleBlock}>
-            <Text style={styles.title}>{t('auth.welcome')}</Text>
-            <Text style={styles.subtitle}>{t('auth.subtitle')}</Text>
-          </View>
+      <Animated.View style={[styles.centerContent, { opacity: contentOpacity }]}>
+        {/* Single centered block: TG icon → 60px → Title → Subtitle → 60px → Button */}
+        <View style={styles.centerBlock}>
+          {/* Telegram icon */}
+          <SvgXml xml={telegramIconSvg} width={48} height={48} />
 
-          {/* Buttons section */}
-          <View style={styles.buttonsSection}>
-            <TouchableOpacity
-              style={styles.primaryButton}
-              activeOpacity={0.8}
-              onPress={() => navigateWithFade('TelegramAuth')}
-            >
-              <Text style={styles.primaryButtonText}>
-                {t('auth.loginWithTelegram')}
-              </Text>
-            </TouchableOpacity>
+          {/* 60px gap between icon and text */}
+          <View style={styles.spacer60} />
 
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>{t('auth.orContinueWith')}</Text>
-              <View style={styles.dividerLine} />
-            </View>
+          {/* Title — "Castar" */}
+          <Text style={styles.title}>{t('auth.welcome')}</Text>
 
-            <View style={styles.secondaryButtonsGroup}>
-              <TouchableOpacity
-                style={styles.secondaryButton}
-                activeOpacity={0.7}
-                onPress={() => navigateWithFade('PhoneAuth')}
-              >
-                <Text style={styles.secondaryButtonText}>
-                  {t('auth.continueWithPhone')}
-                </Text>
-              </TouchableOpacity>
+          {/* Subtitle — 16 regular, white 40%, width 277 */}
+          <Text style={styles.subtitle}>{t('auth.subtitle')}</Text>
 
-              <TouchableOpacity
-                style={styles.secondaryButton}
-                activeOpacity={0.7}
-                onPress={() => navigateWithFade('EmailAuth')}
-              >
-                <Text style={styles.secondaryButtonText}>
-                  {t('auth.continueWithEmail')}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+          {/* 60px gap between text and button */}
+          <View style={styles.spacer60} />
 
-          <Text style={styles.privacyText}>
-            {t('auth.privacyPrefix')}
-            <Text style={styles.privacyLink} onPress={() => navigation.navigate('PrivacyPolicy')}>{t('auth.privacyPolicy')}</Text>
-            {t('auth.privacyAnd')}
-            <Text style={styles.privacyLink} onPress={() => navigation.navigate('TermsOfUse')}>{t('auth.termsConditions')}</Text>
-          </Text>
+          {/* Login via Telegram — Telegram blue button */}
+          <TouchableOpacity
+            style={styles.telegramButton}
+            activeOpacity={0.8}
+            onPress={() => navigateWithFade('TelegramAuth')}
+          >
+            <Text style={styles.telegramButtonText}>
+              {t('auth.loginWithTelegram')}
+            </Text>
+          </TouchableOpacity>
         </View>
       </Animated.View>
 
@@ -518,27 +502,28 @@ const styles = StyleSheet.create({
     gap: 4,
   },
 
-  // === Content ===
-  content: {
+  // === Center content (single centered container) ===
+  centerContent: {
     flex: 1,
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
+    alignItems: 'center',
     paddingHorizontal: grid.margin,
   },
-
-  // === Title — fixed width 248 ===
-  titleBlock: {
-    width: 248,
-    alignSelf: 'center',
+  centerBlock: {
     alignItems: 'center',
-    marginBottom: 60,
+    width: '100%',
   },
+  spacer60: {
+    height: 60,
+  },
+
+  // === Title ===
   title: {
     fontFamily: fontFamily.medium,
     fontSize: 32,
     lineHeight: 40,
     color: colors.white[100],
     textAlign: 'center',
-    marginBottom: 8,
   },
   subtitle: {
     fontFamily: fontFamily.regular,
@@ -546,80 +531,25 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     color: colors.white[40],
     textAlign: 'center',
+    marginTop: 8,
+    width: scale(277),
   },
 
-  // === Buttons ===
-  buttonsSection: {
-    gap: 16,
-  },
-  primaryButton: {
+  // === Telegram button — blue #2AABEE ===
+  telegramButton: {
+    width: '100%',
     height: 51,
-    backgroundColor: colors.white[100],
+    backgroundColor: '#2AABEE',
     borderRadius: 43,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 24,
   },
-  primaryButtonText: {
-    fontFamily: fontFamily.regular,
-    fontSize: 16,
-    lineHeight: 20,
-    color: colors.neutral[950],
-    textAlign: 'center',
-  },
-
-  // === Divider ===
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 9,
-  },
-  dividerLine: {
-    flex: 1,
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.white[30],
-  },
-  dividerText: {
-    fontFamily: fontFamily.regular,
-    fontSize: 13,
-    lineHeight: 16,
-    color: colors.white[100],
-    textAlign: 'center',
-  },
-
-  // === Secondary buttons ===
-  secondaryButtonsGroup: {
-    gap: 6,
-  },
-  secondaryButton: {
-    height: 51,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
-    borderRadius: 43,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-  },
-  secondaryButtonText: {
+  telegramButtonText: {
     fontFamily: fontFamily.regular,
     fontSize: 16,
     lineHeight: 20,
     color: colors.white[100],
     textAlign: 'center',
-  },
-
-  // === Privacy ===
-  privacyText: {
-    fontFamily: fontFamily.regular,
-    fontSize: 12,
-    lineHeight: 17,
-    color: colors.white[40],
-    textAlign: 'center',
-    marginTop: 24,
-  },
-  privacyLink: {
-    color: colors.white[100],
   },
 
   // ============================================================
