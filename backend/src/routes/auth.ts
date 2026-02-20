@@ -19,6 +19,29 @@ import { signJwt } from '../services/jwt';
 
 const auth = new Hono<{ Bindings: Env; Variables: Variables }>();
 
+// ============================================================
+// In-memory OTP store (Worker-scoped, resets on redeploy)
+// Key: "phone:+998..." or "email:user@..."
+// Value: { code, expiresAt, attempts, createdAt }
+// ============================================================
+interface OtpEntry {
+  code: string;
+  expiresAt: number;   // Unix ms
+  attempts: number;
+  createdAt: number;   // Unix ms — for rate limiting
+}
+
+const otpStore = new Map<string, OtpEntry>();
+
+const OTP_EXPIRY_MS = 5 * 60 * 1000;    // 5 minutes
+const OTP_COOLDOWN_MS = 60 * 1000;       // 1 min between sends
+const OTP_MAX_ATTEMPTS = 3;
+
+/** Generate a random 4-digit code */
+function generateCode(): string {
+  return String(Math.floor(1000 + Math.random() * 9000));
+}
+
 // GET /auth/telegram — serve Telegram Login Widget
 auth.get('/telegram', (c) => {
   const bot = c.req.query('bot') || 'castar_bot';
@@ -106,7 +129,7 @@ auth.get('/telegram/callback', async (c) => {
       left: -20%;
       width: 140%;
       height: 100%;
-      background: radial-gradient(ellipse at 30% 20%, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 60%);
+      background: radial-gradient(ellipse at 30% 20%, rgba(23,229,108,0.08) 0%, rgba(23,229,108,0) 60%);
       pointer-events: none;
     }
     .glow2 {
@@ -115,7 +138,7 @@ auth.get('/telegram/callback', async (c) => {
       right: -10%;
       width: 60%;
       height: 60%;
-      background: radial-gradient(ellipse at center, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 55%);
+      background: radial-gradient(ellipse at center, rgba(23,229,108,0.06) 0%, rgba(23,229,108,0) 55%);
       pointer-events: none;
     }
     .logo {
@@ -207,36 +230,160 @@ auth.get('/telegram/callback', async (c) => {
 
 // POST /auth/email/send-code
 auth.post('/email/send-code', async (c) => {
-  // TODO: Validate email, generate 4-digit code, store in D1, send via Resend
-  // const { email } = await c.req.json();
-  // Rate limit: 1 code per 60 seconds per email
-  // OTP expires in 5 minutes, max 3 attempts
-  return c.json({ ok: false, error: 'Not implemented' }, 501);
+  const body = await c.req.json<{ email?: string }>();
+  const email = body.email?.trim().toLowerCase();
+
+  if (!email) {
+    return c.json({ ok: false, error: 'Email is required' }, 400);
+  }
+
+  const key = `email:${email}`;
+  const existing = otpStore.get(key);
+
+  // Rate limit: 1 code per 60 seconds
+  if (existing && Date.now() - existing.createdAt < OTP_COOLDOWN_MS) {
+    const retryAfter = Math.ceil((OTP_COOLDOWN_MS - (Date.now() - existing.createdAt)) / 1000);
+    return c.json({ ok: false, error: 'Too many requests', retryAfter }, 429);
+  }
+
+  const code = generateCode();
+  otpStore.set(key, {
+    code,
+    expiresAt: Date.now() + OTP_EXPIRY_MS,
+    attempts: 0,
+    createdAt: Date.now(),
+  });
+
+  // TODO: Send via Resend.com — for now just log to console
+  console.log(`[Email OTP] ${email} → code: ${code}`);
+
+  return c.json({ ok: true, expiresIn: 300 });
 });
 
 // POST /auth/email/verify-code
 auth.post('/email/verify-code', async (c) => {
-  // TODO: Validate code against D1, find/create user, sign JWT
-  // const { email, code } = await c.req.json();
-  // Check attempts <= 3, check expires_at > now
-  // Return: { ok: true, token: jwt, email }
-  return c.json({ ok: false, error: 'Not implemented' }, 501);
+  const body = await c.req.json<{ email?: string; code?: string }>();
+  const email = body.email?.trim().toLowerCase();
+  const code = body.code?.trim();
+
+  if (!email || !code) {
+    return c.json({ ok: false, error: 'Email and code are required' }, 400);
+  }
+
+  const key = `email:${email}`;
+  const entry = otpStore.get(key);
+
+  if (!entry) {
+    return c.json({ ok: false, error: 'No code sent for this email' }, 400);
+  }
+
+  // Check expiry
+  if (Date.now() > entry.expiresAt) {
+    otpStore.delete(key);
+    return c.json({ ok: false, error: 'Code expired' }, 400);
+  }
+
+  // Check attempts
+  if (entry.attempts >= OTP_MAX_ATTEMPTS) {
+    otpStore.delete(key);
+    return c.json({ ok: false, error: 'Too many attempts', attemptsLeft: 0 }, 400);
+  }
+
+  entry.attempts++;
+
+  if (entry.code !== code) {
+    const attemptsLeft = OTP_MAX_ATTEMPTS - entry.attempts;
+    console.log(`[Email OTP] ${email} → wrong code (${code}), ${attemptsLeft} attempts left`);
+    return c.json({ ok: false, error: 'Invalid code', attemptsLeft }, 400);
+  }
+
+  // Success — delete OTP, sign JWT
+  otpStore.delete(key);
+  const userId = `email_${email.replace(/[^a-z0-9]/g, '_')}`;
+  const token = await signJwt(userId, c.env.JWT_SECRET);
+
+  console.log(`[Email OTP] ${email} → verified OK, userId: ${userId}`);
+
+  return c.json({ ok: true, token, email });
 });
 
 // POST /auth/phone/send-code
 auth.post('/phone/send-code', async (c) => {
-  // TODO: Validate phone, generate 4-digit code, store in D1, send via Eskiz
-  // const { phone } = await c.req.json();
-  // Rate limit: 1 code per 60 seconds per phone
-  return c.json({ ok: false, error: 'Not implemented' }, 501);
+  const body = await c.req.json<{ phone?: string }>();
+  const phone = body.phone?.trim();
+
+  if (!phone) {
+    return c.json({ ok: false, error: 'Phone number is required' }, 400);
+  }
+
+  const key = `phone:${phone}`;
+  const existing = otpStore.get(key);
+
+  // Rate limit: 1 code per 60 seconds
+  if (existing && Date.now() - existing.createdAt < OTP_COOLDOWN_MS) {
+    const retryAfter = Math.ceil((OTP_COOLDOWN_MS - (Date.now() - existing.createdAt)) / 1000);
+    return c.json({ ok: false, error: 'Too many requests', retryAfter }, 429);
+  }
+
+  const code = generateCode();
+  otpStore.set(key, {
+    code,
+    expiresAt: Date.now() + OTP_EXPIRY_MS,
+    attempts: 0,
+    createdAt: Date.now(),
+  });
+
+  // TODO: Send via Eskiz.uz — for now just log to console
+  console.log(`[Phone OTP] ${phone} → code: ${code}`);
+
+  return c.json({ ok: true, expiresIn: 300 });
 });
 
 // POST /auth/phone/verify-code
 auth.post('/phone/verify-code', async (c) => {
-  // TODO: Validate code against D1, find/create user, sign JWT
-  // const { phone, code } = await c.req.json();
-  // Return: { ok: true, token: jwt, phone }
-  return c.json({ ok: false, error: 'Not implemented' }, 501);
+  const body = await c.req.json<{ phone?: string; code?: string }>();
+  const phone = body.phone?.trim();
+  const code = body.code?.trim();
+
+  if (!phone || !code) {
+    return c.json({ ok: false, error: 'Phone and code are required' }, 400);
+  }
+
+  const key = `phone:${phone}`;
+  const entry = otpStore.get(key);
+
+  if (!entry) {
+    return c.json({ ok: false, error: 'No code sent for this phone' }, 400);
+  }
+
+  // Check expiry
+  if (Date.now() > entry.expiresAt) {
+    otpStore.delete(key);
+    return c.json({ ok: false, error: 'Code expired' }, 400);
+  }
+
+  // Check attempts
+  if (entry.attempts >= OTP_MAX_ATTEMPTS) {
+    otpStore.delete(key);
+    return c.json({ ok: false, error: 'Too many attempts', attemptsLeft: 0 }, 400);
+  }
+
+  entry.attempts++;
+
+  if (entry.code !== code) {
+    const attemptsLeft = OTP_MAX_ATTEMPTS - entry.attempts;
+    console.log(`[Phone OTP] ${phone} → wrong code (${code}), ${attemptsLeft} attempts left`);
+    return c.json({ ok: false, error: 'Invalid code', attemptsLeft }, 400);
+  }
+
+  // Success — delete OTP, sign JWT
+  otpStore.delete(key);
+  const userId = `phone_${phone.replace(/\D/g, '')}`;
+  const token = await signJwt(userId, c.env.JWT_SECRET);
+
+  console.log(`[Phone OTP] ${phone} → verified OK, userId: ${userId}`);
+
+  return c.json({ ok: true, token, phone });
 });
 
 export { auth };
