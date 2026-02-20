@@ -19,9 +19,9 @@
     "retry": "Повторити"
   },
   "auth": {
-    "welcome": "Castar",
-    "subtitle": "Зареєструйтесь через Telegram, щоб почати використовувати додаток.",
-    "loginWithTelegram": "Увійти через Telegram",
+    "welcome": "Ласкаво просимо",
+    "subtitle": "Ваша фінансова грамотність починається тут",
+    "loginWithTelegram": "Telegram",
     "continueWithPhone": "Продовжити з телефоном",
     "continueWithEmail": "Продовжити з Email",
     "orContinueWith": "АБО ПРОДОВЖІТЬ З",

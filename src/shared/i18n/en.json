@@ -19,9 +19,9 @@
     "retry": "Try Again"
   },
   "auth": {
-    "welcome": "Castar",
-    "subtitle": "Register via Telegram to start using the app.",
-    "loginWithTelegram": "Login via Telegram",
+    "welcome": "Welcome",
+    "subtitle": "Your financial literacy starts here",
+    "loginWithTelegram": "Telegram",
     "continueWithPhone": "Continue with Phone",
     "continueWithEmail": "Continue with Email",
     "orContinueWith": "OR CONTINUE WITH",

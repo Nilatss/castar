@@ -19,9 +19,9 @@
     "retry": "Qayta urinish"
   },
   "auth": {
-    "welcome": "Castar",
-    "subtitle": "Ilovadan foydalanishni boshlash uchun Telegram orqali ro'yxatdan o'ting.",
-    "loginWithTelegram": "Telegram orqali kirish",
+    "welcome": "Xush kelibsiz",
+    "subtitle": "Moliyaviy savodxonligingiz shu yerdan boshlanadi",
+    "loginWithTelegram": "Telegram",
     "continueWithPhone": "Telefon raqami bilan davom etish",
     "continueWithEmail": "Email bilan davom etish",
     "orContinueWith": "YOKI DAVOM ETING",

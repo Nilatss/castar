@@ -19,9 +19,9 @@
     "retry": "Yenidən cəhd edin"
   },
   "auth": {
-    "welcome": "Castar",
-    "subtitle": "Tətbiqdən istifadə etməyə başlamaq üçün Telegram vasitəsilə qeydiyyatdan keçin.",
-    "loginWithTelegram": "Telegram ilə daxil ol",
+    "welcome": "Xoş gəlmisiniz",
+    "subtitle": "Maliyyə savadlılığınız burada başlayır",
+    "loginWithTelegram": "Telegram",
     "continueWithPhone": "Telefonla davam et",
     "continueWithEmail": "Email ilə davam et",
     "orContinueWith": "VƏ YA DAVAM EDİN",

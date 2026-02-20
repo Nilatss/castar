@@ -19,9 +19,9 @@
     "retry": "Қайталау"
   },
   "auth": {
-    "welcome": "Castar",
-    "subtitle": "Қолданбаны пайдалану үшін Telegram арқылы тіркеліңіз.",
-    "loginWithTelegram": "Telegram арқылы кіру",
+    "welcome": "Қош келдіңіз",
+    "subtitle": "Қаржылық сауаттылығыңыз осы жерден басталады",
+    "loginWithTelegram": "Telegram",
     "continueWithPhone": "Телефонмен жалғастыру",
     "continueWithEmail": "Email арқылы жалғастыру",
     "orContinueWith": "НЕМЕСЕ ЖАЛҒАСТЫРЫҢЫЗ",

@@ -19,9 +19,9 @@
     "retry": "Паўтарыць"
   },
   "auth": {
-    "welcome": "Castar",
-    "subtitle": "Зарэгіструйцеся праз Telegram, каб пачаць карыстацца праграмай.",
-    "loginWithTelegram": "Увайсці праз Telegram",
+    "welcome": "Вітаем",
+    "subtitle": "Ваша фінансавая граматнасць пачынаецца тут",
+    "loginWithTelegram": "Telegram",
     "continueWithPhone": "Працягнуць з тэлефонам",
     "continueWithEmail": "Працягнуць з Email",
     "orContinueWith": "АБО ПРАЦЯГНІЦЕ З",
