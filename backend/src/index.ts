@@ -14,6 +14,7 @@ import { budgets } from './routes/budgets';
 import { recurrings } from './routes/recurrings';
 import { settings } from './routes/settings';
 import { sync } from './routes/sync';
+import { voice } from './routes/voice';
 
 const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
@@ -31,6 +32,7 @@ app.get('/health', (c) => c.json({ ok: true }));
 
 // ── Public routes (no auth required) ──
 app.route('/auth', auth);
+app.route('/api/voice', voice);
 
 // ── Protected routes (JWT required) ──
 app.use('/transactions/*', authMiddleware);

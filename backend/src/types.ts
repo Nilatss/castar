@@ -9,6 +9,7 @@ export interface Env {
   RESEND_API_KEY: string;
   ESKIZ_TOKEN: string;
   TELEGRAM_BOT_TOKEN: string;
+  GOOGLE_CLOUD_STT_KEY: string;
 }
 
 /** JWT payload shape */
