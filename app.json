@@ -2,6 +2,7 @@
   "expo": {
     "name": "castar",
     "slug": "castar",
+    "scheme": "castar",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -10,7 +11,7 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#101010"
     },
     "ios": {
       "supportsTablet": true
@@ -18,10 +19,11 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#101010"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.anonymous.castar"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -29,13 +31,14 @@
     "plugins": [
       "expo-localization",
       "expo-secure-store",
-      "expo-sqlite",
-      [
-        "expo-av",
-        {
-          "microphonePermission": "Castar needs access to your microphone for voice input of transactions."
-        }
-      ]
-    ]
+      "expo-asset",
+      "expo-sqlite"
+    ],
+    "owner": "nilats",
+    "extra": {
+      "eas": {
+        "projectId": "47f56049-f9b3-45cb-a0f8-195c8277f795"
+      }
+    }
   }
 }

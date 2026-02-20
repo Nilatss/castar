@@ -1,5 +1,5 @@
 /**
- * CaStar Design System — Spacing & Layout
+ * Castar Design System — Spacing & Layout
  */
 
 export const spacing = {

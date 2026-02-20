@@ -1,5 +1,5 @@
 /**
- * CaStar — Supported currencies
+ * Castar — Supported currencies
  */
 
 export interface CurrencyInfo {

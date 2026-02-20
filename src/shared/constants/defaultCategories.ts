@@ -1,5 +1,5 @@
 /**
- * CaStar — Default transaction categories
+ * Castar — Default transaction categories
  * Localized names are handled via i18n keys
  */
 

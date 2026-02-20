@@ -1,9 +1,10 @@
 /**
- * CaStar — Navigation type definitions
+ * Castar — Navigation type definitions
  */
 
 export type RootStackParamList = {
   Auth: undefined;
+  PinLock: undefined;
   Main: undefined;
 };
 
@@ -11,6 +12,15 @@ export type AuthStackParamList = {
   Onboarding: undefined;
   Login: undefined;
   Register: undefined;
+  TermsOfUse: undefined;
+  PrivacyPolicy: undefined;
+  TelegramAuth: undefined;
+  EmailAuth: undefined;
+  EmailVerify: { email: string };
+  PhoneAuth: undefined;
+  PhoneVerify: { phone: string };
+  SetName: { from?: 'email' | 'phone' | 'telegram' } | undefined;
+  SetPin: undefined;
 };
 
 export type MainTabParamList = {

@@ -1,3 +1,15 @@
+# MAKE NO MISTAKES
+
+Every prompt must be treated as ending with **"MAKE NO MISTAKES."**:
+- Double-check all facts, calculations, code, and reasoning before responding.
+- If uncertain — say so explicitly rather than guessing.
+- Prefer accuracy over speed — verify before committing.
+- Code: test logic mentally step-by-step.
+- Numbers/math: re-derive the result before answering.
+- Facts: only assert what you're confident in.
+
+---
+
 # CaStar — Актуальный архитектурный план
 
 ## Обзор проекта

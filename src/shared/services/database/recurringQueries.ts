@@ -6,11 +6,11 @@ import type { RecurringTransaction } from '../../types';
 type NewRecurring = typeof recurrings.$inferInsert;
 
 export function findById(id: string): RecurringTransaction | undefined {
-  return db.select().from(recurrings).where(eq(recurrings.id, id)).get();
+  return db.select().from(recurrings).where(eq(recurrings.id, id)).get() as unknown as RecurringTransaction | undefined;
 }
 
 export function findAll(): RecurringTransaction[] {
-  return db.select().from(recurrings).all();
+  return db.select().from(recurrings).all() as unknown as RecurringTransaction[];
 }
 
 export function findByUser(userId: string): RecurringTransaction[] {
@@ -19,7 +19,7 @@ export function findByUser(userId: string): RecurringTransaction[] {
     .from(recurrings)
     .where(and(eq(recurrings.userId, userId), eq(recurrings.isActive, true)))
     .orderBy(recurrings.nextDate)
-    .all();
+    .all() as unknown as RecurringTransaction[];
 }
 
 export function findDue(now: number): RecurringTransaction[] {
@@ -27,7 +27,7 @@ export function findDue(now: number): RecurringTransaction[] {
     .select()
     .from(recurrings)
     .where(and(eq(recurrings.isActive, true), lte(recurrings.nextDate, now)))
-    .all();
+    .all() as unknown as RecurringTransaction[];
 }
 
 export function pause(id: string): void {

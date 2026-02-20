@@ -6,11 +6,11 @@ import type { Account } from '../../types';
 type NewAccount = typeof accounts.$inferInsert;
 
 export function findById(id: string): Account | undefined {
-  return db.select().from(accounts).where(eq(accounts.id, id)).get();
+  return db.select().from(accounts).where(eq(accounts.id, id)).get() as unknown as Account | undefined;
 }
 
 export function findAll(): Account[] {
-  return db.select().from(accounts).all();
+  return db.select().from(accounts).all() as unknown as Account[];
 }
 
 export function findByUser(userId: string): Account[] {
@@ -19,7 +19,7 @@ export function findByUser(userId: string): Account[] {
     .from(accounts)
     .where(and(eq(accounts.userId, userId), eq(accounts.isArchived, false)))
     .orderBy(accounts.createdAt)
-    .all();
+    .all() as unknown as Account[];
 }
 
 export function adjustBalance(id: string, delta: number): void {

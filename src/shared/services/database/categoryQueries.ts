@@ -6,11 +6,11 @@ import type { Category } from '../../types';
 type NewCategory = typeof categories.$inferInsert;
 
 export function findById(id: string): Category | undefined {
-  return db.select().from(categories).where(eq(categories.id, id)).get();
+  return db.select().from(categories).where(eq(categories.id, id)).get() as unknown as Category | undefined;
 }
 
 export function findAll(): Category[] {
-  return db.select().from(categories).all();
+  return db.select().from(categories).all() as unknown as Category[];
 }
 
 export function findByUser(userId: string): Category[] {
@@ -19,7 +19,7 @@ export function findByUser(userId: string): Category[] {
     .from(categories)
     .where(eq(categories.userId, userId))
     .orderBy(categories.sortOrder)
-    .all();
+    .all() as unknown as Category[];
 }
 
 export function findByType(userId: string, type: Category['type']): Category[] {
@@ -28,7 +28,7 @@ export function findByType(userId: string, type: Category['type']): Category[] {
     .from(categories)
     .where(and(eq(categories.userId, userId), eq(categories.type, type)))
     .orderBy(categories.sortOrder)
-    .all();
+    .all() as unknown as Category[];
 }
 
 export function countByUser(userId: string): number {

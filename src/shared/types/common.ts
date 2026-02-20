@@ -1,5 +1,5 @@
 /**
- * CaStar — Core TypeScript types
+ * Castar — Core TypeScript types
  */
 
 // === Enums as union types ===
@@ -47,74 +47,74 @@ export interface FamilyMember {
 
 export interface Category {
   id: string;
-  remoteId: string | null;
+  remoteId?: string;
   userId: string;
   name: string;
   icon: string;
   color: string;
   type: TransactionType;
   isDefault: boolean;
-  parentId: string | null;
+  parentId?: string;
   sortOrder: number;
   createdAt: number;
   updatedAt: number;
-  syncedAt: number | null;
+  syncedAt?: number;
 }
 
 export interface Account {
   id: string;
-  remoteId: string | null;
+  remoteId?: string;
   userId: string;
   name: string;
   type: AccountType;
   currency: Currency;
   balance: number;
-  icon: string | null;
-  color: string | null;
+  icon?: string;
+  color?: string;
   isArchived: boolean;
   createdAt: number;
   updatedAt: number;
-  syncedAt: number | null;
+  syncedAt?: number;
 }
 
 export interface Transaction {
   id: string;
-  remoteId: string | null;
+  remoteId?: string;
   userId: string;
   accountId: string;
   categoryId: string;
-  familyGroupId: string | null;
+  familyGroupId?: string;
   type: TransactionType;
   amount: number;
   currency: Currency;
-  amountInDefault: number | null;
-  exchangeRate: number | null;
-  description: string | null;
+  amountInDefault?: number;
+  exchangeRate?: number;
+  description?: string;
   date: number;
   isRecurring: boolean;
-  recurringId: string | null;
+  recurringId?: string;
   voiceInput: boolean;
   createdAt: number;
   updatedAt: number;
-  syncedAt: number | null;
+  syncedAt?: number;
 }
 
 export interface Budget {
   id: string;
-  remoteId: string | null;
+  remoteId?: string;
   userId: string;
-  familyGroupId: string | null;
-  categoryId: string | null;
+  familyGroupId?: string;
+  categoryId?: string;
   name: string;
   amount: number;
   currency: Currency;
   period: BudgetPeriod;
   startDate: number;
-  endDate: number | null;
+  endDate?: number;
   isActive: boolean;
   createdAt: number;
   updatedAt: number;
-  syncedAt: number | null;
+  syncedAt?: number;
   // Computed (not stored in DB)
   spent?: number;
   remaining?: number;
@@ -129,7 +129,7 @@ export interface RecurringTransaction {
   type: TransactionType;
   amount: number;
   currency: Currency;
-  description: string | null;
+  description?: string;
   frequency: BudgetPeriod;
   nextDate: number;
   isActive: boolean;
@@ -153,7 +153,7 @@ export interface SyncQueueItem {
   data: string; // JSON
   createdAt: number;
   attempts: number;
-  lastError: string | null;
+  lastError?: string;
 }
 
 // === Voice Input ===

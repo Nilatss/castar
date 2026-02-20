@@ -6,11 +6,11 @@ import type { Transaction, TransactionFilters } from '../../types';
 type NewTransaction = typeof transactions.$inferInsert;
 
 export function findById(id: string): Transaction | undefined {
-  return db.select().from(transactions).where(eq(transactions.id, id)).get();
+  return db.select().from(transactions).where(eq(transactions.id, id)).get() as unknown as Transaction | undefined;
 }
 
 export function findAll(): Transaction[] {
-  return db.select().from(transactions).all();
+  return db.select().from(transactions).all() as unknown as Transaction[];
 }
 
 export function findByUser(userId: string, limit = 100): Transaction[] {
@@ -20,7 +20,7 @@ export function findByUser(userId: string, limit = 100): Transaction[] {
     .where(eq(transactions.userId, userId))
     .orderBy(desc(transactions.date))
     .limit(limit)
-    .all();
+    .all() as unknown as Transaction[];
 }
 
 export function findByFilters(userId: string, filters: TransactionFilters): Transaction[] {
@@ -40,7 +40,7 @@ export function findByFilters(userId: string, filters: TransactionFilters): Tran
     .from(transactions)
     .where(and(...conditions))
     .orderBy(desc(transactions.date))
-    .all();
+    .all() as unknown as Transaction[];
 }
 
 export function getSummary(

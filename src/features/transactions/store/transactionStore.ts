@@ -1,15 +1,13 @@
 import { create } from 'zustand';
-import { v4 as uuid } from 'uuid';
-import type { Transaction, TransactionFilters, CreateTransactionDTO } from '../../../shared/types';
-import { transactionRepository, accountRepository, syncQueueRepository } from '../../../shared/services/database';
+import type { Transaction, TransactionFilters, CreateTransactionDTO, UpdateTransactionDTO } from '../../../shared/types';
 
 interface TransactionStore {
   transactions: Transaction[];
   isLoading: boolean;
   filters: TransactionFilters;
 
-  loadTransactions: (userId: string) => void;
-  addTransaction: (dto: CreateTransactionDTO, userId: string) => Transaction;
+  setTransactions: (transactions: Transaction[]) => void;
+  addTransaction: (transaction: Transaction) => void;
   updateTransaction: (id: string, data: Partial<Transaction>) => void;
   removeTransaction: (id: string) => void;
   setFilters: (filters: Partial<TransactionFilters>) => void;
@@ -19,84 +17,29 @@ interface TransactionStore {
 
 const defaultFilters: TransactionFilters = {};
 
-export const useTransactionStore = create<TransactionStore>((set, get) => ({
+export const useTransactionStore = create<TransactionStore>((set) => ({
   transactions: [],
   isLoading: false,
   filters: defaultFilters,
 
-  loadTransactions: (userId: string) => {
-    set({ isLoading: true });
-    try {
-      const filters = get().filters;
-      const hasFilters = Object.keys(filters).length > 0;
-      const transactions = hasFilters
-        ? transactionRepository.findByFilters(userId, filters)
-        : transactionRepository.findByUser(userId);
-      set({ transactions, isLoading: false });
-    } catch {
-      set({ isLoading: false });
-    }
-  },
+  setTransactions: (transactions) => set({ transactions }),
 
-  addTransaction: (dto: CreateTransactionDTO, userId: string): Transaction => {
-    const now = Date.now();
-    const transaction: Transaction = {
-      id: uuid(),
-      remoteId: null,
-      userId,
-      accountId: dto.accountId,
-      categoryId: dto.categoryId,
-      familyGroupId: dto.familyGroupId ?? null,
-      type: dto.type,
-      amount: dto.amount,
-      currency: dto.currency,
-      amountInDefault: null,
-      exchangeRate: null,
-      description: dto.description ?? null,
-      date: dto.date,
-      isRecurring: false,
-      recurringId: null,
-      voiceInput: dto.voiceInput ?? false,
-      createdAt: now,
-      updatedAt: now,
-      syncedAt: null,
-    };
+  addTransaction: (transaction) =>
+    set((state) => ({
+      transactions: [transaction, ...state.transactions],
+    })),
 
-    transactionRepository.insert(transaction);
-
-    // Adjust account balance
-    const delta = dto.type === 'income' ? dto.amount : -dto.amount;
-    accountRepository.adjustBalance(dto.accountId, delta);
-
-    // Enqueue sync
-    syncQueueRepository.enqueue('transactions', transaction.id, 'create', transaction);
-
-    set((state) => ({ transactions: [transaction, ...state.transactions] }));
-    return transaction;
-  },
-
-  updateTransaction: (id: string, data: Partial<Transaction>) => {
-    transactionRepository.update(id, { ...data, updatedAt: Date.now() });
-    syncQueueRepository.enqueue('transactions', id, 'update', data);
+  updateTransaction: (id, data) =>
     set((state) => ({
       transactions: state.transactions.map((t) =>
-        t.id === id ? { ...t, ...data, updatedAt: Date.now() } : t
+        t.id === id ? { ...t, ...data } : t
       ),
-    }));
-  },
+    })),
 
-  removeTransaction: (id: string) => {
-    const tx = transactionRepository.findById(id);
-    if (tx) {
-      const delta = tx.type === 'income' ? -tx.amount : tx.amount;
-      accountRepository.adjustBalance(tx.accountId, delta);
-      transactionRepository.delete(id);
-      syncQueueRepository.enqueue('transactions', id, 'delete', { id });
-    }
+  removeTransaction: (id) =>
     set((state) => ({
       transactions: state.transactions.filter((t) => t.id !== id),
-    }));
-  },
+    })),
 
   setFilters: (filters) =>
     set((state) => ({

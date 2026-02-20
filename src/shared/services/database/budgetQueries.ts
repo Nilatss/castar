@@ -6,11 +6,11 @@ import type { Budget } from '../../types';
 type NewBudget = typeof budgets.$inferInsert;
 
 export function findById(id: string): Budget | undefined {
-  return db.select().from(budgets).where(eq(budgets.id, id)).get();
+  return db.select().from(budgets).where(eq(budgets.id, id)).get() as unknown as Budget | undefined;
 }
 
 export function findAll(): Budget[] {
-  return db.select().from(budgets).all();
+  return db.select().from(budgets).all() as unknown as Budget[];
 }
 
 export function findByUser(userId: string): Budget[] {
@@ -19,7 +19,7 @@ export function findByUser(userId: string): Budget[] {
     .from(budgets)
     .where(and(eq(budgets.userId, userId), eq(budgets.isActive, true)))
     .orderBy(desc(budgets.createdAt))
-    .all();
+    .all() as unknown as Budget[];
 }
 
 export function findByCategory(userId: string, categoryId: string): Budget | undefined {
@@ -33,7 +33,7 @@ export function findByCategory(userId: string, categoryId: string): Budget | und
         eq(budgets.isActive, true)
       )
     )
-    .get();
+    .get() as unknown as Budget | undefined;
 }
 
 export function findActive(userId: string): Budget[] {

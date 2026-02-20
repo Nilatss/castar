@@ -1,5 +1,5 @@
 /**
- * CaStar — Sync Service (stub)
+ * Castar — Sync Service (stub)
  * Will handle offline-first synchronization when backend is ready.
  *
  * Architecture:

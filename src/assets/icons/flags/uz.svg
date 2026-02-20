@@ -1,0 +1,21 @@
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<clipPath id="c"><circle cx="10" cy="10" r="10"/></clipPath>
+<g clip-path="url(#c)">
+<rect width="20" height="6" fill="#1EB53A"/>
+<rect y="6" width="20" height="1" fill="#CE1126"/>
+<rect y="7" width="20" height="6" fill="#FFFFFF"/>
+<rect y="13" width="20" height="1" fill="#CE1126"/>
+<rect y="14" width="20" height="6" fill="#0099B5"/>
+<circle cx="5.5" cy="3" r="1.8" fill="#FFFFFF"/>
+<circle cx="6.3" cy="3" r="1.8" fill="#0099B5"/>
+<circle cx="8" cy="1.8" r="0.5" fill="#FFFFFF"/>
+<circle cx="9.2" cy="1.8" r="0.5" fill="#FFFFFF"/>
+<circle cx="10.4" cy="1.8" r="0.5" fill="#FFFFFF"/>
+<circle cx="9.2" cy="3" r="0.5" fill="#FFFFFF"/>
+<circle cx="10.4" cy="3" r="0.5" fill="#FFFFFF"/>
+<circle cx="8" cy="3" r="0.5" fill="#FFFFFF"/>
+<circle cx="8" cy="4.2" r="0.5" fill="#FFFFFF"/>
+<circle cx="9.2" cy="4.2" r="0.5" fill="#FFFFFF"/>
+<circle cx="10.4" cy="4.2" r="0.5" fill="#FFFFFF"/>
+</g>
+</svg>

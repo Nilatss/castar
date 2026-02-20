@@ -1,5 +1,5 @@
 /**
- * CaStar — Voice input parser
+ * Castar — Voice input parser
  * Parses spoken text into transaction data.
  *
  * Examples:

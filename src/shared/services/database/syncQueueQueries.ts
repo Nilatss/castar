@@ -7,11 +7,11 @@ import type { SyncAction, SyncQueueItem } from '../../types';
 type NewSyncQueueItem = typeof syncQueue.$inferInsert;
 
 export function findById(id: string): SyncQueueItem | undefined {
-  return db.select().from(syncQueue).where(eq(syncQueue.id, id)).get();
+  return db.select().from(syncQueue).where(eq(syncQueue.id, id)).get() as unknown as SyncQueueItem | undefined;
 }
 
 export function findAll(): SyncQueueItem[] {
-  return db.select().from(syncQueue).all();
+  return db.select().from(syncQueue).all() as unknown as SyncQueueItem[];
 }
 
 export function enqueue(tableName: string, recordId: string, action: SyncAction, data: unknown): void {
@@ -35,7 +35,7 @@ export function findPending(limit = 50): SyncQueueItem[] {
     .where(lt(syncQueue.attempts, 3))
     .orderBy(asc(syncQueue.createdAt))
     .limit(limit)
-    .all();
+    .all() as unknown as SyncQueueItem[];
 }
 
 export function markSynced(id: string): void {
