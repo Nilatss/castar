@@ -16,6 +16,7 @@ import { Hono } from 'hono';
 import type { Env, Variables } from '../types';
 import { getTelegramWidgetHtml, validateTelegramAuth } from '../services/telegram';
 import { signJwt } from '../services/jwt';
+import { sendEmailCode } from '../services/email';
 
 const auth = new Hono<{ Bindings: Env; Variables: Variables }>();
 
@@ -254,8 +255,14 @@ auth.post('/email/send-code', async (c) => {
     createdAt: Date.now(),
   });
 
-  // TODO: Send via Resend.com — for now just log to console
+  // Send via Resend.com + log to console as backup
   console.log(`[Email OTP] ${email} → code: ${code}`);
+
+  const emailResult = await sendEmailCode(email, code, c.env.RESEND_API_KEY);
+  if (!emailResult.ok) {
+    console.log(`[Email OTP] Failed to send email: ${emailResult.error}`);
+    // Don't fail — code is still in memory, visible in wrangler tail
+  }
 
   return c.json({ ok: true, expiresIn: 300 });
 });
