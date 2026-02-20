@@ -105,7 +105,6 @@ export function getTelegramWidgetHtml(botUsername: string, callbackUrl: string):
     body {
       display: flex;
       flex-direction: column;
-      justify-content: center;
       align-items: center;
       min-height: 100vh;
       background: #101010;
@@ -113,7 +112,7 @@ export function getTelegramWidgetHtml(botUsername: string, callbackUrl: string):
       overflow: hidden;
       position: relative;
     }
-    /* Background glow — radial gradient matching app design */
+    /* Background glow */
     .glow {
       position: absolute;
       top: -40%;
@@ -132,28 +131,21 @@ export function getTelegramWidgetHtml(botUsername: string, callbackUrl: string):
       background: radial-gradient(ellipse at center, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 55%);
       pointer-events: none;
     }
-    /* Logo — fixed position top center */
+    /* Logo at top */
     .logo {
-      position: absolute;
-      top: 78px;
-      left: 50%;
-      transform: translateX(-50%);
+      margin-top: 78px;
       z-index: 10;
     }
-    /* Main centered container */
+    /* Centered content block */
     .container {
       display: flex;
       flex-direction: column;
       align-items: center;
+      flex: 1;
+      justify-content: center;
       z-index: 1;
+      padding: 0 24px;
     }
-    /* Telegram icon */
-    .tg-icon {
-      width: 48px;
-      height: 48px;
-      margin-bottom: 60px;
-    }
-    /* Title */
     .title {
       font-size: 32px;
       font-weight: 500;
@@ -161,7 +153,6 @@ export function getTelegramWidgetHtml(botUsername: string, callbackUrl: string):
       text-align: center;
       line-height: 40px;
     }
-    /* Subtitle */
     .subtitle {
       font-size: 16px;
       font-weight: 400;
@@ -171,18 +162,16 @@ export function getTelegramWidgetHtml(botUsername: string, callbackUrl: string):
       margin-top: 8px;
       max-width: 277px;
     }
-    /* Widget wrapper */
     .widget-wrap {
-      margin-top: 60px;
+      margin-top: 32px;
     }
   </style>
 </head>
 <body>
-  <!-- Background glows -->
   <div class="glow"></div>
   <div class="glow2"></div>
 
-  <!-- Castar logo -->
+  <!-- Logo -->
   <div class="logo">
     <svg width="49" height="46" viewBox="0 0 49 46" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M3.98343 12.3283C9.38617 7.58872 17.3686 8.05095 23.4014 11.1007L26.0342 12.5929L23.0137 12.9122C17.9759 13.7619 12.904 16.6709 9.34573 20.4992C7.73404 22.2779 6.427 24.318 5.7637 26.5929C3.91853 32.235 6.23411 39.3068 11.711 42.4367C11.9636 42.5582 12.215 42.6705 12.4737 42.7736C12.7146 42.869 12.9604 42.956 13.209 43.0343V43.0792C12.953 43.0077 12.6994 42.9276 12.4492 42.84C12.185 42.7467 11.9254 42.6464 11.6651 42.5363C6.63598 40.019 3.29201 34.1617 3.75101 28.2579C2.85842 27.3331 2.06319 26.2967 1.42093 25.1554C-0.0703107 22.6104 -0.591641 19.1283 0.858429 16.2677C1.6097 14.7162 2.72509 13.4227 3.98343 12.3283ZM19.8086 11.6564C14.8857 9.95133 9.03349 10.1057 5.03421 13.5636C3.88096 14.5325 2.89663 15.6528 2.24417 16.9493C1.01094 19.2996 1.10202 22.1936 2.24026 24.7423C2.65692 25.6991 3.19715 26.6165 3.83304 27.463C3.89172 27.0328 3.97033 26.6028 4.07132 26.1749C4.63209 23.5131 6.03578 21.0835 7.82327 19.1154C11.1341 15.6147 15.1903 12.9953 19.8086 11.6564Z" fill="white"/>
@@ -192,23 +181,10 @@ export function getTelegramWidgetHtml(botUsername: string, callbackUrl: string):
     </svg>
   </div>
 
-  <!-- Main content -->
+  <!-- Centered content -->
   <div class="container">
-    <!-- Telegram icon -->
-    <svg class="tg-icon" width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <g clip-path="url(#clip0)">
-        <path fill-rule="evenodd" clip-rule="evenodd" d="M48 24C48 37.2548 37.2548 48 24 48C10.7452 48 0 37.2548 0 24C0 10.7452 10.7452 0 24 0C37.2548 0 48 10.7452 48 24ZM24.8601 17.7179C22.5257 18.6888 17.8603 20.6984 10.8638 23.7466C9.72766 24.1984 9.13251 24.6404 9.07834 25.0726C8.98677 25.803 9.90142 26.0906 11.1469 26.4822C11.3164 26.5355 11.4919 26.5907 11.6719 26.6492C12.8973 27.0475 14.5457 27.5135 15.4026 27.5321C16.1799 27.5489 17.0475 27.2284 18.0053 26.5707C24.5423 22.158 27.9168 19.9276 28.1286 19.8795C28.2781 19.8456 28.4852 19.803 28.6255 19.9277C28.7659 20.0524 28.7521 20.2886 28.7372 20.352C28.6466 20.7383 25.0562 24.0762 23.1982 25.8036C22.619 26.3421 22.2081 26.724 22.1242 26.8113C21.936 27.0067 21.7443 27.1915 21.56 27.3692C20.4215 28.4667 19.5678 29.2896 21.6072 30.6336C22.5873 31.2794 23.3715 31.8135 24.1539 32.3463C25.0084 32.9282 25.8606 33.5085 26.9632 34.2313C27.2442 34.4155 27.5125 34.6068 27.7738 34.7931C28.7681 35.5019 29.6615 36.1388 30.7652 36.0373C31.4065 35.9782 32.0689 35.3752 32.4053 33.5767C33.2004 29.3263 34.7633 20.1169 35.1244 16.3219C35.1561 15.9895 35.1163 15.5639 35.0843 15.3771C35.0523 15.1904 34.9855 14.9242 34.7427 14.7272C34.4552 14.4939 34.0113 14.4447 33.8127 14.4482C32.91 14.4641 31.5251 14.9456 24.8601 17.7179Z" fill="white"/>
-      </g>
-      <defs><clipPath id="clip0"><rect width="48" height="48" fill="white"/></clipPath></defs>
-    </svg>
-
-    <!-- Title -->
     <div class="title">Castar</div>
-
-    <!-- Subtitle -->
     <div class="subtitle">Register via Telegram to start using the app.</div>
-
-    <!-- Telegram Login Widget -->
     <div class="widget-wrap">
       <script async src="https://telegram.org/js/telegram-widget.js?22"
         data-telegram-login="${botUsername}"
