@@ -277,7 +277,7 @@ export const TelegramAuthScreen = () => {
         <SvgXml xml={logoSvg} width={49} height={46} />
       </View>
 
-      {/* Center content */}
+      {/* Single centered container: icon + text + buttons */}
       <View style={styles.centerContent}>
         {error ? (
           /* Error state */
@@ -294,13 +294,13 @@ export const TelegramAuthScreen = () => {
             </TouchableOpacity>
           </Animated.View>
         ) : (
-          /* Waiting state: Icon → 60px → Text → 60px gap to buttons */
+          /* Waiting state: Icon → 60px → Text → 60px → Buttons */
           <View style={styles.centerBlock}>
             {/* Telegram icon */}
             <SvgXml xml={telegramIconSvg} width={48} height={48} />
 
             {/* 60px gap between icon and text */}
-            <View style={styles.iconTextSpacer} />
+            <View style={styles.spacer60} />
 
             {/* Line 1 — "Ожидание" / "Waiting" (always on its own line) */}
             <Text style={styles.waitingTitle}>
@@ -322,33 +322,34 @@ export const TelegramAuthScreen = () => {
               {t('auth.telegramBrowserHint') ||
                 'Complete authentication in the browser and you will be redirected back to the app.'}
             </Text>
+
+            {/* 60px gap between text and buttons */}
+            <View style={styles.spacer60} />
+
+            {/* Open Telegram again — secondary button style */}
+            <TouchableOpacity
+              style={styles.openAgainButton}
+              onPress={openBrowserAuth}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.openAgainButtonText}>
+                {t('auth.openTelegramAgain') || 'Open Telegram again'}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Cancel — same shape as Open button, but no background */}
+            <View style={styles.buttonGap} />
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={handleCancel}
+              activeOpacity={0.6}
+            >
+              <Text style={styles.cancelButtonText}>
+                {t('common.cancel') || 'Cancel'}
+              </Text>
+            </TouchableOpacity>
           </View>
         )}
-      </View>
-
-      {/* Bottom buttons — 60px gap from center text block */}
-      <View style={[styles.bottomSection, { paddingBottom: insets.bottom + 32 }]}>
-        {/* Open Telegram again — secondary button style */}
-        <TouchableOpacity
-          style={styles.openAgainButton}
-          onPress={openBrowserAuth}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.openAgainButtonText}>
-            {t('auth.openTelegramAgain') || 'Open Telegram again'}
-          </Text>
-        </TouchableOpacity>
-
-        {/* Cancel — same shape as Open button, but no background */}
-        <TouchableOpacity
-          style={styles.cancelButton}
-          onPress={handleCancel}
-          activeOpacity={0.6}
-        >
-          <Text style={styles.cancelButtonText}>
-            {t('common.cancel') || 'Cancel'}
-          </Text>
-        </TouchableOpacity>
       </View>
     </View>
   );
@@ -380,13 +381,12 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
 
-  // === Center content (vertically centered, 60px padding to bottom buttons) ===
+  // === Center content (single centered container for everything) ===
   centerContent: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: grid.margin,
-    paddingBottom: 60,
   },
   centerBlock: {
     alignItems: 'center',
@@ -420,8 +420,11 @@ const styles = StyleSheet.create({
     marginTop: 8,
     width: 277,
   },
-  iconTextSpacer: {
+  spacer60: {
     height: 60,
+  },
+  buttonGap: {
+    height: 16,
   },
 
   // === Error state ===
@@ -445,13 +448,6 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.medium,
     fontSize: 16,
     color: colors.white[100],
-  },
-
-  // === Bottom section (60px gap from center text block) ===
-  bottomSection: {
-    paddingHorizontal: grid.margin,
-    gap: 16,
-    alignItems: 'center',
   },
 
   // "Open Telegram again" — same style as OnboardingScreen secondary button
