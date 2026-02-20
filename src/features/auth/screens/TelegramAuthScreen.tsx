@@ -294,8 +294,14 @@ export const TelegramAuthScreen = () => {
             </TouchableOpacity>
           </Animated.View>
         ) : (
-          /* Waiting state */
+          /* Waiting state: Icon → 60px → Text → 60px gap to buttons */
           <View style={styles.centerBlock}>
+            {/* Telegram icon */}
+            <SvgXml xml={telegramIconSvg} width={48} height={48} />
+
+            {/* 60px gap between icon and text */}
+            <View style={styles.iconTextSpacer} />
+
             {/* Line 1 — "Ожидание" / "Waiting" (always on its own line) */}
             <Text style={styles.waitingTitle}>
               {t('auth.waitingLine1') || 'Waiting'}
@@ -311,7 +317,7 @@ export const TelegramAuthScreen = () => {
               </Animated.Text>
             </View>
 
-            {/* Subtitle — 16 regular, white 40%, marginTop 8 */}
+            {/* Subtitle — 16 regular, white 40%, width 277 */}
             <Text style={styles.waitingSubtitle}>
               {t('auth.telegramBrowserHint') ||
                 'Complete authentication in the browser and you will be redirected back to the app.'}
@@ -320,15 +326,8 @@ export const TelegramAuthScreen = () => {
         )}
       </View>
 
-      {/* Bottom section: TG icon + buttons */}
+      {/* Bottom buttons — 60px gap from center text block */}
       <View style={[styles.bottomSection, { paddingBottom: insets.bottom + 32 }]}>
-        {/* Telegram icon — 60px below center text, above buttons */}
-        {!error && (
-          <View style={styles.telegramIconWrap}>
-            <SvgXml xml={telegramIconSvg} width={48} height={48} />
-          </View>
-        )}
-
         {/* Open Telegram again — secondary button style */}
         <TouchableOpacity
           style={styles.openAgainButton}
@@ -381,12 +380,13 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
 
-  // === Center content (vertically centered) ===
+  // === Center content (vertically centered, 60px padding to bottom buttons) ===
   centerContent: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: grid.margin,
+    paddingBottom: 60,
   },
   centerBlock: {
     alignItems: 'center',
@@ -418,10 +418,10 @@ const styles = StyleSheet.create({
     color: colors.white[40],
     textAlign: 'center',
     marginTop: 8,
-    maxWidth: 280,
+    width: 277,
   },
-  telegramIconWrap: {
-    marginBottom: 16,
+  iconTextSpacer: {
+    height: 60,
   },
 
   // === Error state ===
@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
     color: colors.white[100],
   },
 
-  // === Bottom section ===
+  // === Bottom section (60px gap from center text block) ===
   bottomSection: {
     paddingHorizontal: grid.margin,
     gap: 16,
