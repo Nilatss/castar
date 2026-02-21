@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import type { NavigationState } from '@react-navigation/native';
-import { StatusBar } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import * as SecureStore from 'expo-secure-store';
 import { colors } from '../../shared/constants';
 import { useAuthStore } from '../../features/auth/store/authStore';
+import { useProfileStore } from '../../features/profile/store/profileStore';
 
 // Initialize i18n
 import '../../shared/i18n';
@@ -35,15 +36,17 @@ const navigationTheme = {
 
 export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
   const initializeAuth = useAuthStore((s) => s.initializeAuth);
+  const initializeSettings = useProfileStore((s) => s.initializeSettings);
   const [isReady, setIsReady] = useState(false);
   const [initialState, setInitialState] = useState<NavigationState | undefined>();
 
-  // Restore auth + navigation state in parallel on app start
+  // Restore auth + settings + navigation state in parallel on app start
   useEffect(() => {
     const init = async () => {
       try {
-        const [, savedNav] = await Promise.all([
+        const [, , savedNav] = await Promise.all([
           initializeAuth(),
+          initializeSettings(),
           SecureStore.getItemAsync(NAV_STATE_KEY),
         ]);
         if (savedNav) {
@@ -56,7 +59,7 @@ export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
       }
     };
     init();
-  }, [initializeAuth]);
+  }, [initializeAuth, initializeSettings]);
 
   // Persist navigation state on every change
   const onStateChange = useCallback((state: NavigationState | undefined) => {
@@ -75,7 +78,7 @@ export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
       initialState={initialState}
       onStateChange={onStateChange}
     >
-      <StatusBar barStyle="light-content" backgroundColor={colors.background} />
+      <StatusBar style="light" translucent backgroundColor="transparent" />
       {children}
     </NavigationContainer>
   );

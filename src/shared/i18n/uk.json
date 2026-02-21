@@ -84,8 +84,7 @@
   },
   "tabs": {
     "home": "Головна",
-    "budget": "Бюджет",
-    "analytics": "Аналітика",
+    "monitoring": "Моніторинг",
     "profile": "Профіль"
   },
   "home": {
@@ -142,10 +141,16 @@
     "theme": "Тема",
     "notifications": "Сповіщення",
     "about": "Про додаток",
+    "otherSections": "Інші розділи",
+    "notificationsSubtitle": "Обіцяємо не спамити",
+    "subscriptionManagement": "Керування підпискою",
+    "subscriptionNoActive": "Немає активної підписки",
     "logout": "Вийти",
     "logoutTitle": "Вихід",
     "logoutConfirm": "Ви впевнені, що хочете вийти?",
-    "guest": "Гість"
+    "guest": "Гість",
+    "selectCurrency": "Оберіть валюту",
+    "currencyDescription": "Обрана валюта буде встановлена як основна для відображення загальної суми та конвертації інших валют. Кожна транзакція все одно буде збережена у своїй початковій валюті."
   },
   "terms": {
     "headerTitle": "Умови використання",

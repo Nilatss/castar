@@ -10,6 +10,9 @@ import uk from './uk.json';
 import kk from './kk.json';
 import de from './de.json';
 import az from './az.json';
+import pl from './pl.json';
+import ka from './ka.json';
+import zh from './zh.json';
 
 const resources = {
   ru: { translation: ru },
@@ -20,11 +23,14 @@ const resources = {
   kk: { translation: kk },
   de: { translation: de },
   az: { translation: az },
+  pl: { translation: pl },
+  ka: { translation: ka },
+  zh: { translation: zh },
 };
 
 // Detect device language, fallback to 'en'
 const deviceLang = Localization.getLocales()[0]?.languageCode ?? 'en';
-const supportedLangs = ['ru', 'uz', 'en', 'be', 'uk', 'kk', 'de', 'az'];
+const supportedLangs = ['ru', 'uz', 'en', 'be', 'uk', 'kk', 'de', 'az', 'pl', 'ka', 'zh'];
 const detectedLang = supportedLangs.includes(deviceLang) ? deviceLang : 'en';
 
 i18n.use(initReactI18next).init({

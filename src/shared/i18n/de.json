@@ -84,8 +84,7 @@
   },
   "tabs": {
     "home": "Startseite",
-    "budget": "Budget",
-    "analytics": "Analytik",
+    "monitoring": "Monitoring",
     "profile": "Profil"
   },
   "home": {
@@ -142,10 +141,16 @@
     "theme": "Design",
     "notifications": "Benachrichtigungen",
     "about": "Über die App",
+    "otherSections": "Weitere Bereiche",
+    "notificationsSubtitle": "Wir versprechen, nicht zu spammen",
+    "subscriptionManagement": "Abonnement verwalten",
+    "subscriptionNoActive": "Kein aktives Abonnement",
     "logout": "Abmelden",
     "logoutTitle": "Abmelden",
     "logoutConfirm": "Sind Sie sicher, dass Sie sich abmelden möchten?",
-    "guest": "Gast"
+    "guest": "Gast",
+    "selectCurrency": "Währung wählen",
+    "currencyDescription": "Die ausgewählte Währung wird als Hauptwährung für die Anzeige des Gesamtbetrags und die Umrechnung anderer Währungen festgelegt. Jede Transaktion wird weiterhin in ihrer ursprünglichen Währung gespeichert."
   },
   "terms": {
     "headerTitle": "Nutzungsbedingungen",

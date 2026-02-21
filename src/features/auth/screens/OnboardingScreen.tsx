@@ -14,6 +14,7 @@ import {
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
+import { useProfileStore } from '../../profile/store/profileStore';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SvgXml } from 'react-native-svg';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -151,6 +152,7 @@ const SCREEN_HEIGHT = Dimensions.get('window').height;
 
 export const OnboardingScreen = () => {
   const { t, i18n } = useTranslation();
+  const storeSetLanguage = useProfileStore((s) => s.setLanguage);
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
   const [showLangPicker, setShowLangPicker] = useState(false);
@@ -249,11 +251,11 @@ export const OnboardingScreen = () => {
   }, [overlayOpacity, sheetTranslateY]);
 
   const changeLanguage = useCallback((country: CountryOption) => {
-    i18n.changeLanguage(country.code);
+    storeSetLanguage(country.code);
     setSelectedCountry(country.country);
     // Small delay so user sees the check animate before sheet closes
     setTimeout(() => closePicker(), 200);
-  }, [i18n, closePicker]);
+  }, [storeSetLanguage, closePicker]);
 
   // Handle Android back button when picker is open
   useEffect(() => {

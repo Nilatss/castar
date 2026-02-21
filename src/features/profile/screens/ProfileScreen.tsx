@@ -1,10 +1,20 @@
 /**
  * Castar — Profile Screen
  *
- * Shows user info (avatar, name, username) and a logout button.
+ * Layout (from Figma screenshot):
+ * ┌──────────────────────────────────────────────────┐
+ * │  Name (32px medium)           [Settings][Exit]   │
+ * │  auth method (16px regular, 40% white)           │
+ * ├──────────────────────────────────────────────────┤
+ * │  [Currency 🇺🇿 UZS  >]  [Language 🇺🇿 O'zbek >]│
+ * ├──────────────────────────────────────────────────┤
+ * │  Other sections                                   │
+ * │  🔔 Notifications    We promise not to spam  [⬤] │
+ * │  💳 Subscription mgmt   No active            [>] │
+ * └──────────────────────────────────────────────────┘
  */
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -12,50 +22,495 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  Dimensions,
+  Animated,
+  ScrollView,
+  Pressable,
+  BackHandler,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SvgXml } from 'react-native-svg';
 import { useTranslation } from 'react-i18next';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-import { colors, fontFamily } from '../../../shared/constants';
+import { colors, fontFamily, grid, borderRadius } from '../../../shared/constants';
+import type { ProfileStackParamList } from '../../../shared/types';
 import { useAuthStore } from '../../auth/store/authStore';
+import { useProfileStore } from '../store/profileStore';
+import { getRatesFromUSD } from '../../../shared/services/currency/currencyService';
 
-// User avatar placeholder icon
-const userAvatarSvg = `<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-<circle cx="32" cy="32" r="32" fill="rgba(255,255,255,0.1)"/>
-<circle cx="32" cy="26" r="10" fill="rgba(255,255,255,0.3)"/>
-<path d="M14 52C14 42.059 22.059 34 32 34C41.941 34 50 42.059 50 52" stroke="rgba(255,255,255,0.3)" stroke-width="2" fill="none"/>
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+// Figma frame = 393px
+const FIGMA_WIDTH = 393;
+const scale = (v: number) => (v / FIGMA_WIDTH) * SCREEN_WIDTH;
+
+// ═══════════════════════════════════════════════
+// Glow SVGs (identical to auth screens)
+// ═══════════════════════════════════════════════
+
+const GLOW_RENDER_SIZE = 1050;
+const glowSvg = `<svg width="${GLOW_RENDER_SIZE}" height="${GLOW_RENDER_SIZE}" viewBox="0 0 ${GLOW_RENDER_SIZE} ${GLOW_RENDER_SIZE}" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="pg1" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.16"/>
+      <stop offset="0.05" stop-color="#FFFFFF" stop-opacity="0.15"/>
+      <stop offset="0.12" stop-color="#FFFFFF" stop-opacity="0.13"/>
+      <stop offset="0.20" stop-color="#FFFFFF" stop-opacity="0.11"/>
+      <stop offset="0.30" stop-color="#FFFFFF" stop-opacity="0.08"/>
+      <stop offset="0.42" stop-color="#FFFFFF" stop-opacity="0.055"/>
+      <stop offset="0.55" stop-color="#FFFFFF" stop-opacity="0.03"/>
+      <stop offset="0.70" stop-color="#FFFFFF" stop-opacity="0.015"/>
+      <stop offset="0.85" stop-color="#FFFFFF" stop-opacity="0.005"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="${GLOW_RENDER_SIZE / 2}" cy="${GLOW_RENDER_SIZE / 2}" rx="${GLOW_RENDER_SIZE / 2}" ry="${GLOW_RENDER_SIZE / 2}" fill="url(#pg1)"/>
 </svg>`;
 
-// Chevron right icon
-const chevronRightSvg = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M7.5 15L12.5 10L7.5 5" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+const GLOW2_RENDER_SIZE = 477;
+const glow2Svg = `<svg width="${GLOW2_RENDER_SIZE}" height="${GLOW2_RENDER_SIZE}" viewBox="0 0 ${GLOW2_RENDER_SIZE} ${GLOW2_RENDER_SIZE}" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="pg2" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.16"/>
+      <stop offset="0.05" stop-color="#FFFFFF" stop-opacity="0.15"/>
+      <stop offset="0.12" stop-color="#FFFFFF" stop-opacity="0.13"/>
+      <stop offset="0.20" stop-color="#FFFFFF" stop-opacity="0.11"/>
+      <stop offset="0.30" stop-color="#FFFFFF" stop-opacity="0.08"/>
+      <stop offset="0.42" stop-color="#FFFFFF" stop-opacity="0.055"/>
+      <stop offset="0.55" stop-color="#FFFFFF" stop-opacity="0.03"/>
+      <stop offset="0.70" stop-color="#FFFFFF" stop-opacity="0.015"/>
+      <stop offset="0.85" stop-color="#FFFFFF" stop-opacity="0.005"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="${GLOW2_RENDER_SIZE / 2}" cy="${GLOW2_RENDER_SIZE / 2}" rx="${GLOW2_RENDER_SIZE / 2}" ry="${GLOW2_RENDER_SIZE / 2}" fill="url(#pg2)"/>
 </svg>`;
 
-// Logout icon
-const logoutSvg = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9" stroke="#F55858" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M16 17L21 12L16 7" stroke="#F55858" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M21 12H9" stroke="#F55858" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+// ═══════════════════════════════════════════════
+// SVG Icons (from Figma exports)
+// ═══════════════════════════════════════════════
+
+// Settings icon — 28x28, filled white
+const settingsIconSvg = `<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M16.6586 2.51094C16.2265 2.33333 15.6788 2.33333 14.5833 2.33333C13.4879 2.33333 12.9401 2.33333 12.5081 2.51094C11.932 2.74776 11.4743 3.202 11.2357 3.77373C11.1267 4.03473 11.0841 4.33825 11.0674 4.78098C11.0429 5.43162 10.7067 6.03387 10.1385 6.35941C9.57037 6.68495 8.87674 6.67279 8.29673 6.36855C7.90204 6.16151 7.61587 6.04639 7.33365 6.00951C6.71544 5.92874 6.09021 6.095 5.59552 6.47173C5.22449 6.75427 4.95062 7.22504 4.40289 8.16658C3.85515 9.10812 3.58128 9.57889 3.52024 10.0391C3.43885 10.6526 3.60638 11.2731 3.98597 11.7641C4.15923 11.9881 4.40274 12.1765 4.78065 12.4122C5.33623 12.7586 5.69371 13.3488 5.69367 14C5.69364 14.6511 5.33618 15.2412 4.78065 15.5877C4.40267 15.8233 4.15913 16.0117 3.98586 16.2359C3.60626 16.7268 3.43873 17.3473 3.52012 17.9609C3.58117 18.421 3.85503 18.8918 4.40277 19.8333C4.95051 20.7749 5.22438 21.2456 5.5954 21.5282C6.0901 21.9049 6.71532 22.0712 7.33354 21.9904C7.61574 21.9535 7.9019 21.8384 8.29655 21.6314C8.87661 21.3271 9.57028 21.315 10.1385 21.6405C10.7067 21.9661 11.0429 22.5684 11.0674 23.2191C11.0841 23.6618 11.1267 23.9653 11.2357 24.2263C11.4743 24.798 11.932 25.2522 12.5081 25.489C12.9401 25.6667 13.4879 25.6667 14.5833 25.6667C15.6788 25.6667 16.2265 25.6667 16.6586 25.489C17.2347 25.2522 17.6924 24.798 17.931 24.2263C18.04 23.9653 18.0826 23.6617 18.0993 23.219C18.1238 22.5683 18.46 21.9661 19.0281 21.6405C19.5963 21.3149 20.29 21.3271 20.87 21.6313C21.2647 21.8383 21.5508 21.9534 21.833 21.9903C22.4512 22.0711 23.0765 21.9048 23.5712 21.5281C23.9422 21.2456 24.216 20.7748 24.7638 19.8332C25.3115 18.8917 25.5854 18.4209 25.6464 17.9608C25.7278 17.3472 25.5603 16.7267 25.1807 16.2358C25.0074 16.0117 24.7639 15.8233 24.3859 15.5876C23.8304 15.2412 23.473 14.651 23.473 13.9999C23.473 13.3488 23.8305 12.7588 24.3859 12.4124C24.764 12.1767 25.0075 11.9883 25.1808 11.7641C25.5604 11.2732 25.7279 10.6527 25.6465 10.0391C25.5855 9.57897 25.3116 9.1082 24.7639 8.16666C24.2162 7.22512 23.9423 6.75435 23.5713 6.47181C23.0766 6.09508 22.4513 5.92882 21.8331 6.00959C21.5509 6.04647 21.2648 6.16158 20.8701 6.36859C20.2901 6.67285 19.5964 6.68502 19.0282 6.35945C18.46 6.03388 18.1238 5.4316 18.0993 4.78092C18.0826 4.33822 18.0399 4.03471 17.931 3.77373C17.6924 3.202 17.2347 2.74776 16.6586 2.51094ZM14.5833 17.5C16.531 17.5 18.11 15.933 18.11 14C18.11 12.067 16.531 10.5 14.5833 10.5C12.6356 10.5 11.0567 12.067 11.0567 14C11.0567 15.933 12.6356 17.5 14.5833 17.5Z" fill="white"/>
 </svg>`;
+
+// Exit icon — 28x28, filled #FF5151
+const exitIconSvg = `<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M11.3251 2.81014C10.5 3.54163 10.5 4.87969 10.5 7.5558V20.4442C10.5 23.1203 10.5 24.4584 11.3251 25.1899C12.1503 25.9213 13.4115 25.7014 15.9339 25.2614L18.6508 24.7875C21.4444 24.3003 22.8411 24.0567 23.6706 23.032C24.5 22.0074 24.5 20.5255 24.5 17.5617V10.4383C24.5 7.4745 24.5 5.9926 23.6706 4.96796C22.8411 3.94332 21.4444 3.6997 18.6508 3.21245L15.9339 2.73858C13.4115 2.29863 12.1503 2.07865 11.3251 2.81014ZM14 11.8634C14.4832 11.8634 14.875 12.2734 14.875 12.7791V15.2209C14.875 15.7266 14.4832 16.1366 14 16.1366C13.5168 16.1366 13.125 15.7266 13.125 15.2209V12.7791C13.125 12.2734 13.5168 11.8634 14 11.8634Z" fill="#FF5151"/>
+<path d="M8.80503 5.25C6.40371 5.2535 5.15199 5.30631 4.35427 6.10402C3.5 6.9583 3.5 8.33323 3.5 11.0831V16.9164C3.5 19.6663 3.5 21.0412 4.35427 21.8955C5.15199 22.6932 6.40371 22.746 8.80503 22.7495C8.74982 22.0223 8.74991 21.1816 8.75001 20.273V7.72648C8.74991 6.81786 8.74982 5.97719 8.80503 5.25Z" fill="#FF5151"/>
+</svg>`;
+
+// Alt Arrow Right — 28x28, stroke #F6F6F6
+const altArrowRightSvg = `<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M10.5 5.83334L17.5 14L10.5 22.1667" stroke="#F6F6F6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+
+// Notification bell icon — 36x36 (with 10% white rounded bg)
+const notificationIconSvg = `<svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M0 8C0 3.58172 3.58172 0 8 0H28C32.4183 0 36 3.58172 36 8V28C36 32.4183 32.4183 36 28 36H8C3.58172 36 0 32.4183 0 28V8Z" fill="white" fill-opacity="0.1"/>
+<path d="M14.9598 24.8682C15.6607 25.7592 16.7618 26.3333 18 26.3333C19.2382 26.3333 20.3393 25.7592 21.0402 24.8682C19.022 25.1416 16.978 25.1416 14.9598 24.8682Z" fill="white"/>
+<path d="M23.6243 15.5V16.0867C23.6243 16.7909 23.8252 17.4793 24.2018 18.0652L25.1247 19.501C25.9676 20.8124 25.3241 22.5949 23.858 23.0096C20.0227 24.0945 15.9773 24.0945 12.142 23.0096C10.6759 22.5949 10.0324 20.8124 10.8753 19.5009L11.7982 18.0652C12.1748 17.4793 12.3757 16.7909 12.3757 16.0867V15.5C12.3757 12.2783 14.8938 9.66666 18 9.66666C21.1062 9.66666 23.6243 12.2783 23.6243 15.5Z" fill="white"/>
+</svg>`;
+
+// Subscription card icon — 36x36 (with 10% white rounded bg)
+const subscriptionIconSvg = `<svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M0 8C0 3.58172 3.58172 0 8 0H28C32.4183 0 36 3.58172 36 8V28C36 32.4183 32.4183 36 28 36H8C3.58172 36 0 32.4183 0 28V8Z" fill="white" fill-opacity="0.1"/>
+<path d="M19.6665 11.3333H16.3332C13.1905 11.3333 11.6191 11.3333 10.6428 12.3097C9.93986 13.0126 9.74304 14.024 9.68793 15.7083H26.3117C26.2566 14.024 26.0598 13.0126 25.3569 12.3097C24.3805 11.3333 22.8092 11.3333 19.6665 11.3333Z" fill="white"/>
+<path d="M16.3332 24.6667H19.6665C22.8092 24.6667 24.3805 24.6667 25.3569 23.6904C26.3332 22.7141 26.3332 21.1427 26.3332 18C26.3332 17.6317 26.3332 17.285 26.3316 16.9583H9.66807C9.6665 17.285 9.6665 17.6317 9.6665 18C9.6665 21.1427 9.6665 22.7141 10.6428 23.6904C11.6191 24.6667 13.1905 24.6667 16.3332 24.6667Z" fill="white"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M12.3748 21.3333C12.3748 20.9882 12.6547 20.7083 12.9998 20.7083H16.3332C16.6783 20.7083 16.9582 20.9882 16.9582 21.3333C16.9582 21.6785 16.6783 21.9583 16.3332 21.9583H12.9998C12.6547 21.9583 12.3748 21.6785 12.3748 21.3333Z" fill="#100E19"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M17.7915 21.3333C17.7915 20.9882 18.0713 20.7083 18.4165 20.7083H19.6665C20.0117 20.7083 20.2915 20.9882 20.2915 21.3333C20.2915 21.6785 20.0117 21.9583 19.6665 21.9583H18.4165C18.0713 21.9583 17.7915 21.6785 17.7915 21.3333Z" fill="#100E19"/>
+</svg>`;
+
+// Edit pencil icon — 24x24, filled #96959A (Pen 2.svg)
+const editPencilSvg = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M3.25 22C3.25 21.5858 3.58579 21.25 4 21.25H20C20.4142 21.25 20.75 21.5858 20.75 22C20.75 22.4142 20.4142 22.75 20 22.75H4C3.58579 22.75 3.25 22.4142 3.25 22Z" fill="#4D4D4D"/>
+<path d="M11.5201 14.929L11.5201 14.9289L17.4368 9.01225C16.6315 8.6771 15.6777 8.12656 14.7757 7.22455C13.8736 6.32238 13.323 5.36846 12.9879 4.56312L7.07106 10.4799L7.07101 10.48C6.60932 10.9417 6.37846 11.1725 6.17992 11.4271C5.94571 11.7273 5.74491 12.0522 5.58107 12.396C5.44219 12.6874 5.33894 12.9972 5.13245 13.6167L4.04356 16.8833C3.94194 17.1882 4.02128 17.5243 4.2485 17.7515C4.47573 17.9787 4.81182 18.0581 5.11667 17.9564L8.38334 16.8676C9.00281 16.6611 9.31256 16.5578 9.60398 16.4189C9.94775 16.2551 10.2727 16.0543 10.5729 15.8201C10.8275 15.6215 11.0584 15.3907 11.5201 14.929Z" fill="#4D4D4D"/>
+<path d="M19.0786 7.37044C20.3071 6.14188 20.3071 4.14999 19.0786 2.92142C17.85 1.69286 15.8581 1.69286 14.6296 2.92142L13.9199 3.63105C13.9296 3.6604 13.9397 3.69015 13.9502 3.72028C14.2103 4.47 14.701 5.45281 15.6243 6.37602C16.5475 7.29923 17.5303 7.78999 18.28 8.05009C18.31 8.0605 18.3396 8.07054 18.3688 8.08021L19.0786 7.37044Z" fill="#4D4D4D"/>
+</svg>`;
+
+
+// ═══════════════════════════════════════════════
+// Language modal SVG icons (from OnboardingScreen)
+// ═══════════════════════════════════════════════
+
+// Language icon — 24x24
+const languageIconSvg = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M5 8L11 14M4 14L10 8L12 5M2 5H14M7 2H8M22 22L17 12L12 22M14 18H20" stroke="#F6F6F6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+
+// Close circle icon — 40x40
+const closeCircleSvg = `<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+<circle cx="20" cy="20" r="16.6667" fill="white" fill-opacity="0.2"/>
+<path d="M24.1666 15.8333L15.8333 24.1666M15.8333 15.8333L24.1666 24.1666" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+</svg>`;
+
+// Check circle icon — 24x24, selected language indicator
+const checkCircleSvg = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<circle cx="12" cy="12" r="10" fill="white"/>
+<path d="M8.5 12.5L10.5 14.5L15.5 9.5" stroke="#101010" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+
+// Currency icon — 24x24 (dollar sign, filled)
+const currencyIconSvg = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M11.25 7.84748C10.3141 8.10339 9.75 8.82154 9.75 9.5C9.75 10.1785 10.3141 10.8966 11.25 11.1525V7.84748Z" fill="white"/>
+<path d="M12.75 12.8475V16.1525C13.6859 15.8966 14.25 15.1785 14.25 14.5C14.25 13.8215 13.6859 13.1034 12.75 12.8475Z" fill="white"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12ZM12 5.25C12.4142 5.25 12.75 5.58579 12.75 6V6.31673C14.3804 6.60867 15.75 7.83361 15.75 9.5C15.75 9.91421 15.4142 10.25 15 10.25C14.5858 10.25 14.25 9.91421 14.25 9.5C14.25 8.82154 13.6859 8.10339 12.75 7.84748V11.3167C14.3804 11.6087 15.75 12.8336 15.75 14.5C15.75 16.1664 14.3804 17.3913 12.75 17.6833V18C12.75 18.4142 12.4142 18.75 12 18.75C11.5858 18.75 11.25 18.4142 11.25 18V17.6833C9.61957 17.3913 8.25 16.1664 8.25 14.5C8.25 14.0858 8.58579 13.75 9 13.75C9.41421 13.75 9.75 14.0858 9.75 14.5C9.75 15.1785 10.3141 15.8966 11.25 16.1525V12.6833C9.61957 12.3913 8.25 11.1664 8.25 9.5C8.25 7.83361 9.61957 6.60867 11.25 6.31673V6C11.25 5.58579 11.5858 5.25 12 5.25Z" fill="white"/>
+</svg>`;
+
+// ═══════════════════════════════════════════════
+// Language & Currency mappings
+// ═══════════════════════════════════════════════
+
+const FLAG_EMOJIS: Record<string, string> = {
+  ru: '\u{1F1F7}\u{1F1FA}',
+  uz: '\u{1F1FA}\u{1F1FF}',
+  us: '\u{1F1FA}\u{1F1F8}',
+  kz: '\u{1F1F0}\u{1F1FF}',
+  de: '\u{1F1E9}\u{1F1EA}',
+  az: '\u{1F1E6}\u{1F1FF}',
+  by: '\u{1F1E7}\u{1F1FE}',
+  ua: '\u{1F1FA}\u{1F1E6}',
+  pl: '\u{1F1F5}\u{1F1F1}',
+  ge: '\u{1F1EC}\u{1F1EA}',
+  cn: '\u{1F1E8}\u{1F1F3}',
+};
+
+type CountryOption = {
+  code: string;
+  country: string;
+  flagKey: string;
+};
+
+const COUNTRIES: CountryOption[] = [
+  { code: 'ru', country: '\u0420\u0443\u0441\u0441\u043A\u0438\u0439', flagKey: 'ru' },
+  { code: 'uz', country: "O'zbek", flagKey: 'uz' },
+  { code: 'en', country: 'English', flagKey: 'us' },
+  { code: 'kk', country: '\u049A\u0430\u0437\u0430\u049B\u0448\u0430', flagKey: 'kz' },
+  { code: 'de', country: 'Deutsch', flagKey: 'de' },
+  { code: 'az', country: 'Az\u0259rbaycan', flagKey: 'az' },
+  { code: 'be', country: '\u0411\u0435\u043B\u0430\u0440\u0443\u0441\u043A\u0430\u044F', flagKey: 'by' },
+  { code: 'uk', country: '\u0423\u043A\u0440\u0430\u0457\u043D\u0441\u044C\u043A\u0430', flagKey: 'ua' },
+  { code: 'pl', country: 'Polski', flagKey: 'pl' },
+  { code: 'ka', country: '\u10E5\u10D0\u10E0\u10D7\u10E3\u10DA\u10D8', flagKey: 'ge' },
+  { code: 'zh', country: '\u4E2D\u6587', flagKey: 'cn' },
+];
+
+const LANGUAGE_NAMES: Record<string, string> = {
+  uz: "O'zbekcha",
+  ru: '\u0420\u0443\u0441\u0441\u043A\u0438\u0439',
+  en: 'English',
+  be: '\u0411\u0435\u043B\u0430\u0440\u0443\u0441\u043A\u0430\u044F',
+  uk: '\u0423\u043A\u0440\u0430\u0457\u043D\u0441\u044C\u043A\u0430',
+  kk: '\u049A\u0430\u0437\u0430\u049B\u0448\u0430',
+  de: 'Deutsch',
+  az: 'Az\u0259rbaycan',
+  pl: 'Polski',
+  ka: '\u10E5\u10D0\u10E0\u10D7\u10E3\u10DA\u10D8',
+  zh: '\u4E2D\u6587',
+};
+
+const LANGUAGE_FLAGS: Record<string, string> = {
+  uz: '\u{1F1FA}\u{1F1FF}',
+  ru: '\u{1F1F7}\u{1F1FA}',
+  en: '\u{1F1FA}\u{1F1F8}',
+  be: '\u{1F1E7}\u{1F1FE}',
+  uk: '\u{1F1FA}\u{1F1E6}',
+  kk: '\u{1F1F0}\u{1F1FF}',
+  de: '\u{1F1E9}\u{1F1EA}',
+  az: '\u{1F1E6}\u{1F1FF}',
+  pl: '\u{1F1F5}\u{1F1F1}',
+  ka: '\u{1F1EC}\u{1F1EA}',
+  zh: '\u{1F1E8}\u{1F1F3}',
+};
+
+const CURRENCY_FLAGS: Record<string, string> = {
+  UZS: '\u{1F1FA}\u{1F1FF}',
+  USD: '\u{1F1FA}\u{1F1F8}',
+  EUR: '\u{1F1EA}\u{1F1FA}',
+  RUB: '\u{1F1F7}\u{1F1FA}',
+  GBP: '\u{1F1EC}\u{1F1E7}',
+  TRY: '\u{1F1F9}\u{1F1F7}',
+  KZT: '\u{1F1F0}\u{1F1FF}',
+  CNY: '\u{1F1E8}\u{1F1F3}',
+  JPY: '\u{1F1EF}\u{1F1F5}',
+  KRW: '\u{1F1F0}\u{1F1F7}',
+  CHF: '\u{1F1E8}\u{1F1ED}',
+  AED: '\u{1F1E6}\u{1F1EA}',
+  INR: '\u{1F1EE}\u{1F1F3}',
+  BRL: '\u{1F1E7}\u{1F1F7}',
+  CAD: '\u{1F1E8}\u{1F1E6}',
+  AUD: '\u{1F1E6}\u{1F1FA}',
+  PLN: '\u{1F1F5}\u{1F1F1}',
+  UAH: '\u{1F1FA}\u{1F1E6}',
+  GEL: '\u{1F1EC}\u{1F1EA}',
+  BYN: '\u{1F1E7}\u{1F1FE}',
+  AZN: '\u{1F1E6}\u{1F1FF}',
+  AMD: '\u{1F1E6}\u{1F1F2}',
+  KGS: '\u{1F1F0}\u{1F1EC}',
+  TJS: '\u{1F1F9}\u{1F1EF}',
+  MDL: '\u{1F1F2}\u{1F1E9}',
+  TMT: '\u{1F1F9}\u{1F1F2}',
+};
+
+type CurrencyOption = {
+  code: string;
+  symbol: string;
+};
+
+const CURRENCIES: CurrencyOption[] = [
+  { code: 'UZS', symbol: "so'm" },
+  { code: 'USD', symbol: '$' },
+  { code: 'EUR', symbol: '€' },
+  { code: 'RUB', symbol: '₽' },
+  { code: 'GBP', symbol: '£' },
+  { code: 'TRY', symbol: '₺' },
+  { code: 'KZT', symbol: '₸' },
+  { code: 'CNY', symbol: '¥' },
+  { code: 'JPY', symbol: '¥' },
+  { code: 'KRW', symbol: '₩' },
+  { code: 'CHF', symbol: 'Fr' },
+  { code: 'AED', symbol: 'د.إ' },
+  { code: 'INR', symbol: '₹' },
+  { code: 'BRL', symbol: 'R$' },
+  { code: 'CAD', symbol: 'C$' },
+  { code: 'AUD', symbol: 'A$' },
+  { code: 'PLN', symbol: 'zł' },
+  { code: 'UAH', symbol: '₴' },
+  { code: 'GEL', symbol: '₾' },
+  { code: 'BYN', symbol: 'Br' },
+  { code: 'AZN', symbol: '₼' },
+  { code: 'AMD', symbol: '֏' },
+  { code: 'KGS', symbol: 'сом' },
+  { code: 'TJS', symbol: 'смн' },
+  { code: 'MDL', symbol: 'L' },
+  { code: 'TMT', symbol: 'm' },
+];
+
+// Fallback rates (units of X per 1 USD) — used only when API + DB both unavailable
+const FALLBACK_RATES_FROM_USD: Record<string, number> = {
+  USD: 1,
+  UZS: 12850,
+  EUR: 0.925,
+  RUB: 93.5,
+  GBP: 0.79,
+  TRY: 38.5,
+  KZT: 510,
+  CNY: 7.26,
+  JPY: 149.5,
+  KRW: 1365,
+  CHF: 0.88,
+  AED: 3.67,
+  INR: 84,
+  BRL: 5.75,
+  CAD: 1.4,
+  AUD: 1.57,
+  PLN: 3.84,
+  UAH: 41.5,
+  GEL: 2.74,
+  BYN: 3.27,
+  AZN: 1.7,
+  AMD: 389,
+  KGS: 86.8,
+  TJS: 10.9,
+  MDL: 17.85,
+  TMT: 3.5,
+};
+
+const formatRateNumber = (num: number): string => {
+  if (num >= 1000) {
+    return String(Math.round(num)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  }
+  if (num >= 100) return String(Math.round(num));
+  if (num >= 1) return String(Math.round(num * 100) / 100);
+  if (num >= 0.01) return num.toFixed(2);
+  return num.toFixed(4);
+};
+
+/**
+ * Compute display text like "1 EUR ≈ 13 892 UZS".
+ * `rates` is a map of currency → units per 1 USD.
+ * rate(X→Y) = rates[Y] / rates[X]
+ */
+const getExchangeRateText = (
+  currencyCode: string,
+  primaryCode: string,
+  rates: Record<string, number>,
+): string => {
+  if (currencyCode === primaryCode) return '';
+  const currRate = rates[currencyCode];
+  const primRate = rates[primaryCode];
+  if (!currRate || !primRate) return '';
+  const rate = primRate / currRate;
+  return `1 ${currencyCode} ≈ ${formatRateNumber(rate)} ${primaryCode}`;
+};
+
+const SCREEN_HEIGHT = Dimensions.get('window').height;
+
+// ═══════════════════════════════════════════════
+// Types
+// ═══════════════════════════════════════════════
+
+type ProfileNavigation = NativeStackNavigationProp<ProfileStackParamList, 'Profile'>;
+
+// ═══════════════════════════════════════════════
+// Custom iOS-style Switch (pill-shaped toggle with border)
+// ═══════════════════════════════════════════════
+
+const IOS_SWITCH_WIDTH = 64;
+const IOS_SWITCH_HEIGHT = 28;
+const IOS_THUMB_WIDTH = 39;
+const IOS_THUMB_HEIGHT = 24;
+const IOS_BORDER = 2;
+// Thumb travel = inner content width − thumb width
+// Inner content = 64 − 2 * 2 = 60; Travel = 60 − 39 = 21
+const IOS_THUMB_TRAVEL = IOS_SWITCH_WIDTH - 2 * IOS_BORDER - IOS_THUMB_WIDTH;
+
+const IOSSwitch = ({
+  value,
+  onValueChange,
+}: {
+  value: boolean;
+  onValueChange: (val: boolean) => void;
+}) => {
+  const translateX = useRef(new Animated.Value(value ? IOS_THUMB_TRAVEL : 0)).current;
+  const colorAnim = useRef(new Animated.Value(value ? 1 : 0)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.spring(translateX, {
+        toValue: value ? IOS_THUMB_TRAVEL : 0,
+        useNativeDriver: true,
+        bounciness: 2,
+        speed: 15,
+      }),
+      Animated.timing(colorAnim, {
+        toValue: value ? 1 : 0,
+        duration: 200,
+        useNativeDriver: false,
+      }),
+    ]).start();
+  }, [value, translateX, colorAnim]);
+
+  const trackBg = colorAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['rgba(120,120,128,0.16)', '#34C759'],
+  });
+
+  return (
+    <TouchableOpacity
+      activeOpacity={0.8}
+      onPress={() => onValueChange(!value)}
+    >
+      <Animated.View
+        style={{
+          width: IOS_SWITCH_WIDTH,
+          height: IOS_SWITCH_HEIGHT,
+          borderRadius: IOS_SWITCH_HEIGHT / 2,
+          backgroundColor: trackBg,
+        }}
+      >
+        <Animated.View
+          style={{
+            position: 'absolute',
+            top: IOS_BORDER,
+            left: IOS_BORDER,
+            width: IOS_THUMB_WIDTH,
+            height: IOS_THUMB_HEIGHT,
+            borderRadius: IOS_THUMB_HEIGHT / 2,
+            backgroundColor: '#FFFFFF',
+            transform: [{ translateX }],
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 3 },
+            shadowOpacity: 0.15,
+            shadowRadius: 4,
+            elevation: 4,
+          }}
+        />
+      </Animated.View>
+    </TouchableOpacity>
+  );
+};
+
+// ═══════════════════════════════════════════════
+// Component
+// ═══════════════════════════════════════════════
 
 export const ProfileScreen = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<ProfileNavigation>();
+
   const telegramUser = useAuthStore((s) => s.telegramUser);
   const savedDisplayName = useAuthStore((s) => s.displayName);
+  const userId = useAuthStore((s) => s.userId);
   const logout = useAuthStore((s) => s.logout);
+  const selectedCurrency = useProfileStore((s) => s.currency);
+  const storeSetLanguage = useProfileStore((s) => s.setLanguage);
+  const storeSetCurrency = useProfileStore((s) => s.setDefaultCurrency);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [activePicker, setActivePicker] = useState<'language' | 'currency' | 'settings' | null>(null);
+  const [scrolledDown, setScrolledDown] = useState(false);
+  const [ratesMap, setRatesMap] = useState<Record<string, number>>(FALLBACK_RATES_FROM_USD);
+  const [loadingRates, setLoadingRates] = useState(false);
 
-  // Prefer saved display name (from SetName screen), fall back to Telegram name
-  const displayName = savedDisplayName
-    || (telegramUser
+  // Settings form state
+  const [settingsName, setSettingsName] = useState('');
+  const [settingsTelegram, setSettingsTelegram] = useState('');
+  const [settingsPhone, setSettingsPhone] = useState('');
+  const [settingsEmail, setSettingsEmail] = useState('');
+  const [settingsDirty, setSettingsDirty] = useState(false);
+
+  // Picker animation values
+  const overlayOpacity = useRef(new Animated.Value(0)).current;
+  const sheetTranslateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+  const topFadeOpacity = useRef(new Animated.Value(0)).current;
+  const pickerScrollRef = useRef<ScrollView>(null);
+
+  // Display name: saved name → Telegram name → "Guest"
+  const displayName =
+    savedDisplayName ||
+    (telegramUser
       ? [telegramUser.first_name, telegramUser.last_name].filter(Boolean).join(' ')
       : t('profile.guest') || 'Guest');
 
-  const username = telegramUser?.username
+  // Auth method: Telegram @username, email, or phone
+  const authMethod = telegramUser?.username
     ? `@${telegramUser.username}`
-    : '';
+    : userId || '';
+
+  // Current language
+  const currentLang = i18n.language;
+  const languageDisplayName = LANGUAGE_NAMES[currentLang] || LANGUAGE_NAMES.en;
+  const languageFlag = LANGUAGE_FLAGS[currentLang] || LANGUAGE_FLAGS.en;
+
+  // Current currency
+  const currencyFlag = CURRENCY_FLAGS[selectedCurrency] || CURRENCY_FLAGS.UZS;
+
+  // Load live exchange rates on mount (from cache or API)
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingRates(true);
+    getRatesFromUSD()
+      .then((rates) => {
+        if (!cancelled) setRatesMap(rates);
+      })
+      .catch(() => {
+        // Keep fallback rates
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingRates(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   const handleLogout = useCallback(() => {
     Alert.alert(
@@ -82,79 +537,545 @@ export const ProfileScreen = () => {
     );
   }, [logout, t]);
 
+  // Language picker scroll handler
+  const handlePickerScroll = useCallback((e: any) => {
+    const y = e.nativeEvent.contentOffset.y;
+    const isScrolled = y > 4;
+    if (isScrolled !== scrolledDown) {
+      setScrolledDown(isScrolled);
+      Animated.timing(topFadeOpacity, {
+        toValue: isScrolled ? 1 : 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [scrolledDown, topFadeOpacity]);
+
+  const openPicker = useCallback((type: 'language' | 'currency' | 'settings') => {
+    navigation.getParent()?.setOptions({ tabBarStyle: { display: 'none' } });
+    setScrolledDown(false);
+    topFadeOpacity.setValue(0);
+    // Ensure sheet is fully offscreen + overlay invisible before content switch
+    sheetTranslateY.setValue(SCREEN_HEIGHT);
+    overlayOpacity.setValue(0);
+    pickerScrollRef.current?.scrollTo({ y: 0, animated: false });
+    // Pre-populate settings form when opening settings
+    if (type === 'settings') {
+      setSettingsName(displayName || '');
+      setSettingsTelegram(telegramUser?.username ? `@${telegramUser.username}` : '');
+      setSettingsPhone(userId && userId.startsWith('+') ? userId : '');
+      setSettingsEmail(userId && userId.includes('@') ? userId : '');
+      setSettingsDirty(false);
+    }
+    setActivePicker(type);
+    // Wait for React to render correct content, THEN animate in
+    requestAnimationFrame(() => {
+      Animated.parallel([
+        Animated.timing(overlayOpacity, {
+          toValue: 1,
+          duration: 350,
+          useNativeDriver: true,
+        }),
+        Animated.spring(sheetTranslateY, {
+          toValue: 0,
+          damping: 28,
+          stiffness: 220,
+          mass: 0.9,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    });
+  }, [navigation, overlayOpacity, sheetTranslateY, topFadeOpacity, displayName, telegramUser, userId]);
+
+  const closePicker = useCallback(() => {
+    navigation.getParent()?.setOptions({ tabBarStyle: undefined });
+    setActivePicker(null);
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 280,
+        useNativeDriver: true,
+      }),
+      Animated.timing(sheetTranslateY, {
+        toValue: SCREEN_HEIGHT,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [navigation, overlayOpacity, sheetTranslateY]);
+
+  const changeLanguage = useCallback((country: CountryOption) => {
+    storeSetLanguage(country.code);
+    setTimeout(() => closePicker(), 200);
+  }, [storeSetLanguage, closePicker]);
+
+  const changeCurrency = useCallback((currency: CurrencyOption) => {
+    storeSetCurrency(currency.code);
+    setTimeout(() => closePicker(), 200);
+  }, [storeSetCurrency, closePicker]);
+
+  const setDisplayNameAndContinue = useAuthStore((s) => s.setDisplayNameAndContinue);
+
+  const handleSaveSettings = useCallback(async () => {
+    if (!settingsDirty) return;
+    try {
+      if (settingsName.trim() && settingsName.trim() !== displayName) {
+        await setDisplayNameAndContinue(settingsName.trim());
+      }
+      setSettingsDirty(false);
+      closePicker();
+    } catch {
+      // ignore
+    }
+  }, [settingsDirty, settingsName, displayName, setDisplayNameAndContinue, closePicker]);
+
+  const handleDeleteAccount = useCallback(() => {
+    Alert.alert(
+      t('profile.deleteAccountTitle') || 'Delete account',
+      t('profile.deleteAccountConfirm') || 'Are you sure? This action cannot be undone.',
+      [
+        { text: t('common.cancel') || 'Cancel', style: 'cancel' },
+        {
+          text: t('profile.deleteAccount') || 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            // TODO: call backend delete endpoint
+            await logout();
+          },
+        },
+      ],
+    );
+  }, [logout, t]);
+
+  // Track settings form changes
+  const onSettingsFieldChange = useCallback((setter: (v: string) => void) => (value: string) => {
+    setter(value);
+    setSettingsDirty(true);
+  }, []);
+
+  // Handle Android back button when picker is open
+  useEffect(() => {
+    if (!activePicker) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      closePicker();
+      return true;
+    });
+    return () => sub.remove();
+  }, [activePicker, closePicker]);
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>{t('profile.title')}</Text>
+
+      {/* Background glow 1 */}
+      <View style={styles.glowContainer} pointerEvents="none">
+        <SvgXml xml={glowSvg} width={scale(GLOW_RENDER_SIZE)} height={scale(GLOW_RENDER_SIZE)} />
       </View>
 
-      {/* User card */}
-      <View style={styles.userCard}>
-        {telegramUser?.photo_url ? (
-          <View style={styles.avatarContainer}>
-            {/* We could use Image here but for simplicity use placeholder */}
-            <SvgXml xml={userAvatarSvg} width={64} height={64} />
+      {/* Background glow 2 */}
+      <View style={styles.glow2Container} pointerEvents="none">
+        <SvgXml xml={glow2Svg} width={scale(GLOW2_RENDER_SIZE)} height={scale(GLOW2_RENDER_SIZE)} />
+      </View>
+
+      {/* Content */}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 24 }]}
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+      >
+
+        {/* ══ Single container for all profile content ══ */}
+        <View style={styles.mainContainer}>
+
+          {/* ── Section 1: user name + action buttons ── */}
+          <View style={styles.topRow}>
+            <View style={styles.userDataLeft}>
+              <Text style={styles.userName} numberOfLines={1}>
+                {displayName}
+              </Text>
+              {authMethod ? (
+                <Text style={styles.userAuthMethod} numberOfLines={1}>
+                  {authMethod}
+                </Text>
+              ) : null}
+            </View>
+
+            {/* Settings + Exit buttons (aligned right, opposite name) */}
+            <View style={styles.actionButtons}>
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={() => openPicker('settings')}
+                activeOpacity={0.7}
+              >
+                <SvgXml xml={settingsIconSvg} width={28} height={28} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.exitButton}
+                onPress={handleLogout}
+                activeOpacity={0.7}
+                disabled={isLoggingOut}
+              >
+                {isLoggingOut ? (
+                  <ActivityIndicator size="small" color="#FF2626" />
+                ) : (
+                  <SvgXml xml={exitIconSvg} width={28} height={28} />
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
-        ) : (
-          <SvgXml xml={userAvatarSvg} width={64} height={64} />
-        )}
-        <View style={styles.userInfo}>
-          <Text style={styles.userName} numberOfLines={1}>
-            {displayName}
+
+          {/* ── Section 2: Currency + Language (32px gap from above) ── */}
+          <View style={styles.selectorRow}>
+            {/* Currency */}
+            <TouchableOpacity
+              style={styles.selectorButton}
+              activeOpacity={0.7}
+              onPress={() => openPicker('currency')}
+            >
+              <View style={styles.selectorTextGroup}>
+                <Text style={styles.selectorLabel}>
+                  {t('profile.currency')}
+                </Text>
+                <Text style={styles.selectorValue} numberOfLines={1}>
+                  {currencyFlag} {selectedCurrency}
+                </Text>
+              </View>
+              <SvgXml xml={altArrowRightSvg} width={28} height={28} />
+            </TouchableOpacity>
+
+            {/* Language */}
+            <TouchableOpacity
+              style={styles.selectorButton}
+              activeOpacity={0.7}
+              onPress={() => openPicker('language')}
+            >
+              <View style={styles.selectorTextGroup}>
+                <Text style={styles.selectorLabel}>
+                  {t('profile.language')}
+                </Text>
+                <Text style={styles.selectorValue} numberOfLines={1}>
+                  {languageFlag} {languageDisplayName}
+                </Text>
+              </View>
+              <SvgXml xml={altArrowRightSvg} width={28} height={28} />
+            </TouchableOpacity>
+          </View>
+
+          {/* ── Section 3: Other sections (32px gap from above) ── */}
+          <Text style={styles.sectionHeader}>
+            {t('profile.otherSections')}
           </Text>
-          {username ? (
-            <Text style={styles.userUsername} numberOfLines={1}>
-              {username}
-            </Text>
-          ) : null}
+
+          {/* Notifications button */}
+          <TouchableOpacity
+            style={styles.sectionButton}
+            activeOpacity={0.7}
+            onPress={() => setNotificationsEnabled((prev) => !prev)}
+          >
+            <SvgXml xml={notificationIconSvg} width={36} height={36} />
+            <View style={styles.sectionButtonTexts}>
+              <Text style={styles.sectionButtonTitle}>
+                {t('profile.notifications')}
+              </Text>
+              <Text style={styles.sectionButtonSubtitle}>
+                {t('profile.notificationsSubtitle')}
+              </Text>
+            </View>
+            <IOSSwitch
+              value={notificationsEnabled}
+              onValueChange={setNotificationsEnabled}
+            />
+          </TouchableOpacity>
+
+          {/* Subscription management button */}
+          <TouchableOpacity
+            style={[styles.sectionButton, { marginTop: 6 }]}
+            activeOpacity={0.7}
+            onPress={() => {
+              // TODO: Navigate to Subscription screen
+            }}
+          >
+            <SvgXml xml={subscriptionIconSvg} width={36} height={36} />
+            <View style={styles.sectionButtonTexts}>
+              <Text style={styles.sectionButtonTitle}>
+                {t('profile.subscriptionManagement')}
+              </Text>
+              <Text style={styles.sectionButtonSubtitle}>
+                {t('profile.subscriptionNoActive')}
+              </Text>
+            </View>
+            <SvgXml xml={altArrowRightSvg} width={28} height={28} />
+          </TouchableOpacity>
+
         </View>
-      </View>
 
-      {/* Menu items */}
-      <View style={styles.menuSection}>
-        <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
-          <Text style={styles.menuItemText}>{t('profile.settings')}</Text>
-          <SvgXml xml={chevronRightSvg} width={20} height={20} />
-        </TouchableOpacity>
+      </ScrollView>
 
-        <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
-          <Text style={styles.menuItemText}>{t('profile.language')}</Text>
-          <SvgXml xml={chevronRightSvg} width={20} height={20} />
-        </TouchableOpacity>
+      {/* ══ Language Picker Overlay (same as OnboardingScreen) ══ */}
+      <View style={styles.overlayRoot} pointerEvents={activePicker ? 'auto' : 'none'}>
+        {/* Animated blur + tint backdrop */}
+        <Animated.View style={[StyleSheet.absoluteFill, { opacity: overlayOpacity }]}>
+          <BlurView
+            intensity={10}
+            tint="dark"
+            experimentalBlurMethod="dimezisBlurView"
+            style={StyleSheet.absoluteFill}
+          />
+          <View style={styles.overlayTint} />
+        </Animated.View>
 
-        <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
-          <Text style={styles.menuItemText}>{t('profile.currency')}</Text>
-          <SvgXml xml={chevronRightSvg} width={20} height={20} />
-        </TouchableOpacity>
+        {/* Tap outside sheet to close */}
+        <Pressable
+          style={styles.overlayDismiss}
+          onPress={closePicker}
+        />
 
-        <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
-          <Text style={styles.menuItemText}>{t('profile.about')}</Text>
-          <SvgXml xml={chevronRightSvg} width={20} height={20} />
-        </TouchableOpacity>
-      </View>
-
-      {/* Logout button */}
-      <View style={styles.logoutSection}>
-        <TouchableOpacity
-          style={styles.logoutButton}
-          onPress={handleLogout}
-          activeOpacity={0.7}
-          disabled={isLoggingOut}
+        {/* Animated Sheet — slides up from bottom */}
+        <Animated.View
+          style={[
+            styles.modalSheet,
+            { paddingBottom: insets.bottom + 24, transform: [{ translateY: sheetTranslateY }] },
+          ]}
         >
-          {isLoggingOut ? (
-            <ActivityIndicator size="small" color="#F55858" />
+          {/* Header: icon + title with close button */}
+          <View style={styles.modalHeader}>
+            <View style={styles.modalHeaderLeft}>
+              <SvgXml
+                xml={activePicker === 'currency' ? currencyIconSvg : activePicker === 'settings' ? settingsIconSvg : languageIconSvg}
+                width={24}
+                height={24}
+              />
+              <Text style={styles.modalTitle}>
+                {activePicker === 'currency'
+                  ? t('profile.selectCurrency')
+                  : activePicker === 'settings'
+                    ? t('profile.settings') || 'Settings'
+                    : t('auth.selectLanguage')}
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.modalCloseBtn}
+              onPress={closePicker}
+              activeOpacity={0.7}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <SvgXml xml={closeCircleSvg} width={40} height={40} />
+            </TouchableOpacity>
+          </View>
+
+          {activePicker === 'currency' ? (
+            <View style={styles.currencyDescriptionRow}>
+              <Text style={styles.currencyDescription}>
+                {t('profile.currencyDescription')}
+              </Text>
+              {loadingRates ? (
+                <ActivityIndicator size="small" color={colors.white[40]} style={{ marginLeft: 8 }} />
+              ) : null}
+            </View>
+          ) : null}
+
+          {/* Content area */}
+          {activePicker === 'settings' ? (
+            /* ── Settings form ── */
+            <KeyboardAvoidingView
+              style={{ flex: 1 }}
+              behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+              keyboardVerticalOffset={80}
+            >
+              <ScrollView
+                style={styles.countryList}
+                contentContainerStyle={styles.settingsContent}
+                showsVerticalScrollIndicator={false}
+                bounces={true}
+                keyboardShouldPersistTaps="handled"
+              >
+                {/* Fields */}
+                <View style={styles.settingsFields}>
+                  {/* Name */}
+                  <View style={styles.settingsField}>
+                    <View style={styles.settingsFieldTexts}>
+                      <Text style={styles.settingsLabel}>{t('profile.name') || 'Name'}</Text>
+                      <TextInput
+                        style={styles.settingsInput}
+                        value={settingsName}
+                        onChangeText={onSettingsFieldChange(setSettingsName)}
+                        placeholderTextColor={colors.white[20]}
+                        placeholder={t('profile.name') || 'Name'}
+                      />
+                    </View>
+                    <SvgXml xml={editPencilSvg} width={24} height={24} />
+                  </View>
+
+                  {/* Telegram */}
+                  <View style={styles.settingsField}>
+                    <View style={styles.settingsFieldTexts}>
+                      <Text style={styles.settingsLabel}>Telegram</Text>
+                      <TextInput
+                        style={[styles.settingsInput, styles.settingsInputDisabled, !settingsTelegram && { opacity: 0.5 }]}
+                        value={settingsTelegram || '@'}
+                        editable={false}
+                      />
+                    </View>
+                    <SvgXml xml={editPencilSvg} width={24} height={24} />
+                  </View>
+
+                  {/* Phone */}
+                  <View style={styles.settingsField}>
+                    <View style={styles.settingsFieldTexts}>
+                      <Text style={styles.settingsLabel}>{t('profile.phone') || 'Number'}</Text>
+                      <TextInput
+                        style={[styles.settingsInput, styles.settingsInputDisabled, !settingsPhone && { opacity: 0.5 }]}
+                        value={settingsPhone || '+998'}
+                        editable={false}
+                      />
+                    </View>
+                    <SvgXml xml={editPencilSvg} width={24} height={24} />
+                  </View>
+
+                  {/* Email */}
+                  <View style={styles.settingsField}>
+                    <View style={styles.settingsFieldTexts}>
+                      <Text style={styles.settingsLabel}>e-mail</Text>
+                      <TextInput
+                        style={[styles.settingsInput, styles.settingsInputDisabled]}
+                        value={settingsEmail || '—'}
+                        editable={false}
+                      />
+                    </View>
+                    <SvgXml xml={editPencilSvg} width={24} height={24} />
+                  </View>
+                </View>
+
+                {/* Buttons */}
+                <View style={styles.settingsButtons}>
+                  <TouchableOpacity
+                    style={[styles.settingsSaveBtn, !settingsDirty && styles.settingsSaveBtnDisabled]}
+                    onPress={handleSaveSettings}
+                    activeOpacity={0.7}
+                    disabled={!settingsDirty}
+                  >
+                    <Text style={styles.settingsSaveText}>
+                      {t('common.save') || 'Save'}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.settingsDeleteBtn}
+                    onPress={handleDeleteAccount}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.settingsDeleteText}>
+                      {t('profile.deleteAccount') || 'Delete account'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+            </KeyboardAvoidingView>
           ) : (
-            <SvgXml xml={logoutSvg} width={24} height={24} />
+          /* ── Picker list with fade gradients ── */
+          <View style={styles.countryListWrapper}>
+            <ScrollView
+              ref={pickerScrollRef}
+              style={styles.countryList}
+              contentContainerStyle={styles.countryListContent}
+              showsVerticalScrollIndicator={false}
+              bounces={true}
+              onScroll={handlePickerScroll}
+              scrollEventThrottle={16}
+            >
+              {activePicker === 'currency' ? (
+                [...CURRENCIES].sort((a, b) => {
+                  if (a.code === selectedCurrency) return -1;
+                  if (b.code === selectedCurrency) return 1;
+                  return 0;
+                }).map((currency) => {
+                    const isSelected = currency.code === selectedCurrency;
+                    const rateText = getExchangeRateText(currency.code, selectedCurrency, ratesMap);
+                    return (
+                      <TouchableOpacity
+                        key={currency.code}
+                        style={styles.countryRow}
+                        onPress={() => changeCurrency(currency)}
+                        activeOpacity={0.7}
+                      >
+                        <View style={styles.countryFlagWrap}>
+                          <Text style={styles.flagEmojiLarge}>{CURRENCY_FLAGS[currency.code]}</Text>
+                        </View>
+                        {rateText ? (
+                          <View style={styles.currencyTextGroup}>
+                            <Text style={styles.currencyCodeText}>{currency.code}</Text>
+                            <Text style={styles.currencyRate}>{rateText}</Text>
+                          </View>
+                        ) : (
+                          <Text style={styles.countryName}>{currency.code}</Text>
+                        )}
+                        {isSelected ? (
+                          <SvgXml xml={checkCircleSvg} width={24} height={24} />
+                        ) : (
+                          <View style={styles.radioOuter} />
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })
+              ) : activePicker === 'language' ? (
+                COUNTRIES.map((country, index) => {
+                  const isSelected = country.code === currentLang;
+                  return (
+                    <TouchableOpacity
+                      key={`${country.country}-${index}`}
+                      style={styles.countryRow}
+                      onPress={() => changeLanguage(country)}
+                      activeOpacity={0.7}
+                    >
+                      <View style={styles.countryFlagWrap}>
+                        <Text style={styles.flagEmojiLarge}>{FLAG_EMOJIS[country.flagKey]}</Text>
+                      </View>
+                      <Text style={styles.countryName}>{country.country}</Text>
+                      {isSelected ? (
+                        <SvgXml xml={checkCircleSvg} width={24} height={24} />
+                      ) : (
+                        <View style={styles.radioOuter} />
+                      )}
+                    </TouchableOpacity>
+                  );
+                })
+              ) : null}
+            </ScrollView>
+
+            {/* Top fade gradient — only visible when scrolled */}
+            <Animated.View style={[styles.scrollFadeTop, { opacity: topFadeOpacity }]} pointerEvents="none">
+              <LinearGradient
+                colors={[
+                  colors.neutral[900],
+                  'rgba(26, 26, 26, 0.8)',
+                  'rgba(26, 26, 26, 0)',
+                ]}
+                style={StyleSheet.absoluteFill}
+              />
+            </Animated.View>
+
+            {/* Bottom fade gradient */}
+            <LinearGradient
+              colors={[
+                'rgba(26, 26, 26, 0)',
+                'rgba(26, 26, 26, 0.8)',
+                colors.neutral[900],
+              ]}
+              style={styles.scrollFadeBottom}
+              pointerEvents="none"
+            />
+          </View>
           )}
-          <Text style={styles.logoutText}>
-            {t('profile.logout') || 'Log out'}
-          </Text>
-        </TouchableOpacity>
+        </Animated.View>
       </View>
     </View>
   );
 };
+
+// ═══════════════════════════════════════════════
+// Styles
+// ═══════════════════════════════════════════════
 
 const styles = StyleSheet.create({
   container: {
@@ -162,91 +1083,352 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
 
-  // === Header ===
-  header: {
-    paddingHorizontal: 24,
-    height: 56,
-    justifyContent: 'center',
+  // === Glows (same positions as auth screens) ===
+  glowContainer: {
+    position: 'absolute',
+    left: scale(22 + 175 - GLOW_RENDER_SIZE / 2),
+    top: scale(-175 + 175 - GLOW_RENDER_SIZE / 2),
   },
-  headerTitle: {
-    fontFamily: fontFamily.medium,
-    fontSize: 24,
-    lineHeight: 32,
-    color: colors.white[100],
+  glow2Container: {
+    position: 'absolute',
+    left: scale(267.5 - GLOW2_RENDER_SIZE / 2),
+    top: scale(-64.5 - GLOW2_RENDER_SIZE / 2),
   },
 
-  // === User Card ===
-  userCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 20,
-    gap: 16,
-  },
-  avatarContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    overflow: 'hidden',
-  },
-  userInfo: {
+  // === Scroll ===
+  scrollView: {
     flex: 1,
-    gap: 4,
+  },
+  scrollContent: {
+    paddingHorizontal: grid.margin,
+  },
+
+  // === Main container (wraps all content) ===
+  mainContainer: {
+    marginTop: 32,
+  },
+
+  // === Top row: name (left) + buttons (right) ===
+  topRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 32,
+  },
+  userDataLeft: {
+    flex: 1,
+    gap: 6,
+    marginRight: 12,
   },
   userName: {
     fontFamily: fontFamily.medium,
-    fontSize: 20,
-    lineHeight: 26,
+    fontSize: 32,
+    lineHeight: 40,
     color: colors.white[100],
   },
-  userUsername: {
+  userAuthMethod: {
     fontFamily: fontFamily.regular,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 16,
+    lineHeight: 22,
     color: colors.white[40],
   },
 
-  // === Menu ===
-  menuSection: {
-    marginTop: 8,
-    marginHorizontal: 16,
-    backgroundColor: colors.neutral[900],
-    borderRadius: 16,
-    overflow: 'hidden',
+  // === Action buttons (Settings + Exit) ===
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 4,
+    marginTop: 4,
   },
-  menuItem: {
+  actionButton: {
+    width: 48,
+    height: 48,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  exitButton: {
+    width: 48,
+    height: 48,
+    backgroundColor: 'rgba(255, 38, 38, 0.1)',
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // === Currency + Language row ===
+  selectorRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 32,
+  },
+  selectorButton: {
+    flex: 1,
+    height: 62,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: borderRadius.xl,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    height: 52,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(255,255,255,0.07)',
   },
-  menuItemText: {
+  selectorTextGroup: {
+    flex: 1,
+    gap: 4,
+    marginRight: 8,
+  },
+  selectorLabel: {
+    fontFamily: fontFamily.regular,
+    fontSize: 14,
+    lineHeight: 18,
+    color: colors.white[40],
+  },
+  selectorValue: {
     fontFamily: fontFamily.regular,
     fontSize: 16,
     lineHeight: 22,
     color: colors.white[100],
   },
 
-  // === Logout ===
-  logoutSection: {
-    marginTop: 24,
-    marginHorizontal: 16,
+  // === Section header ===
+  sectionHeader: {
+    fontFamily: fontFamily.regular,
+    fontSize: 14,
+    lineHeight: 18,
+    color: colors.white[40],
+    marginBottom: 12,
   },
-  logoutButton: {
+
+  // === Section buttons (notifications, subscription) — separate ===
+  sectionButton: {
+    height: 70,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: borderRadius.xl,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    height: 52,
-    backgroundColor: 'rgba(245, 88, 88, 0.1)',
-    borderRadius: 16,
-    gap: 10,
+    paddingHorizontal: 16,
+    gap: 12,
   },
-  logoutText: {
+  sectionButtonTexts: {
+    flex: 1,
+    gap: 2,
+  },
+  sectionButtonTitle: {
+    fontFamily: fontFamily.regular,
+    fontSize: 16,
+    lineHeight: 22,
+    color: colors.white[100],
+  },
+  sectionButtonSubtitle: {
+    fontFamily: fontFamily.regular,
+    fontSize: 14,
+    lineHeight: 18,
+    color: colors.white[40],
+  },
+
+  // === Language Picker Overlay (same as OnboardingScreen) ===
+  overlayRoot: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 100,
+  },
+  overlayTint: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(16, 16, 16, 0.5)',
+  },
+  overlayDismiss: {
+    flex: 1,
+  },
+  modalSheet: {
+    backgroundColor: colors.neutral[900],
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    height: '75%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  modalHeaderLeft: {
+    gap: 12,
+    flex: 1,
+  },
+  modalCloseBtn: {
+    marginLeft: 12,
+  },
+  modalTitle: {
+    fontFamily: fontFamily.medium,
+    fontSize: 24,
+    lineHeight: 32,
+    color: colors.white[100],
+  },
+  countryListWrapper: {
+    flex: 1,
+    minHeight: 200,
+  },
+  countryList: {
+    flex: 1,
+  },
+  countryListContent: {
+    paddingTop: 8,
+    paddingBottom: 40,
+  },
+  scrollFadeTop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 40,
+    zIndex: 1,
+  },
+  scrollFadeBottom: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 60,
+  },
+  countryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.neutral[850],
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    height: 56,
+    marginBottom: 8,
+  },
+  countryFlagWrap: {
+    width: 24,
+    height: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  countryName: {
+    flex: 1,
     fontFamily: fontFamily.medium,
     fontSize: 16,
-    color: '#F55858',
+    lineHeight: 22,
+    color: colors.white[100],
+  },
+  flagEmojiLarge: {
+    fontSize: 16,
+    fontFamily: fontFamily.regular,
+    lineHeight: 16,
+  },
+  radioOuter: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: colors.white[30],
+    margin: 2,
+  },
+  currencyTextGroup: {
+    flex: 1,
+    gap: 2,
+  },
+  currencyCodeText: {
+    fontFamily: fontFamily.medium,
+    fontSize: 16,
+    lineHeight: 22,
+    color: colors.white[100],
+  },
+  currencyRate: {
+    fontFamily: fontFamily.regular,
+    fontSize: 13,
+    lineHeight: 18,
+    color: colors.white[40],
+  },
+  currencyDescriptionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  currencyDescription: {
+    fontFamily: fontFamily.regular,
+    fontSize: 13,
+    lineHeight: 18,
+    color: colors.white[40],
+  },
+
+  // === Settings modal ===
+  settingsContent: {
+    paddingTop: 8,
+    paddingBottom: 24,
+    flexGrow: 1,
+    justifyContent: 'space-between',
+  },
+  settingsFields: {
+    gap: 6,
+  },
+  settingsButtons: {
+    gap: 6,
+  },
+  settingsField: {
+    height: 62,
+    backgroundColor: colors.neutral[850],
+    borderRadius: borderRadius.xl,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+  },
+  settingsFieldTexts: {
+    flex: 1,
+    gap: 4,
+    marginRight: 8,
+  },
+  settingsLabel: {
+    fontFamily: fontFamily.regular,
+    fontSize: 14,
+    lineHeight: 18,
+    color: colors.white[40],
+  },
+  settingsInput: {
+    fontFamily: fontFamily.regular,
+    fontSize: 16,
+    lineHeight: 20,
+    color: colors.white[100],
+    padding: 0,
+    margin: 0,
+    minHeight: 0,
+    height: 20,
+  },
+  settingsInputDisabled: {
+    color: colors.white[100],
+  },
+  settingsSaveBtn: {
+    height: 51,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.07)',
+    borderRadius: 43,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  settingsSaveBtnDisabled: {
+    opacity: 0.5,
+  },
+  settingsSaveText: {
+    fontFamily: fontFamily.regular,
+    fontSize: 16,
+    lineHeight: 20,
+    color: colors.white[100],
+  },
+  settingsDeleteBtn: {
+    height: 51,
+    backgroundColor: 'rgba(255, 38, 38, 0.08)',
+    borderRadius: 43,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  settingsDeleteText: {
+    fontFamily: fontFamily.regular,
+    fontSize: 16,
+    lineHeight: 20,
+    color: '#FF5151',
   },
 });

@@ -84,8 +84,7 @@
   },
   "tabs": {
     "home": "Bosh sahifa",
-    "budget": "Byudjet",
-    "analytics": "Tahlil",
+    "monitoring": "Monitoring",
     "profile": "Profil"
   },
   "home": {
@@ -142,10 +141,21 @@
     "theme": "Mavzu",
     "notifications": "Bildirishnomalar",
     "about": "Dastur haqida",
+    "otherSections": "Boshqa bo'limlar",
+    "notificationsSubtitle": "Biz spam yubormaslikka va'da beramiz",
+    "subscriptionManagement": "Obunani boshqarish",
+    "subscriptionNoActive": "Faol obuna yo'q",
     "logout": "Chiqish",
     "logoutTitle": "Chiqish",
     "logoutConfirm": "Haqiqatan ham chiqishni xohlaysizmi?",
-    "guest": "Mehmon"
+    "guest": "Mehmon",
+    "name": "Ism",
+    "phone": "Raqam",
+    "deleteAccount": "Akkauntni o'chirish",
+    "deleteAccountTitle": "Akkauntni o'chirish",
+    "deleteAccountConfirm": "Ishonchingiz komilmi? Bu amalni bekor qilib bo'lmaydi. Barcha ma'lumotlaringiz butunlay o'chiriladi.",
+    "selectCurrency": "Valyutani tanlang",
+    "currencyDescription": "Tanlangan valyuta umumiy summani ko'rsatish va boshqa valyutalarni konvertatsiya qilish uchun asosiy sifatida o'rnatiladi. Har bir tranzaksiya o'zining asl valyutasida saqlanadi."
   },
   "terms": {
     "headerTitle": "Foydalanish shartlari",

@@ -84,8 +84,7 @@
   },
   "tabs": {
     "home": "Ana səhifə",
-    "budget": "Büdcə",
-    "analytics": "Analitika",
+    "monitoring": "Monitorinq",
     "profile": "Profil"
   },
   "home": {
@@ -142,10 +141,16 @@
     "theme": "Mövzu",
     "notifications": "Bildirişlər",
     "about": "Tətbiq haqqında",
+    "otherSections": "Digər bölmələr",
+    "notificationsSubtitle": "Spam göndərməyəcəyimizə söz veririk",
+    "subscriptionManagement": "Abunəliyin idarə edilməsi",
+    "subscriptionNoActive": "Aktiv abunəlik yoxdur",
     "logout": "Çıxış",
     "logoutTitle": "Çıxış",
     "logoutConfirm": "Çıxmaq istədiyinizə əminsiniz?",
-    "guest": "Qonaq"
+    "guest": "Qonaq",
+    "selectCurrency": "Valyutanı seçin",
+    "currencyDescription": "Seçilmiş valyuta ümumi məbləğin göstərilməsi və digər valyutaların konvertasiyası üçün əsas kimi təyin ediləcək. Hər əməliyyat öz orijinal valyutasında saxlanılacaq."
   },
   "terms": {
     "headerTitle": "İstifadə Şərtləri",

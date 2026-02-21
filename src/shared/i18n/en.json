@@ -84,8 +84,7 @@
   },
   "tabs": {
     "home": "Home",
-    "budget": "Budget",
-    "analytics": "Analytics",
+    "monitoring": "Monitoring",
     "profile": "Profile"
   },
   "home": {
@@ -142,10 +141,21 @@
     "theme": "Theme",
     "notifications": "Notifications",
     "about": "About",
+    "otherSections": "Other sections",
+    "notificationsSubtitle": "We promise not to spam",
+    "subscriptionManagement": "Subscription management",
+    "subscriptionNoActive": "No active",
     "logout": "Log out",
     "logoutTitle": "Log out",
     "logoutConfirm": "Are you sure you want to log out?",
-    "guest": "Guest"
+    "guest": "Guest",
+    "name": "Name",
+    "phone": "Number",
+    "deleteAccount": "Delete account",
+    "deleteAccountTitle": "Delete account",
+    "deleteAccountConfirm": "Are you sure? This action cannot be undone. All your data will be permanently deleted.",
+    "selectCurrency": "Select currency",
+    "currencyDescription": "The selected currency will be set as the primary one for displaying the total amount and for converting other currencies. Each transaction will still be saved in its original currency."
   },
   "terms": {
     "headerTitle": "Terms of Use",

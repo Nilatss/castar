@@ -23,8 +23,7 @@ export type AuthStackParamList = {
 
 export type MainTabParamList = {
   HomeTab: undefined;
-  BudgetTab: undefined;
-  AnalyticsTab: undefined;
+  MonitoringTab: undefined;
   ProfileTab: undefined;
 };
 
@@ -41,7 +40,7 @@ export type BudgetStackParamList = {
   FamilyBudget: { groupId: string };
 };
 
-export type AnalyticsStackParamList = {
+export type MonitoringStackParamList = {
   Analytics: undefined;
 };
 
