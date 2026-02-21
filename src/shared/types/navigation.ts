@@ -10,8 +10,6 @@ export type RootStackParamList = {
 
 export type AuthStackParamList = {
   Onboarding: undefined;
-  Login: undefined;
-  Register: undefined;
   TermsOfUse: undefined;
   PrivacyPolicy: undefined;
   TelegramAuth: undefined;
