@@ -1327,9 +1327,7 @@ export const ProfileScreen = () => {
           <TouchableOpacity
             style={[styles.sectionButton, { marginTop: 6 }]}
             activeOpacity={0.7}
-            onPress={() => {
-              // TODO: Navigate to Subscription screen
-            }}
+            onPress={() => navigation.navigate('SubscriptionManagement')}
           >
             <SvgXml xml={subscriptionIconSvg} width={36} height={36} />
             <View style={styles.sectionButtonTexts}>

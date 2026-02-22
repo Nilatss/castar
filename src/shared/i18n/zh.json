@@ -86,6 +86,7 @@
   "tabs": {
     "home": "\u9996\u9875",
     "monitoring": "\u76d1\u63a7",
+    "tasks": "\u4efb\u52a1",
     "profile": "\u4e2a\u4eba"
   },
   "home": {
@@ -341,5 +342,25 @@
     "contact1": "\u6570\u636e\u4fdd\u62a4\u5b98\uff1a[DPO_EMAIL]",
     "contact2": "\u9690\u79c1\u54a8\u8be2\uff1a[PRIVACY_EMAIL]",
     "contact3": "\u901a\u4fe1\u5730\u5740\uff1a[\u5730\u5740]"
+  },
+  "subscription": {
+    "title": "订阅\n管理",
+    "annual": "年度",
+    "monthly": "月度",
+    "save71": "节省71%",
+    "freeTrial14": "14天免费试用",
+    "freeTrial7": "7天免费试用",
+    "annualPrice": "7.49$/月",
+    "annualTotal": "89.98/年",
+    "monthlyPrice": "9.98$/月",
+    "advantages": "优势：",
+    "advantageCategories": "创建更多收支类别|（免费版5个，付费版可达20个）。",
+    "advantageBudgets": "预算和提醒：控制支出，达到限额时获得通知。",
+    "advantageAnalytics": "高级统计：详细图表、按类别分析、支出动态。",
+    "advantagePriority": "优先访问新功能和独家更新。",
+    "tryFree": "免费试用并订阅"
+  },
+  "tasks": {
+    "title": "任务"
   }
 }

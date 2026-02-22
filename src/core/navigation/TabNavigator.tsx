@@ -2,6 +2,7 @@ import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path, Circle, Ellipse } from 'react-native-svg';
@@ -9,6 +10,7 @@ import { colors } from '../../shared/constants';
 import type {
   MainTabParamList,
   HomeStackParamList,
+  TasksStackParamList,
   MonitoringStackParamList,
   ProfileStackParamList,
 } from '../../shared/types';
@@ -18,17 +20,19 @@ import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { HomeScreen } from '../../features/transactions/screens/HomeScreen';
 import { AddTransactionScreen } from '../../features/transactions/screens/AddTransactionScreen';
 import { TransactionDetailScreen } from '../../features/transactions/screens/TransactionDetailScreen';
+import { TasksScreen } from '../../features/tasks/screens/TasksScreen';
 import { AnalyticsScreen } from '../../features/analytics/screens/AnalyticsScreen';
 import { ProfileScreen } from '../../features/profile/screens/ProfileScreen';
 import { SettingsScreen } from '../../features/profile/screens/SettingsScreen';
 import { CategoriesScreen } from '../../features/categories/screens/CategoriesScreen';
 import { CreateCategoryScreen } from '../../features/categories/screens/CreateCategoryScreen';
+import { SubscriptionManagementScreen } from '../../features/profile/screens/SubscriptionManagementScreen';
 
 /* ── Constants ── */
 const INACTIVE_COLOR = '#828187';
 const ACTIVE_COLOR = '#FFFFFF';
-const TAB_WIDTH = 102;
-const TAB_GAP = 20;
+const TAB_WIDTH = 80;
+const TAB_GAP = 12;
 const ICON_TEXT_GAP = 6;
 
 /* ── SVG Icons (Solar Icon Set — Bold) ── */
@@ -43,6 +47,17 @@ const HomeIcon = ({ color }: { color: string }) => (
     />
     <Path
       d="M3 11.3472V22H21V11.3472C21 10.4903 20.6336 9.67426 19.9931 9.10496L13.9931 3.77163C12.8564 2.76126 11.1436 2.76126 10.0069 3.77163L4.00691 9.10496C3.36644 9.67426 3 10.4903 3 11.3472Z"
+      fill={color}
+    />
+  </Svg>
+);
+
+const TasksIcon = ({ color }: { color: string }) => (
+  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+    <Path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M3.46447 3.46447C2 4.92893 2 7.28595 2 12C2 16.714 2 19.0711 3.46447 20.5355C4.92893 22 7.28595 22 12 22C16.714 22 19.0711 22 20.5355 20.5355C22 19.0711 22 16.714 22 12C22 7.28595 22 4.92893 20.5355 3.46447C19.0711 2 16.714 2 12 2C7.28595 2 4.92893 2 3.46447 3.46447ZM10.5858 7.26426C10.8238 7.01431 10.8142 6.61879 10.5642 6.38073C10.3142 6.14268 9.9186 6.15226 9.6806 6.40222L7.75224 8.42693L7.25236 7.90222C7.01436 7.65226 6.61882 7.64268 6.36882 7.88073C6.11882 8.11879 6.10924 8.51431 6.34724 8.76426L7.29964 9.76426C7.41764 9.88815 7.58124 9.95833 7.75224 9.95833C7.92324 9.95833 8.08684 9.88815 8.20484 9.76426L10.5858 7.26426ZM12.8332 7.87499C12.488 7.87499 12.2082 8.15481 12.2082 8.49999C12.2082 8.84517 12.488 9.12499 12.8332 9.12499H16.9998C17.345 9.12499 17.6248 8.84517 17.6248 8.49999C17.6248 8.15481 17.345 7.87499 16.9998 7.87499H12.8332ZM10.5858 14.0977C10.8238 13.8477 10.8142 13.4521 10.5642 13.214C10.3142 12.976 9.9186 12.9856 9.6806 13.2356L7.75224 15.2604L7.25236 14.7356C7.01436 14.4856 6.61882 14.476 6.36882 14.714C6.11882 14.9521 6.10924 15.3477 6.34724 15.5977L7.29964 16.5977C7.41764 16.7215 7.58124 16.7916 7.75224 16.7916C7.92324 16.7916 8.08684 16.7215 8.20484 16.5977L10.5858 14.0977ZM12.8332 14.7083C12.488 14.7083 12.2082 14.9881 12.2082 15.3333C12.2082 15.6785 12.488 15.9583 12.8332 15.9583H16.9998C17.345 15.9583 17.6248 15.6785 17.6248 15.3333C17.6248 14.9881 17.345 14.7083 16.9998 14.7083H12.8332Z"
       fill={color}
     />
   </Svg>
@@ -68,6 +83,7 @@ const ProfileIcon = ({ color }: { color: string }) => (
 
 /* ── Stack Navigators ── */
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
+const TasksStack = createNativeStackNavigator<TasksStackParamList>();
 const MonitoringStack = createNativeStackNavigator<MonitoringStackParamList>();
 const ProfileStack = createNativeStackNavigator<ProfileStackParamList>();
 
@@ -84,6 +100,12 @@ const HomeStackNavigator = () => (
   </HomeStack.Navigator>
 );
 
+const TasksStackNavigator = () => (
+  <TasksStack.Navigator screenOptions={stackScreenOptions}>
+    <TasksStack.Screen name="Tasks" component={TasksScreen} />
+  </TasksStack.Navigator>
+);
+
 const MonitoringStackNavigator = () => (
   <MonitoringStack.Navigator screenOptions={stackScreenOptions}>
     <MonitoringStack.Screen name="Analytics" component={AnalyticsScreen} />
@@ -96,8 +118,19 @@ const ProfileStackNavigator = () => (
     <ProfileStack.Screen name="Settings" component={SettingsScreen} />
     <ProfileStack.Screen name="Categories" component={CategoriesScreen} />
     <ProfileStack.Screen name="CreateCategory" component={CreateCategoryScreen} />
+    <ProfileStack.Screen
+      name="SubscriptionManagement"
+      component={SubscriptionManagementScreen}
+      options={{
+        animation: 'fade_from_bottom',
+        animationDuration: 300,
+      }}
+    />
   </ProfileStack.Navigator>
 );
+
+/* ── Screens where tab bar should be hidden ── */
+const HIDE_TAB_BAR_SCREENS = new Set(['SubscriptionManagement']);
 
 /* ── Tab Config ── */
 const TAB_CONFIG: Record<
@@ -106,6 +139,7 @@ const TAB_CONFIG: Record<
 > = {
   HomeTab: { icon: HomeIcon, labelKey: 'tabs.home' },
   MonitoringTab: { icon: MonitoringIcon, labelKey: 'tabs.monitoring' },
+  TasksTab: { icon: TasksIcon, labelKey: 'tabs.tasks' },
   ProfileTab: { icon: ProfileIcon, labelKey: 'tabs.profile' },
 };
 
@@ -182,7 +216,19 @@ export const TabNavigator = () => (
   >
     <Tab.Screen name="HomeTab" component={HomeStackNavigator} />
     <Tab.Screen name="MonitoringTab" component={MonitoringStackNavigator} />
-    <Tab.Screen name="ProfileTab" component={ProfileStackNavigator} />
+    <Tab.Screen name="TasksTab" component={TasksStackNavigator} />
+    <Tab.Screen
+      name="ProfileTab"
+      component={ProfileStackNavigator}
+      options={({ route }) => {
+        const routeName = getFocusedRouteNameFromRoute(route) ?? 'Profile';
+        return {
+          tabBarStyle: HIDE_TAB_BAR_SCREENS.has(routeName)
+            ? { display: 'none' as const }
+            : undefined,
+        };
+      }}
+    />
   </Tab.Navigator>
 );
 
@@ -197,7 +243,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: TAB_GAP,
     paddingTop: 12,
-    paddingBottom: 8,
+    paddingBottom: 16,
   },
   tabButton: {
     width: TAB_WIDTH,

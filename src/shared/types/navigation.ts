@@ -23,6 +23,7 @@ export type AuthStackParamList = {
 
 export type MainTabParamList = {
   HomeTab: undefined;
+  TasksTab: undefined;
   MonitoringTab: undefined;
   ProfileTab: undefined;
 };
@@ -40,6 +41,10 @@ export type BudgetStackParamList = {
   FamilyBudget: { groupId: string };
 };
 
+export type TasksStackParamList = {
+  Tasks: undefined;
+};
+
 export type MonitoringStackParamList = {
   Analytics: undefined;
 };
@@ -49,4 +54,5 @@ export type ProfileStackParamList = {
   Settings: undefined;
   Categories: undefined;
   CreateCategory: undefined;
+  SubscriptionManagement: undefined;
 };

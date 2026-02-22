@@ -88,6 +88,7 @@
   "tabs": {
     "home": "Home",
     "monitoring": "Monitoring",
+    "tasks": "Tasks",
     "profile": "Profile"
   },
   "home": {
@@ -345,5 +346,25 @@
     "freelance": "Freelance",
     "investments": "Investments",
     "other_income": "Other Income"
+  },
+  "subscription": {
+    "title": "Subscription\nmanagement",
+    "annual": "Annual",
+    "monthly": "Monthly",
+    "save71": "Save 71%",
+    "freeTrial14": "14-day free trial",
+    "freeTrial7": "7-day free trial",
+    "annualPrice": "7.49$/mo",
+    "annualTotal": "89.98/yr",
+    "monthlyPrice": "9.98$/mo",
+    "advantages": "Advantages:",
+    "advantageCategories": "Create more categories for expenses and income |(up to 20 versus 5 in the free version).",
+    "advantageBudgets": "Budgets and reminders: control your spending and get notified when you reach your limit.",
+    "advantageAnalytics": "Get advanced statistics: detailed graphs, analytics by categories, spending dynamics.",
+    "advantagePriority": "Priority access to new features and exclusive updates.",
+    "tryFree": "Try Free And Subscribe"
+  },
+  "tasks": {
+    "title": "Tasks"
   }
 }

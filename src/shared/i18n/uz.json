@@ -88,6 +88,7 @@
   "tabs": {
     "home": "Bosh sahifa",
     "monitoring": "Monitoring",
+    "tasks": "Vazifalar",
     "profile": "Profil"
   },
   "home": {
@@ -345,5 +346,25 @@
     "freelance": "Frilanserlik",
     "investments": "Investitsiyalar",
     "other_income": "Boshqa daromadlar"
+  },
+  "subscription": {
+    "title": "Obuna\nboshqaruvi",
+    "annual": "Yillik",
+    "monthly": "Oylik",
+    "save71": "71% tejash",
+    "freeTrial14": "14 kun bepul sinov",
+    "freeTrial7": "7 kun bepul sinov",
+    "annualPrice": "7.49$/oy",
+    "annualTotal": "89.98/yil",
+    "monthlyPrice": "9.98$/oy",
+    "advantages": "Afzalliklar:",
+    "advantageCategories": "Xarajatlar va daromadlar uchun ko'proq kategoriyalar yarating |(bepul versiyada 5 ta o'rniga 20 tagacha).",
+    "advantageBudgets": "Byudjetlar va eslatmalar: xarajatlaringizni nazorat qiling va limitga yetganingizda xabar oling.",
+    "advantageAnalytics": "Kengaytirilgan statistika: batafsil grafiklar, kategoriyalar bo'yicha tahlil, xarajatlar dinamikasi.",
+    "advantagePriority": "Yangi funksiyalar va eksklyuziv yangilanishlarga ustuvor kirish.",
+    "tryFree": "Bepul sinab ko'ring"
+  },
+  "tasks": {
+    "title": "Vazifalar"
   }
 }

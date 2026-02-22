@@ -88,6 +88,7 @@
   "tabs": {
     "home": "Startseite",
     "monitoring": "Monitoring",
+    "tasks": "Aufgaben",
     "profile": "Profil"
   },
   "home": {
@@ -345,5 +346,25 @@
     "freelance": "Freiberuflich",
     "investments": "Investitionen",
     "other_income": "Sonstige Einnahmen"
+  },
+  "subscription": {
+    "title": "Abo-\nVerwaltung",
+    "annual": "Jährlich",
+    "monthly": "Monatlich",
+    "save71": "71% sparen",
+    "freeTrial14": "14 Tage kostenlos testen",
+    "freeTrial7": "7 Tage kostenlos testen",
+    "annualPrice": "7,49$/Monat",
+    "annualTotal": "89,98/Jahr",
+    "monthlyPrice": "9,98$/Monat",
+    "advantages": "Vorteile:",
+    "advantageCategories": "Erstellen Sie mehr Kategorien für Ausgaben und Einnahmen |(bis zu 20 statt 5 in der kostenlosen Version).",
+    "advantageBudgets": "Budgets und Erinnerungen: Kontrollieren Sie Ihre Ausgaben und erhalten Sie Benachrichtigungen bei Erreichen des Limits.",
+    "advantageAnalytics": "Erweiterte Statistiken: detaillierte Grafiken, Analysen nach Kategorien, Ausgabendynamik.",
+    "advantagePriority": "Bevorzugter Zugang zu neuen Funktionen und exklusiven Updates.",
+    "tryFree": "Kostenlos testen"
+  },
+  "tasks": {
+    "title": "Aufgaben"
   }
 }

@@ -86,6 +86,7 @@
   "tabs": {
     "home": "\u10db\u10d7\u10d0\u10d5\u10d0\u10e0\u10d8",
     "monitoring": "\u10db\u10dd\u10dc\u10d8\u10e2\u10dd\u10e0\u10d8\u10dc\u10d2\u10d8",
+    "tasks": "\u10d3\u10d0\u10d5\u10d0\u10da\u10d4\u10d1\u10d4\u10d1\u10d8",
     "profile": "\u10de\u10e0\u10dd\u10e4\u10d8\u10da\u10d8"
   },
   "home": {
@@ -341,5 +342,25 @@
     "contact1": "\u10db\u10dd\u10dc\u10d0\u10ea\u10d4\u10db\u10d7\u10d0 \u10d3\u10d0\u10ea\u10d5\u10d8\u10e1 \u10dd\u10e4\u10d8\u10ea\u10d4\u10e0\u10d8: [DPO_EMAIL]",
     "contact2": "\u10d9\u10dd\u10dc\u10e4\u10d8\u10d3\u10d4\u10dc\u10ea\u10d8\u10d0\u10da\u10e3\u10e0\u10dd\u10d1\u10d8\u10e1 \u10e1\u10d0\u10d9\u10d8\u10d7\u10ee\u10d4\u10d1\u10d8: [PRIVACY_EMAIL]",
     "contact3": "\u10e1\u10d0\u10e4\u10dd\u10e1\u10e2\u10dd \u10db\u10d8\u10e1\u10d0\u10db\u10d0\u10e0\u10d7\u10d8: [\u10db\u10d8\u10e1\u10d0\u10db\u10d0\u10e0\u10d7\u10d8]"
+  },
+  "subscription": {
+    "title": "გამოწერის\nმართვა",
+    "annual": "წლიური",
+    "monthly": "თვიური",
+    "save71": "დაზოგე 71%",
+    "freeTrial14": "14-დღიანი უფასო საცდელი პერიოდი",
+    "freeTrial7": "7-დღიანი უფასო საცდელი პერიოდი",
+    "annualPrice": "7.49$/თვე",
+    "annualTotal": "89.98/წელი",
+    "monthlyPrice": "9.98$/თვე",
+    "advantages": "უპირატესობები:",
+    "advantageCategories": "შექმენით მეტი კატეგორია ხარჯებისა და შემოსავლებისთვის |(უფასო ვერსიაში 5-ის ნაცვლად 20-მდე).",
+    "advantageBudgets": "ბიუჯეტები და შეხსენებები: აკონტროლეთ ხარჯები და მიიღეთ შეტყობინება ლიმიტის მიღწევისას.",
+    "advantageAnalytics": "გაფართოებული სტატისტიკა: დეტალური გრაფიკები, ანალიტიკა კატეგორიების მიხედვით, ხარჯების დინამიკა.",
+    "advantagePriority": "პრიორიტეტული წვდომა ახალ ფუნქციებსა და ექსკლუზიურ განახლებებზე.",
+    "tryFree": "სცადე უფასოდ და გამოიწერე"
+  },
+  "tasks": {
+    "title": "დავალებები"
   }
 }

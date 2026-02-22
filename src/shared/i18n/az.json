@@ -88,6 +88,7 @@
   "tabs": {
     "home": "Ana səhifə",
     "monitoring": "Monitorinq",
+    "tasks": "Tapşırıqlar",
     "profile": "Profil"
   },
   "home": {
@@ -345,5 +346,25 @@
     "freelance": "Frilans",
     "investments": "İnvestisiyalar",
     "other_income": "Digər gəlir"
+  },
+  "subscription": {
+    "title": "Abunə\nidarəetməsi",
+    "annual": "İllik",
+    "monthly": "Aylıq",
+    "save71": "71% qənaət",
+    "freeTrial14": "14 gün pulsuz sınaq",
+    "freeTrial7": "7 gün pulsuz sınaq",
+    "annualPrice": "7.49$/ay",
+    "annualTotal": "89.98/il",
+    "monthlyPrice": "9.98$/ay",
+    "advantages": "Üstünlüklər:",
+    "advantageCategories": "Xərclər və gəlirlər üçün daha çox kateqoriya yaradın |(pulsuz versiyada 5 əvəzinə 20-yə qədər).",
+    "advantageBudgets": "Büdcələr və xatırlatmalar: xərclərinizi idarə edin və limitə çatdıqda bildiriş alın.",
+    "advantageAnalytics": "Təkmilləşdirilmiş statistika: ətraflı qrafiklər, kateqoriyalar üzrə analitika, xərc dinamikası.",
+    "advantagePriority": "Yeni funksiyalara və eksklüziv yeniliklərə prioritet giriş.",
+    "tryFree": "Pulsuz sınayın"
+  },
+  "tasks": {
+    "title": "Tapşırıqlar"
   }
 }
