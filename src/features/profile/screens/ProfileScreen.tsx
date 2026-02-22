@@ -895,9 +895,9 @@ export const ProfileScreen = () => {
     setShowTelegramWebView(true);
   }, []);
 
-  // WebView URL interceptor: catch castar:// deep links and extract auth data
-  const handleWebViewNavigationChange = useCallback((navState: { url: string }) => {
-    const { url } = navState;
+  // Handle postMessage from WebView — receives castar:// deep link URL
+  const handleWebViewMessage = useCallback((event: { nativeEvent: { data: string } }) => {
+    const url = event.nativeEvent.data;
     if (isAuthCallback(url)) {
       const result = parseAuthCallback(url);
       if (result) {
@@ -908,24 +908,6 @@ export const ProfileScreen = () => {
         });
       }
     }
-  }, []);
-
-  // Block WebView from actually navigating to castar:// (custom scheme)
-  // Return false = block, true = allow
-  const handleWebViewShouldLoad = useCallback((request: { url: string }) => {
-    if (request.url.startsWith('castar://')) {
-      // Parse auth data from the deep link URL
-      const result = parseAuthCallback(request.url);
-      if (result) {
-        setShowTelegramWebView(false);
-        persistLinkedTelegram(result.user).then(() => {
-          useAuthStore.setState({ telegramUser: result.user });
-          setTimeout(() => openPickerRef.current('settings'), 300);
-        });
-      }
-      return false; // Block navigation to custom scheme
-    }
-    return true; // Allow all other URLs
   }, []);
 
   // Deep link listener: catch castar://auth/callback when returning from TG auth (browser fallback)
@@ -1608,13 +1590,40 @@ export const ProfileScreen = () => {
             source={{ uri: getTelegramAuthUrl(i18n.language) }}
             incognito={true}
             style={styles.telegramWebView}
-            onNavigationStateChange={handleWebViewNavigationChange}
-            onShouldStartLoadWithRequest={handleWebViewShouldLoad}
             javaScriptEnabled={true}
             domStorageEnabled={true}
             sharedCookiesEnabled={false}
             setSupportMultipleWindows={false}
             javaScriptCanOpenWindowsAutomatically={true}
+            onMessage={handleWebViewMessage}
+            injectedJavaScript={`
+              // Intercept castar:// links and send via postMessage to React Native.
+              // 1) Catch clicks on <a href="castar://..."> links
+              document.addEventListener('click', function(e) {
+                var el = e.target;
+                while (el && el.tagName !== 'A') el = el.parentElement;
+                if (el && el.href && el.href.startsWith('castar://')) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  window.ReactNativeWebView.postMessage(el.href);
+                }
+              }, true);
+              // 2) Intercept JS-based redirect: override location.href setter
+              (function() {
+                var origHref = window.location.href;
+                var checkInterval = setInterval(function() {
+                  // Check all <a> tags for castar:// href (callback page renders them)
+                  var links = document.querySelectorAll('a[href^="castar://"]');
+                  if (links.length > 0) {
+                    clearInterval(checkInterval);
+                    window.ReactNativeWebView.postMessage(links[0].href);
+                  }
+                }, 300);
+                // Stop checking after 30s
+                setTimeout(function() { clearInterval(checkInterval); }, 30000);
+              })();
+              true;
+            `}
           />
         </View>
       )}
