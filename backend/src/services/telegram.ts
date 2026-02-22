@@ -168,25 +168,13 @@ export function getTelegramWidgetHtml(botUsername: string, callbackUrl: string, 
     .widget-wrap {
       margin-top: 32px;
     }
-    .switch-btn {
-      display: inline-block;
-      margin-top: 16px;
-      font-family: 'Inter', sans-serif;
-      font-size: 15px;
-      font-weight: 500;
-      color: rgba(255,255,255,0.6);
-      text-decoration: none;
-      padding: 12px 32px;
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 43px;
+    .widget-wrap {
+      margin-top: 0;
       background: rgba(255,255,255,0.1);
       cursor: pointer;
       text-align: center;
       transition: opacity 0.2s;
       -webkit-tap-highlight-color: transparent;
-    }
-    .switch-btn:active {
-      opacity: 0.6;
     }
   </style>
 </head>
@@ -217,18 +205,7 @@ export function getTelegramWidgetHtml(botUsername: string, callbackUrl: string, 
         data-request-access="write">
       </script>
     </div>
-    <a href="javascript:void(0)" class="switch-btn" id="switchBtn" onclick="switchAccount()">Log in to another account</a>
   </div>
-
-  <script>
-    function switchAccount() {
-      var btn = document.getElementById('switchBtn');
-      btn.textContent = '...';
-      btn.style.pointerEvents = 'none';
-      // Navigate to our switch endpoint (clears TG session → redirects to auth page)
-      window.location.href = window.location.origin + '/auth/telegram/switch';
-    }
-  </script>
 </body>
 </html>`;
 }
