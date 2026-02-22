@@ -35,6 +35,7 @@
     "whatsYourName": "Ism",
     "nameSubtitle": "Ismingizni kiriting va biz sizga shaxsiylashtirilgan bildirishnomalar yuboramiz.",
     "namePlaceholder": "Ism kiriting...",
+    "nameMinLength": "Ism kamida 3 ta belgidan iborat bo'lishi kerak",
     "continue": "Davom etish",
     "waitingForTelegram": "Telegram kutilmoqda...",
     "completeTelegramAuth": "Brauzerda autentifikatsiyani yakunlang va siz ilovaga qayta yo'naltirilasiz.",
@@ -151,11 +152,18 @@
     "guest": "Mehmon",
     "name": "Ism",
     "phone": "Raqam",
+    "telegram": "Telegram",
+    "email": "E-pochta",
+    "connectTelegram": "Telegramni ulash",
+    "switchTelegram": "Akkauntni almashtirish",
+    "connectPhone": "Raqamni tasdiqlash",
+    "connectEmail": "E-mailni tasdiqlash",
     "deleteAccount": "Akkauntni o'chirish",
     "deleteAccountTitle": "Akkauntni o'chirish",
     "deleteAccountConfirm": "Ishonchingiz komilmi? Bu amalni bekor qilib bo'lmaydi. Barcha ma'lumotlaringiz butunlay o'chiriladi.",
     "selectCurrency": "Valyutani tanlang",
-    "currencyDescription": "Tanlangan valyuta umumiy summani ko'rsatish va boshqa valyutalarni konvertatsiya qilish uchun asosiy sifatida o'rnatiladi. Har bir tranzaksiya o'zining asl valyutasida saqlanadi."
+    "currencyDescription": "Tanlangan valyuta umumiy summani ko'rsatish va boshqa valyutalarni konvertatsiya qilish uchun asosiy sifatida o'rnatiladi. Har bir tranzaksiya o'zining asl valyutasida saqlanadi.",
+    "phoneError": "To'liq telefon raqamini kiriting"
   },
   "terms": {
     "headerTitle": "Foydalanish shartlari",

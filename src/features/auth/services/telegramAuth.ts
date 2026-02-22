@@ -256,6 +256,7 @@ export async function clearAllData(): Promise<void> {
     clearPersistedUser(),
     clearPersistedDisplayName(),
     clearPersistedPin(),
+    clearLinkedAccounts(),
   ]);
 }
 
@@ -309,4 +310,54 @@ export async function loadPersistedAuth(): Promise<AuthCallbackResult | null> {
   if (!token || !user) return null;
 
   return { token, user };
+}
+
+// ===================== Linked Accounts Persistence =====================
+// These keys store ADDITIONAL auth methods linked from Settings.
+// They are separate from the primary auth session so linking a new method
+// never overwrites the existing session.
+
+const LINKED_TG_KEY = 'castar_linked_telegram';
+const LINKED_PHONE_KEY = 'castar_linked_phone';
+const LINKED_EMAIL_KEY = 'castar_linked_email';
+
+/** Save linked Telegram user data. */
+export async function persistLinkedTelegram(user: TelegramUser): Promise<void> {
+  await SecureStore.setItemAsync(LINKED_TG_KEY, JSON.stringify(user));
+}
+
+/** Read linked Telegram user data. Returns null if not linked. */
+export async function getLinkedTelegram(): Promise<TelegramUser | null> {
+  const raw = await SecureStore.getItemAsync(LINKED_TG_KEY);
+  if (!raw) return null;
+  try { return JSON.parse(raw) as TelegramUser; } catch { return null; }
+}
+
+/** Save linked phone number. */
+export async function persistLinkedPhone(phone: string): Promise<void> {
+  await SecureStore.setItemAsync(LINKED_PHONE_KEY, phone);
+}
+
+/** Read linked phone number. Returns null if not linked. */
+export async function getLinkedPhone(): Promise<string | null> {
+  return SecureStore.getItemAsync(LINKED_PHONE_KEY);
+}
+
+/** Save linked email address. */
+export async function persistLinkedEmail(email: string): Promise<void> {
+  await SecureStore.setItemAsync(LINKED_EMAIL_KEY, email);
+}
+
+/** Read linked email address. Returns null if not linked. */
+export async function getLinkedEmail(): Promise<string | null> {
+  return SecureStore.getItemAsync(LINKED_EMAIL_KEY);
+}
+
+/** Clear all linked account data (called on full account reset). */
+export async function clearLinkedAccounts(): Promise<void> {
+  await Promise.all([
+    SecureStore.deleteItemAsync(LINKED_TG_KEY),
+    SecureStore.deleteItemAsync(LINKED_PHONE_KEY),
+    SecureStore.deleteItemAsync(LINKED_EMAIL_KEY),
+  ]);
 }

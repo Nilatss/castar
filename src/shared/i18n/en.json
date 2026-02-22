@@ -35,6 +35,7 @@
     "whatsYourName": "Name",
     "nameSubtitle": "Enter your name and we'll send you personalized notifications.",
     "namePlaceholder": "Enter name...",
+    "nameMinLength": "Name must be at least 3 characters",
     "continue": "Continue",
     "waitingForTelegram": "Waiting for Telegram...",
     "completeTelegramAuth": "Complete authentication in the browser and you will be redirected back to the app.",
@@ -151,11 +152,18 @@
     "guest": "Guest",
     "name": "Name",
     "phone": "Number",
+    "telegram": "Telegram",
+    "email": "E-mail",
+    "connectTelegram": "Connect Telegram",
+    "switchTelegram": "Switch account",
+    "connectPhone": "Confirm number",
+    "connectEmail": "Confirm e-mail",
     "deleteAccount": "Delete account",
     "deleteAccountTitle": "Delete account",
     "deleteAccountConfirm": "Are you sure? This action cannot be undone. All your data will be permanently deleted.",
     "selectCurrency": "Select currency",
-    "currencyDescription": "The selected currency will be set as the primary one for displaying the total amount and for converting other currencies. Each transaction will still be saved in its original currency."
+    "currencyDescription": "The selected currency will be set as the primary one for displaying the total amount and for converting other currencies. Each transaction will still be saved in its original currency.",
+    "phoneError": "Enter a complete phone number"
   },
   "terms": {
     "headerTitle": "Terms of Use",

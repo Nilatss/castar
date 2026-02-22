@@ -28,10 +28,18 @@ import {
   Pressable,
   BackHandler,
   TextInput,
-  KeyboardAvoidingView,
+  Keyboard,
+  Linking,
   Platform,
 } from 'react-native';
+import Reanimated, {
+  FadeIn,
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
+import WebView from 'react-native-webview';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SvgXml } from 'react-native-svg';
@@ -41,6 +49,19 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { colors, fontFamily, grid, borderRadius } from '../../../shared/constants';
 import type { ProfileStackParamList } from '../../../shared/types';
+import {
+  getTelegramAuthUrl,
+  isAuthCallback,
+  parseAuthCallback,
+  persistLinkedTelegram,
+  getLinkedTelegram,
+  persistLinkedPhone,
+  getLinkedPhone,
+  persistLinkedEmail,
+  getLinkedEmail,
+} from '../../auth/services/telegramAuth';
+import { sendVerificationCode, verifyEmailCode } from '../../auth/services/emailAuth';
+import { sendPhoneVerificationCode, verifyPhoneCode } from '../../auth/services/phoneAuth';
 import { useAuthStore } from '../../auth/store/authStore';
 import { useProfileStore } from '../store/profileStore';
 import { getRatesFromUSD } from '../../../shared/services/currency/currencyService';
@@ -324,6 +345,97 @@ const FALLBACK_RATES_FROM_USD: Record<string, number> = {
   TMT: 3.5,
 };
 
+// ═══════════════════════════════════════════════
+// Phone number masks by country code
+// ═══════════════════════════════════════════════
+
+/** Mask definition: country dial prefix → digit group sizes AFTER the prefix */
+const PHONE_MASKS: { prefix: string; groups: number[] }[] = [
+  // CIS & Central Asia
+  { prefix: '+998', groups: [2, 3, 2, 2] },   // Uzbekistan: +998 XX XXX XX XX
+  { prefix: '+992', groups: [2, 3, 2, 2] },   // Tajikistan: +992 XX XXX XX XX
+  { prefix: '+993', groups: [2, 3, 2, 2] },   // Turkmenistan: +993 XX XXX XX XX
+  { prefix: '+996', groups: [3, 3, 3] },       // Kyrgyzstan: +996 XXX XXX XXX
+  { prefix: '+374', groups: [2, 3, 3] },       // Armenia: +374 XX XXX XXX
+  { prefix: '+994', groups: [2, 3, 2, 2] },   // Azerbaijan: +994 XX XXX XX XX
+  { prefix: '+995', groups: [3, 2, 2, 2] },   // Georgia: +995 XXX XX XX XX
+  { prefix: '+373', groups: [2, 3, 3] },       // Moldova: +373 XX XXX XXX
+  { prefix: '+380', groups: [2, 3, 2, 2] },   // Ukraine: +380 XX XXX XX XX
+  { prefix: '+375', groups: [2, 3, 2, 2] },   // Belarus: +375 XX XXX XX XX
+  { prefix: '+7',   groups: [3, 3, 2, 2] },   // Russia / Kazakhstan: +7 XXX XXX XX XX
+  // Europe
+  { prefix: '+48',  groups: [3, 3, 3] },       // Poland: +48 XXX XXX XXX
+  { prefix: '+49',  groups: [3, 7] },           // Germany: +49 XXX XXXXXXX
+  { prefix: '+44',  groups: [4, 6] },           // UK: +44 XXXX XXXXXX
+  { prefix: '+33',  groups: [1, 2, 2, 2, 2] }, // France: +33 X XX XX XX XX
+  { prefix: '+34',  groups: [3, 3, 3] },       // Spain: +34 XXX XXX XXX
+  { prefix: '+39',  groups: [3, 3, 4] },       // Italy: +39 XXX XXX XXXX
+  { prefix: '+90',  groups: [3, 3, 2, 2] },   // Turkey: +90 XXX XXX XX XX
+  // Americas
+  { prefix: '+1',   groups: [3, 3, 4] },       // USA / Canada: +1 XXX XXX XXXX
+  { prefix: '+55',  groups: [2, 5, 4] },       // Brazil: +55 XX XXXXX XXXX
+  // Asia
+  { prefix: '+86',  groups: [3, 4, 4] },       // China: +86 XXX XXXX XXXX
+  { prefix: '+82',  groups: [2, 4, 4] },       // South Korea: +82 XX XXXX XXXX
+  { prefix: '+81',  groups: [2, 4, 4] },       // Japan: +81 XX XXXX XXXX
+  { prefix: '+91',  groups: [5, 5] },           // India: +91 XXXXX XXXXX
+  // Middle East
+  { prefix: '+971', groups: [2, 3, 4] },       // UAE: +971 XX XXX XXXX
+];
+
+// Pre-sort by prefix length descending for longest-match-first lookup
+const PHONE_MASKS_SORTED = [...PHONE_MASKS].sort(
+  (a, b) => b.prefix.length - a.prefix.length,
+);
+
+/**
+ * Format a raw phone number string using country-code masks.
+ * Truncates any digits that exceed the mask capacity.
+ * Input:  "+998901234567"  →  Output: "+998 90 123 45 67"
+ * If no mask matches, returns the input unchanged (capped at 16 digits).
+ */
+const formatPhoneWithMask = (raw: string): string => {
+  if (!raw || !raw.startsWith('+')) return raw;
+  const digitsOnly = '+' + raw.replace(/[^\d]/g, '');
+  if (digitsOnly.length <= 1) return raw;
+
+  const mask = PHONE_MASKS_SORTED.find((m) => digitsOnly.startsWith(m.prefix));
+  if (!mask) {
+    // No mask — cap at 16 digits total (E.164 max is 15 + the '+')
+    return digitsOnly.slice(0, 16);
+  }
+
+  const maxBody = mask.groups.reduce((sum, g) => sum + g, 0);
+  const after = digitsOnly.slice(mask.prefix.length).slice(0, maxBody);
+  let result = mask.prefix;
+  let pos = 0;
+  for (const size of mask.groups) {
+    if (pos >= after.length) break;
+    result += ' ' + after.slice(pos, pos + size);
+    pos += size;
+  }
+  return result;
+};
+
+/**
+ * Strip all formatting (spaces) from a phone number, keeping only digits and +.
+ * "+998 90 123 45 67" → "+998901234567"
+ */
+const stripPhoneFormatting = (formatted: string): string =>
+  formatted.replace(/[^\d+]/g, '');
+
+/**
+ * Check whether a raw phone number is complete according to its country mask.
+ * Returns true only when the exact expected number of digits is present.
+ */
+const isPhoneComplete = (raw: string): boolean => {
+  const digitsOnly = '+' + raw.replace(/[^\d]/g, '');
+  const mask = PHONE_MASKS_SORTED.find((m) => digitsOnly.startsWith(m.prefix));
+  if (!mask) return digitsOnly.length >= 8; // fallback for unknown codes
+  const expected = mask.prefix.length + mask.groups.reduce((sum, g) => sum + g, 0);
+  return digitsOnly.length === expected;
+};
+
 const formatRateNumber = (num: number): string => {
   if (num >= 1000) {
     return String(Math.round(num)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
@@ -469,6 +581,53 @@ export const ProfileScreen = () => {
   const [settingsEmail, setSettingsEmail] = useState('');
   const [settingsDirty, setSettingsDirty] = useState(false);
 
+  // Settings field editing mode
+  const [editingField, setEditingField] = useState<'name' | 'telegram' | 'phone' | 'email' | null>(null);
+  const [editingValue, setEditingValue] = useState('');
+  const [editingError, setEditingError] = useState(false);
+
+  // OTP verification state (phone/email linking from settings)
+  const [verifyingField, setVerifyingField] = useState<'phone' | 'email' | null>(null);
+  const [verifyCode, setVerifyCode] = useState('');
+  const [verifySending, setVerifySending] = useState(false);
+  const [verifyError, setVerifyError] = useState(false);
+
+  // Incognito WebView for Telegram auth (no cookies → fresh login → can switch account)
+  const [showTelegramWebView, setShowTelegramWebView] = useState(false);
+
+  // Flag: auto-reopen settings modal after returning from Telegram auth
+  const pendingTelegramReturn = useRef(false);
+
+  // Ref to always hold the latest openPicker (avoids stale closure in deep link handler)
+  const openPickerRef = useRef<(type: 'language' | 'currency' | 'settings') => void>(() => {});
+
+  // Reanimated: animate edit buttons above keyboard
+  const editBtnTranslateY = useSharedValue(0);
+  const editBtnAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: editBtnTranslateY.value }],
+  }));
+
+  // Track keyboard and move edit buttons above it
+  useEffect(() => {
+    const showSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        const kbHeight = e.endCoordinates.height;
+        editBtnTranslateY.value = withSpring(-(kbHeight - 16), { damping: 20, stiffness: 150, mass: 0.8 });
+      },
+    );
+    const hideSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        editBtnTranslateY.value = withSpring(0, { damping: 20, stiffness: 150, mass: 0.8 });
+      },
+    );
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, [insets.bottom, editBtnTranslateY]);
+
   // Picker animation values
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const sheetTranslateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
@@ -562,10 +721,29 @@ export const ProfileScreen = () => {
     // Pre-populate settings form when opening settings
     if (type === 'settings') {
       setSettingsName(displayName || '');
-      setSettingsTelegram(telegramUser?.username ? `@${telegramUser.username}` : '');
-      setSettingsPhone(userId && userId.startsWith('+') ? userId : '');
-      setSettingsEmail(userId && userId.includes('@') ? userId : '');
+      // Resolve values from ALL sources: userId, telegramUser.id (synthetic), linked
+      const tgUsername = telegramUser?.username ? `@${telegramUser.username}` : '';
+      // userId OR telegramUser.id can hold email/phone (synthetic users)
+      const allIds = [userId, telegramUser?.id].filter(Boolean) as string[];
+      const phoneFromAuth = allIds.find((id) => id.startsWith('+')) || '';
+      const emailFromAuth = allIds.find((id) => id.includes('@')) || '';
+      setSettingsTelegram(tgUsername);
+      setSettingsPhone(phoneFromAuth);
+      setSettingsEmail(emailFromAuth);
+      // Then read linked accounts and fill any still-empty fields
+      Promise.all([getLinkedTelegram(), getLinkedPhone(), getLinkedEmail()]).then(
+        ([linkedTg, linkedPhone, linkedEmail]) => {
+          if (!tgUsername && linkedTg?.username) setSettingsTelegram(`@${linkedTg.username}`);
+          if (!phoneFromAuth && linkedPhone) setSettingsPhone(linkedPhone);
+          if (!emailFromAuth && linkedEmail) setSettingsEmail(linkedEmail);
+        },
+      );
       setSettingsDirty(false);
+      setEditingField(null);
+      setEditingValue('');
+      setVerifyingField(null);
+      setVerifyCode('');
+      setVerifyError(false);
     }
     setActivePicker(type);
     // Wait for React to render correct content, THEN animate in
@@ -586,6 +764,9 @@ export const ProfileScreen = () => {
       ]).start();
     });
   }, [navigation, overlayOpacity, sheetTranslateY, topFadeOpacity, displayName, telegramUser, userId]);
+
+  // Keep ref in sync so deep link handler always uses fresh openPicker
+  useEffect(() => { openPickerRef.current = openPicker; }, [openPicker]);
 
   const closePicker = useCallback(() => {
     navigation.getParent()?.setOptions({ tabBarStyle: undefined });
@@ -653,15 +834,200 @@ export const ProfileScreen = () => {
     setSettingsDirty(true);
   }, []);
 
+  // Settings field editing mode (animations handled by reanimated entering/exiting)
+  const startEditing = useCallback((field: 'name' | 'telegram' | 'phone' | 'email') => {
+    const valueMap = { name: settingsName, telegram: settingsTelegram, phone: settingsPhone, email: settingsEmail };
+    let value = valueMap[field];
+    // Pre-fill empty phone with +998 so user sees country code immediately
+    if (field === 'phone' && !value) value = '+998';
+    setEditingValue(value);
+    setEditingError(false);
+    setEditingField(field);
+  }, [settingsName, settingsTelegram, settingsPhone, settingsEmail]);
+
+  const cancelEditing = useCallback(() => {
+    Keyboard.dismiss();
+    setEditingError(false);
+    setEditingField(null);
+    setEditingValue('');
+    setVerifyingField(null);
+    setVerifyCode('');
+    setVerifyError(false);
+  }, []);
+
+  const saveEditing = useCallback(async () => {
+    if (!editingField) return;
+    const trimmed = editingValue.trim();
+    // Validate name (min 3 chars)
+    if (editingField === 'name' && trimmed.length < 3) {
+      setEditingError(true);
+      return;
+    }
+    // Validate email (require 3+ chars TLD: .com, .org, etc.)
+    if (editingField === 'email' && trimmed && !/^[^\s@]+@[^\s@]+\.[^\s@]{3,}$/.test(trimmed)) {
+      setEditingError(true);
+      return;
+    }
+    Keyboard.dismiss();
+    // Update local state
+    const setterMap = { name: setSettingsName, telegram: setSettingsTelegram, phone: setSettingsPhone, email: setSettingsEmail };
+    setterMap[editingField](trimmed);
+    // Persist to store
+    try {
+      if (editingField === 'name' && trimmed && trimmed !== displayName) {
+        await setDisplayNameAndContinue(trimmed);
+      }
+      // TODO: persist telegram, phone, email to backend when ready
+    } catch {
+      // ignore
+    }
+    setEditingField(null);
+    setEditingValue('');
+  }, [editingField, editingValue, displayName, setDisplayNameAndContinue, t]);
+
+  // Connect Telegram: open widget page in an incognito WebView modal.
+  // Incognito = no cookies = Telegram sees a fresh session = user can enter any phone number.
+  // This solves the "auto-auth with same account" problem when switching TG accounts.
+  const connectTelegram = useCallback(() => {
+    Keyboard.dismiss();
+    setEditingField(null);
+    setEditingValue('');
+    setShowTelegramWebView(true);
+  }, []);
+
+  // WebView URL interceptor: catch castar:// deep links and extract auth data
+  const handleWebViewNavigationChange = useCallback((navState: { url: string }) => {
+    const { url } = navState;
+    if (isAuthCallback(url)) {
+      const result = parseAuthCallback(url);
+      if (result) {
+        setShowTelegramWebView(false);
+        persistLinkedTelegram(result.user).then(() => {
+          useAuthStore.setState({ telegramUser: result.user });
+          setTimeout(() => openPickerRef.current('settings'), 300);
+        });
+      }
+    }
+  }, []);
+
+  // Block WebView from actually navigating to castar:// (custom scheme)
+  // Return false = block, true = allow
+  const handleWebViewShouldLoad = useCallback((request: { url: string }) => {
+    if (request.url.startsWith('castar://')) {
+      // Parse auth data from the deep link URL
+      const result = parseAuthCallback(request.url);
+      if (result) {
+        setShowTelegramWebView(false);
+        persistLinkedTelegram(result.user).then(() => {
+          useAuthStore.setState({ telegramUser: result.user });
+          setTimeout(() => openPickerRef.current('settings'), 300);
+        });
+      }
+      return false; // Block navigation to custom scheme
+    }
+    return true; // Allow all other URLs
+  }, []);
+
+  // Deep link listener: catch castar://auth/callback when returning from TG auth (browser fallback)
+  useEffect(() => {
+    const handleDeepLink = (event: { url: string }) => {
+      if (!pendingTelegramReturn.current) return;
+      const { url } = event;
+      if (isAuthCallback(url)) {
+        const result = parseAuthCallback(url);
+        if (result) {
+          pendingTelegramReturn.current = false;
+          persistLinkedTelegram(result.user).then(() => {
+            useAuthStore.setState({ telegramUser: result.user });
+            setTimeout(() => openPickerRef.current('settings'), 500);
+          });
+        }
+      }
+    };
+    const sub = Linking.addEventListener('url', handleDeepLink);
+    return () => sub.remove();
+  }, []);
+
+  // Send OTP for phone/email linking, then switch to verification mode
+  const sendLinkOtp = useCallback(async () => {
+    if (!editingField || !editingValue.trim()) return;
+    // Strip phone formatting before sending ("+998 90 123..." → "+998901234...")
+    const value = editingField === 'phone'
+      ? stripPhoneFormatting(editingValue)
+      : editingValue.trim();
+    // Validate phone: must be complete per mask
+    if (editingField === 'phone' && !isPhoneComplete(value)) {
+      setEditingError(true);
+      return;
+    }
+    // Validate email: require valid format with 3+ char TLD
+    if (editingField === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]{3,}$/.test(value)) {
+      setEditingError(true);
+      return;
+    }
+    setVerifySending(true);
+    setVerifyError(false);
+    try {
+      if (editingField === 'phone') {
+        await sendPhoneVerificationCode(value);
+      } else if (editingField === 'email') {
+        await sendVerificationCode(value);
+      }
+      // Switch to verification mode
+      setVerifyingField(editingField as 'phone' | 'email');
+      setVerifyCode('');
+    } catch {
+      setEditingError(true);
+    } finally {
+      setVerifySending(false);
+    }
+  }, [editingField, editingValue]);
+
+  // Verify OTP code and link the account
+  const verifyLinkOtp = useCallback(async () => {
+    if (!verifyingField || !verifyCode.trim()) return;
+    // Strip phone formatting before verifying & persisting
+    const value = verifyingField === 'phone'
+      ? stripPhoneFormatting(editingValue)
+      : editingValue.trim();
+    const code = verifyCode.trim();
+    setVerifySending(true);
+    setVerifyError(false);
+    try {
+      if (verifyingField === 'phone') {
+        await verifyPhoneCode(value, code);
+        await persistLinkedPhone(value);
+        setSettingsPhone(value);
+      } else if (verifyingField === 'email') {
+        await verifyEmailCode(value, code);
+        await persistLinkedEmail(value);
+        setSettingsEmail(value);
+      }
+      Keyboard.dismiss();
+      setVerifyingField(null);
+      setVerifyCode('');
+      setEditingField(null);
+      setEditingValue('');
+    } catch {
+      setVerifyError(true);
+    } finally {
+      setVerifySending(false);
+    }
+  }, [verifyingField, verifyCode, editingValue]);
+
   // Handle Android back button when picker is open
   useEffect(() => {
     if (!activePicker) return;
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      closePicker();
+      if (editingField) {
+        cancelEditing();
+      } else {
+        closePicker();
+      }
       return true;
     });
     return () => sub.remove();
-  }, [activePicker, closePicker]);
+  }, [activePicker, closePicker, editingField, cancelEditing]);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -877,101 +1243,255 @@ export const ProfileScreen = () => {
 
           {/* Content area */}
           {activePicker === 'settings' ? (
-            /* ── Settings form ── */
-            <KeyboardAvoidingView
+            /* ── Settings: reanimated FadeIn for fields, translateY for buttons ── */
+            <Pressable
               style={{ flex: 1 }}
-              behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-              keyboardVerticalOffset={80}
+              onPress={editingField !== null ? cancelEditing : undefined}
             >
-              <ScrollView
-                style={styles.countryList}
-                contentContainerStyle={styles.settingsContent}
-                showsVerticalScrollIndicator={false}
-                bounces={true}
-                keyboardShouldPersistTaps="handled"
-              >
-                {/* Fields */}
+              <View style={styles.settingsContent}>
                 <View style={styles.settingsFields}>
                   {/* Name */}
-                  <View style={styles.settingsField}>
-                    <View style={styles.settingsFieldTexts}>
-                      <Text style={styles.settingsLabel}>{t('profile.name') || 'Name'}</Text>
-                      <TextInput
-                        style={styles.settingsInput}
-                        value={settingsName}
-                        onChangeText={onSettingsFieldChange(setSettingsName)}
-                        placeholderTextColor={colors.white[20]}
-                        placeholder={t('profile.name') || 'Name'}
-                      />
-                    </View>
-                    <SvgXml xml={editPencilSvg} width={24} height={24} />
-                  </View>
+                  {(editingField === null || editingField === 'name') && (
+                    <Reanimated.View entering={FadeIn.duration(350)}>
+                      <TouchableOpacity
+                        style={[styles.settingsField, editingField === 'name' && editingError && styles.settingsFieldError]}
+                        activeOpacity={0.7}
+                        onPress={editingField === null ? () => startEditing('name') : undefined}
+                        disabled={editingField !== null}
+                      >
+                        <View style={styles.settingsFieldTexts}>
+                          <Text style={styles.settingsLabel}>{t('profile.name') || 'Name'}</Text>
+                          {editingField === 'name' ? (
+                            <TextInput
+                              style={styles.settingsInput}
+                              value={editingValue}
+                              onChangeText={(v) => { setEditingValue(v); if (editingError) setEditingError(false); }}
+                              autoFocus
+                              placeholderTextColor={colors.white[20]}
+                            />
+                          ) : (
+                            <Text style={[styles.settingsValueText, !settingsName && { opacity: 0.5 }]}>{settingsName || '—'}</Text>
+                          )}
+                        </View>
+                        {editingField === null && <SvgXml xml={editPencilSvg} width={24} height={24} />}
+                      </TouchableOpacity>
+                      {editingField === 'name' && editingError && (
+                        <Text style={styles.settingsErrorText}>{t('auth.nameMinLength') || 'Name must be at least 3 characters'}</Text>
+                      )}
+                    </Reanimated.View>
+                  )}
 
-                  {/* Telegram */}
-                  <View style={styles.settingsField}>
-                    <View style={styles.settingsFieldTexts}>
-                      <Text style={styles.settingsLabel}>Telegram</Text>
-                      <TextInput
-                        style={[styles.settingsInput, styles.settingsInputDisabled, !settingsTelegram && { opacity: 0.5 }]}
-                        value={settingsTelegram || '@'}
-                        editable={false}
-                      />
-                    </View>
-                    <SvgXml xml={editPencilSvg} width={24} height={24} />
-                  </View>
+                  {/* Telegram (read-only — connect via auth flow, no manual input) */}
+                  {(editingField === null || editingField === 'telegram') && (
+                    <Reanimated.View entering={FadeIn.duration(350)}>
+                      <TouchableOpacity
+                        style={styles.settingsField}
+                        activeOpacity={0.7}
+                        onPress={editingField === null ? () => startEditing('telegram') : undefined}
+                        disabled={editingField !== null}
+                      >
+                        <View style={styles.settingsFieldTexts}>
+                          <Text style={styles.settingsLabel}>{t('profile.telegram') || 'Telegram'}</Text>
+                          <Text style={[styles.settingsValueText, !settingsTelegram && { opacity: 0.5 }]}>{settingsTelegram || '@'}</Text>
+                        </View>
+                        {editingField === null && <SvgXml xml={editPencilSvg} width={24} height={24} />}
+                      </TouchableOpacity>
+                    </Reanimated.View>
+                  )}
 
                   {/* Phone */}
-                  <View style={styles.settingsField}>
-                    <View style={styles.settingsFieldTexts}>
-                      <Text style={styles.settingsLabel}>{t('profile.phone') || 'Number'}</Text>
-                      <TextInput
-                        style={[styles.settingsInput, styles.settingsInputDisabled, !settingsPhone && { opacity: 0.5 }]}
-                        value={settingsPhone || '+998'}
-                        editable={false}
-                      />
-                    </View>
-                    <SvgXml xml={editPencilSvg} width={24} height={24} />
-                  </View>
+                  {(editingField === null || editingField === 'phone') && (
+                    <Reanimated.View entering={FadeIn.duration(350)}>
+                      <TouchableOpacity
+                        style={[styles.settingsField, editingField === 'phone' && (editingError || verifyError) && styles.settingsFieldError]}
+                        activeOpacity={0.7}
+                        onPress={editingField === null ? () => startEditing('phone') : undefined}
+                        disabled={editingField !== null}
+                      >
+                        <View style={styles.settingsFieldTexts}>
+                          <Text style={styles.settingsLabel}>
+                            {verifyingField === 'phone' ? (t('auth.confirmPhoneTitle') || 'Code') : (t('profile.phone') || 'Number')}
+                          </Text>
+                          {editingField === 'phone' ? (
+                            verifyingField === 'phone' ? (
+                              <TextInput
+                                style={styles.settingsInput}
+                                value={verifyCode}
+                                onChangeText={(v) => { setVerifyCode(v); if (verifyError) setVerifyError(false); }}
+                                autoFocus
+                                keyboardType="number-pad"
+                                maxLength={4}
+                                placeholderTextColor={colors.white[20]}
+                              />
+                            ) : (
+                              <TextInput
+                                style={styles.settingsInput}
+                                value={formatPhoneWithMask(editingValue)}
+                                onChangeText={(v) => {
+                                  let raw = stripPhoneFormatting(v);
+                                  if (!raw.startsWith('+')) raw = '+' + raw;
+                                  // Truncate to mask's max digits so user can't exceed the pattern
+                                  const m = PHONE_MASKS_SORTED.find((pm) => raw.startsWith(pm.prefix));
+                                  if (m) {
+                                    const maxLen = m.prefix.length + m.groups.reduce((s, g) => s + g, 0);
+                                    raw = raw.slice(0, maxLen);
+                                  } else {
+                                    raw = raw.slice(0, 16); // E.164 fallback
+                                  }
+                                  setEditingValue(raw);
+                                  if (editingError) setEditingError(false);
+                                }}
+                                autoFocus
+                                keyboardType="phone-pad"
+                                placeholderTextColor={colors.white[20]}
+                              />
+                            )
+                          ) : (
+                            <Text style={[styles.settingsValueText, !settingsPhone && { opacity: 0.5 }]}>{(settingsPhone && formatPhoneWithMask(settingsPhone)) || '+998'}</Text>
+                          )}
+                        </View>
+                        {editingField === null && <SvgXml xml={editPencilSvg} width={24} height={24} />}
+                      </TouchableOpacity>
+                      {editingField === 'phone' && editingError && (
+                        <Text style={styles.settingsErrorText}>{t('profile.phoneError') || 'Enter a complete phone number'}</Text>
+                      )}
+                    </Reanimated.View>
+                  )}
 
                   {/* Email */}
-                  <View style={styles.settingsField}>
-                    <View style={styles.settingsFieldTexts}>
-                      <Text style={styles.settingsLabel}>e-mail</Text>
-                      <TextInput
-                        style={[styles.settingsInput, styles.settingsInputDisabled]}
-                        value={settingsEmail || '—'}
-                        editable={false}
-                      />
-                    </View>
-                    <SvgXml xml={editPencilSvg} width={24} height={24} />
+                  {(editingField === null || editingField === 'email') && (
+                    <Reanimated.View entering={FadeIn.duration(350)}>
+                      <TouchableOpacity
+                        style={[styles.settingsField, editingField === 'email' && (editingError || verifyError) && styles.settingsFieldError]}
+                        activeOpacity={0.7}
+                        onPress={editingField === null ? () => startEditing('email') : undefined}
+                        disabled={editingField !== null}
+                      >
+                        <View style={styles.settingsFieldTexts}>
+                          <Text style={styles.settingsLabel}>
+                            {verifyingField === 'email' ? (t('auth.confirmEmailTitle') || 'Code') : (t('profile.email') || 'E-mail')}
+                          </Text>
+                          {editingField === 'email' ? (
+                            verifyingField === 'email' ? (
+                              <TextInput
+                                style={styles.settingsInput}
+                                value={verifyCode}
+                                onChangeText={(v) => { setVerifyCode(v); if (verifyError) setVerifyError(false); }}
+                                autoFocus
+                                keyboardType="number-pad"
+                                maxLength={4}
+                                placeholderTextColor={colors.white[20]}
+                              />
+                            ) : (
+                              <TextInput
+                                style={styles.settingsInput}
+                                value={editingValue}
+                                onChangeText={(v) => { setEditingValue(v); if (editingError) setEditingError(false); }}
+                                autoFocus
+                                keyboardType="email-address"
+                                placeholderTextColor={colors.white[20]}
+                              />
+                            )
+                          ) : (
+                            <Text style={[styles.settingsValueText, !settingsEmail && { opacity: 0.5 }]}>{settingsEmail || 'castar@gmail.com'}</Text>
+                          )}
+                        </View>
+                        {editingField === null && <SvgXml xml={editPencilSvg} width={24} height={24} />}
+                      </TouchableOpacity>
+                      {editingField === 'email' && editingError && (
+                        <Text style={styles.settingsErrorText}>{t('auth.emailError') || 'Please enter a valid email address'}</Text>
+                      )}
+                    </Reanimated.View>
+                  )}
+                </View>
+
+                {/* Buttons: edit mode → Cancel + action btn (Save / Connect X), normal → Delete */}
+                {editingField !== null ? (
+                  <Reanimated.View
+                    entering={FadeIn.duration(300)}
+                    style={[styles.settingsEditButtons, editBtnAnimStyle]}
+                  >
+                    <TouchableOpacity
+                      style={styles.editCancelBtn}
+                      onPress={cancelEditing}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={styles.editCancelBtnText}>
+                        {t('common.cancel') || 'Cancel'}
+                      </Text>
+                    </TouchableOpacity>
+
+                    {/* Telegram: not connected → Connect TG; connected → switch account */}
+                    {editingField === 'telegram' ? (
+                      <TouchableOpacity
+                        style={styles.editSaveBtn}
+                        onPress={connectTelegram}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={styles.editSaveBtnText}>
+                          {settingsTelegram
+                            ? (t('profile.switchTelegram') || 'Switch account')
+                            : (t('profile.connectTelegram') || 'Connect Telegram')}
+                        </Text>
+                      </TouchableOpacity>
+                    ) : /* Phone/Email: verify mode → Confirm code */
+                    verifyingField ? (
+                      <TouchableOpacity
+                        style={[styles.editSaveBtn, (!verifyCode.trim() || verifySending) && styles.editSaveBtnDisabled]}
+                        onPress={verifyLinkOtp}
+                        activeOpacity={0.8}
+                        disabled={!verifyCode.trim() || verifySending}
+                      >
+                        <Text style={styles.editSaveBtnText}>
+                          {verifySending ? '...' : (t('common.confirm') || 'Confirm')}
+                        </Text>
+                      </TouchableOpacity>
+                    ) : /* Phone/Email: not connected → Confirm (sends OTP) */
+                    (editingField === 'phone' && !settingsPhone) || (editingField === 'email' && !settingsEmail) ? (
+                      <TouchableOpacity
+                        style={[styles.editSaveBtn, (
+                          (editingField === 'phone' ? !isPhoneComplete(editingValue) : !editingValue.trim())
+                          || verifySending
+                        ) && styles.editSaveBtnDisabled]}
+                        onPress={sendLinkOtp}
+                        activeOpacity={0.8}
+                        disabled={
+                          (editingField === 'phone' ? !isPhoneComplete(editingValue) : !editingValue.trim())
+                          || verifySending
+                        }
+                      >
+                        <Text style={styles.editSaveBtnText}>
+                          {verifySending ? '...' : (t('common.confirm') || 'Confirm')}
+                        </Text>
+                      </TouchableOpacity>
+                    ) : /* Already connected → Save */
+                    (
+                      <TouchableOpacity
+                        style={styles.editSaveBtn}
+                        onPress={saveEditing}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={styles.editSaveBtnText}>
+                          {t('common.save') || 'Save'}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </Reanimated.View>
+                ) : (
+                  <View style={styles.settingsButtons}>
+                    <TouchableOpacity
+                      style={styles.settingsDeleteBtn}
+                      onPress={handleDeleteAccount}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.settingsDeleteText}>
+                        {t('profile.deleteAccount') || 'Delete account'}
+                      </Text>
+                    </TouchableOpacity>
                   </View>
-                </View>
-
-                {/* Buttons */}
-                <View style={styles.settingsButtons}>
-                  <TouchableOpacity
-                    style={[styles.settingsSaveBtn, !settingsDirty && styles.settingsSaveBtnDisabled]}
-                    onPress={handleSaveSettings}
-                    activeOpacity={0.7}
-                    disabled={!settingsDirty}
-                  >
-                    <Text style={styles.settingsSaveText}>
-                      {t('common.save') || 'Save'}
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.settingsDeleteBtn}
-                    onPress={handleDeleteAccount}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.settingsDeleteText}>
-                      {t('profile.deleteAccount') || 'Delete account'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </ScrollView>
-            </KeyboardAvoidingView>
+                )}
+              </View>
+            </Pressable>
           ) : (
           /* ── Picker list with fade gradients ── */
           <View style={styles.countryListWrapper}>
@@ -1069,6 +1589,33 @@ export const ProfileScreen = () => {
           )}
         </Animated.View>
       </View>
+
+      {/* ── Telegram Auth WebView Modal (incognito = fresh session, no auto-auth) ── */}
+      {showTelegramWebView && (
+        <View style={styles.telegramWebViewOverlay}>
+          <View style={styles.telegramWebViewHeader}>
+            <TouchableOpacity
+              onPress={() => setShowTelegramWebView(false)}
+              style={styles.telegramWebViewClose}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.telegramWebViewCloseText}>✕</Text>
+            </TouchableOpacity>
+            <Text style={styles.telegramWebViewTitle}>Telegram</Text>
+            <View style={{ width: 44 }} />
+          </View>
+          <WebView
+            source={{ uri: getTelegramAuthUrl(i18n.language) }}
+            incognito={true}
+            style={styles.telegramWebView}
+            onNavigationStateChange={handleWebViewNavigationChange}
+            onShouldStartLoadWithRequest={handleWebViewShouldLoad}
+            javaScriptEnabled={true}
+            domStorageEnabled={true}
+            sharedCookiesEnabled={false}
+          />
+        </View>
+      )}
     </View>
   );
 };
@@ -1356,9 +1903,9 @@ const styles = StyleSheet.create({
 
   // === Settings modal ===
   settingsContent: {
+    flex: 1,
     paddingTop: 8,
-    paddingBottom: 24,
-    flexGrow: 1,
+    paddingBottom: 8,
     justifyContent: 'space-between',
   },
   settingsFields: {
@@ -1366,6 +1913,48 @@ const styles = StyleSheet.create({
   },
   settingsButtons: {
     gap: 6,
+  },
+  settingsEditInner: {
+    flex: 1,
+    paddingTop: 8,
+  },
+  settingsEditButtons: {
+    flexDirection: 'row',
+    alignSelf: 'flex-end',
+    gap: 6,
+  },
+  editCancelBtn: {
+    height: 51,
+    backgroundColor: 'rgba(246, 246, 246, 0.05)',
+    borderRadius: 43,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  editCancelBtnText: {
+    fontFamily: fontFamily.regular,
+    fontSize: 16,
+    lineHeight: 20,
+    color: colors.white[100],
+    textAlign: 'center',
+  },
+  editSaveBtn: {
+    height: 51,
+    backgroundColor: colors.white[100],
+    borderRadius: 43,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  editSaveBtnDisabled: {
+    opacity: 0.5,
+  },
+  editSaveBtnText: {
+    fontFamily: fontFamily.regular,
+    fontSize: 16,
+    lineHeight: 20,
+    color: colors.neutral[950],
+    textAlign: 'center',
   },
   settingsField: {
     height: 62,
@@ -1375,6 +1964,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  settingsFieldError: {
+    borderColor: colors.error[700],
+  },
+  settingsErrorText: {
+    fontFamily: fontFamily.regular,
+    fontSize: 13,
+    lineHeight: 18,
+    color: colors.error[500],
+    marginTop: 8,
+    marginLeft: 4,
   },
   settingsFieldTexts: {
     flex: 1,
@@ -1397,7 +1999,10 @@ const styles = StyleSheet.create({
     minHeight: 0,
     height: 20,
   },
-  settingsInputDisabled: {
+  settingsValueText: {
+    fontFamily: fontFamily.regular,
+    fontSize: 16,
+    lineHeight: 20,
     color: colors.white[100],
   },
   settingsSaveBtn: {
@@ -1430,5 +2035,46 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 20,
     color: '#FF5151',
+  },
+
+  // ── Telegram WebView Modal ──
+  telegramWebViewOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: colors.background,
+    zIndex: 9999,
+  },
+  telegramWebViewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 54,
+    paddingBottom: 12,
+    paddingHorizontal: 16,
+    backgroundColor: colors.background,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.08)',
+  },
+  telegramWebViewClose: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  telegramWebViewCloseText: {
+    fontSize: 20,
+    color: colors.white[100],
+  },
+  telegramWebViewTitle: {
+    fontFamily: fontFamily.medium,
+    fontSize: 17,
+    color: colors.white[100],
+  },
+  telegramWebView: {
+    flex: 1,
+    backgroundColor: colors.background,
   },
 });

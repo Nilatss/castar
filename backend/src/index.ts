@@ -26,8 +26,18 @@ app.use('*', cors({
   maxAge: 86400,
 }));
 
-// ── Health check ──
-app.get('/', (c) => c.json({ ok: true, service: 'castar-api', version: '1.0.0' }));
+// ── Health check (also handles post-TG-logout redirect) ──
+app.get('/', (c) => {
+  // After Telegram logout, TG redirects to our origin root.
+  // If we set a tg_switch cookie before the logout redirect, we know
+  // the user is switching accounts → redirect them to the widget page.
+  const cookie = c.req.header('cookie') || '';
+  if (cookie.includes('tg_switch=1')) {
+    c.header('Set-Cookie', 'tg_switch=; Path=/; Max-Age=0; SameSite=Lax');
+    return c.redirect('/auth/telegram?bot=castar_bot&switch=1');
+  }
+  return c.json({ ok: true, service: 'castar-api', version: '1.0.0' });
+});
 app.get('/health', (c) => c.json({ ok: true }));
 
 // ── Public routes (no auth required) ──

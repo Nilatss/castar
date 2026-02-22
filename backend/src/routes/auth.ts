@@ -43,12 +43,211 @@ function generateCode(): string {
   return String(Math.floor(1000 + Math.random() * 9000));
 }
 
+// Cache bot numeric ID (Worker-scoped, survives across requests until redeploy)
+let cachedBotId = '';
+
 // GET /auth/telegram — serve Telegram Login Widget
-auth.get('/telegram', (c) => {
+auth.get('/telegram', async (c) => {
   const bot = c.req.query('bot') || 'castar_bot';
+  const isSwitch = c.req.query('switch') === '1';
   const callbackUrl = `${new URL(c.req.url).origin}/auth/telegram/callback`;
-  const html = getTelegramWidgetHtml(bot, callbackUrl);
+
+  // Fetch bot numeric ID once (needed for "switch account" OAuth redirect)
+  if (!cachedBotId && c.env.TELEGRAM_BOT_TOKEN) {
+    try {
+      const resp = await fetch(`https://api.telegram.org/bot${c.env.TELEGRAM_BOT_TOKEN}/getMe`);
+      const data = (await resp.json()) as { ok: boolean; result?: { id: number } };
+      if (data.ok && data.result) cachedBotId = String(data.result.id);
+    } catch {
+      // ignore — button will fallback to reload
+    }
+  }
+
+  // Switch mode: open Telegram auth in a popup/new tab.
+  // The popup shows the FULL Telegram auth page where the user can:
+  // - Click "Log in as different user" to enter a new phone number
+  // After auth, Telegram sends postMessage to our page → we redirect to callback.
+  if (isSwitch) {
+    const origin = new URL(c.req.url).origin;
+    const encodedOrigin = encodeURIComponent(origin);
+    return c.html(`<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101010">
+  <title>Castar — Switch Account</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: #101010;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: #fff;
+      padding: 24px;
+    }
+    .title { font-size: 22px; font-weight: 500; text-align: center; margin-bottom: 8px; }
+    .subtitle {
+      font-size: 15px;
+      color: rgba(255,255,255,0.5);
+      text-align: center;
+      line-height: 22px;
+      max-width: 300px;
+      margin-bottom: 32px;
+    }
+    .btn {
+      display: inline-block;
+      font-family: 'Inter', sans-serif;
+      font-size: 16px;
+      font-weight: 500;
+      color: #fff;
+      text-decoration: none;
+      padding: 14px 40px;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 43px;
+      background: rgba(255,255,255,0.1);
+      cursor: pointer;
+      text-align: center;
+      transition: opacity 0.2s;
+      -webkit-tap-highlight-color: transparent;
+      border: none;
+    }
+    .btn:active { opacity: 0.6; }
+    .btn.primary {
+      background: #54A9EB;
+      color: #fff;
+    }
+    .status {
+      font-size: 14px;
+      color: rgba(255,255,255,0.4);
+      margin-top: 16px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="title">Switch Telegram Account</div>
+  <div class="subtitle">A Telegram login window will open. Tap <b>"Log in as different user"</b> to switch to a new account.</div>
+  <button class="btn primary" id="openBtn" onclick="openAuth()">Open Telegram Login</button>
+  <div class="status" id="status">Waiting for authentication...</div>
+
+  <script>
+    var authUrl = 'https://oauth.telegram.org/auth?bot_id=${cachedBotId}&origin=${encodedOrigin}&embed=1&request_access=write';
+    var callbackBase = '${origin}/auth/telegram/callback';
+    var authWindow = null;
+
+    // Listen for postMessage from Telegram auth popup
+    window.addEventListener('message', function(event) {
+      // Accept messages from Telegram
+      if (event.origin !== 'https://oauth.telegram.org') return;
+
+      try {
+        var data = event.data;
+        if (typeof data === 'string') {
+          try { data = JSON.parse(data); } catch(e) { return; }
+        }
+
+        // Telegram sends: { event: 'auth_result', result: { id, first_name, ... } }
+        // or: just the result object, or: { auth_result: { ... } }
+        var result = null;
+        if (data && data.event === 'auth_result' && data.result) {
+          result = data.result;
+        } else if (data && data.auth_result) {
+          result = data.auth_result;
+        } else if (data && data.id && data.hash) {
+          result = data;
+        }
+
+        if (result && result.id && result.hash) {
+          // Build callback URL with auth data as query params
+          var params = new URLSearchParams();
+          var keys = Object.keys(result);
+          for (var i = 0; i < keys.length; i++) {
+            params.set(keys[i], String(result[keys[i]]));
+          }
+
+          // Close popup if it's still open
+          if (authWindow && !authWindow.closed) {
+            try { authWindow.close(); } catch(e) {}
+          }
+
+          // Redirect to our callback
+          window.location.href = callbackBase + '?' + params.toString();
+        }
+      } catch(e) {
+        console.log('postMessage error:', e);
+      }
+    });
+
+    function openAuth() {
+      var btn = document.getElementById('openBtn');
+      var status = document.getElementById('status');
+      btn.textContent = 'Opening...';
+      btn.style.opacity = '0.6';
+      status.style.display = 'block';
+
+      // Open Telegram auth in a new window/tab
+      authWindow = window.open(authUrl, '_blank');
+
+      // If popup was blocked, fallback to same-window navigation
+      if (!authWindow || authWindow.closed) {
+        status.textContent = 'Popup blocked. Redirecting...';
+        setTimeout(function() {
+          window.location.href = authUrl;
+        }, 500);
+      } else {
+        btn.textContent = 'Waiting...';
+        // Poll to detect if window was closed without auth
+        var poll = setInterval(function() {
+          if (authWindow && authWindow.closed) {
+            clearInterval(poll);
+            btn.textContent = 'Open Telegram Login';
+            btn.style.opacity = '1';
+            status.style.display = 'none';
+          }
+        }, 500);
+      }
+    }
+  </script>
+</body>
+</html>`);
+  }
+
+  const html = getTelegramWidgetHtml(bot, callbackUrl, cachedBotId);
   return c.html(html);
+});
+
+// GET /auth/telegram/switch — clear TG session via redirect chain:
+// 1. Set cookie tg_switch=1 on our domain
+// 2. 302 redirect to oauth.telegram.org/auth/logout (clears TG OAuth cookies on telegram.org domain)
+// 3. After logout, Telegram redirects to our origin root "/"
+// 4. Root handler sees tg_switch cookie → redirects to widget page
+// 5. Widget loads with clean TG session → shows login button
+auth.get('/telegram/switch', async (c) => {
+  // Ensure we have the bot numeric ID
+  if (!cachedBotId && c.env.TELEGRAM_BOT_TOKEN) {
+    try {
+      const resp = await fetch(`https://api.telegram.org/bot${c.env.TELEGRAM_BOT_TOKEN}/getMe`);
+      const data = (await resp.json()) as { ok: boolean; result?: { id: number } };
+      if (data.ok && data.result) cachedBotId = String(data.result.id);
+    } catch { /* ignore */ }
+  }
+
+  // Set a short-lived cookie so the root handler knows to redirect to widget page
+  c.header('Set-Cookie', 'tg_switch=1; Path=/; Max-Age=60; SameSite=Lax');
+
+  // Direct 302 to Telegram's logout endpoint.
+  // Because the browser navigates TO telegram.org, the TG cookies are
+  // on the same domain and WILL be cleared (unlike iframe which fails cross-origin).
+  // Telegram requires 'origin' parameter — must match our Worker origin.
+  const origin = encodeURIComponent(new URL(c.req.url).origin);
+  return c.redirect(`https://oauth.telegram.org/auth/logout?bot_id=${cachedBotId}&origin=${origin}`);
 });
 
 // GET /auth/telegram/callback — handle Telegram widget callback
@@ -66,14 +265,16 @@ auth.get('/telegram/callback', async (c) => {
   const isValid = await validateTelegramAuth(params, c.env.TELEGRAM_BOT_TOKEN);
 
   if (!isValid) {
-    console.log('[Telegram Callback] Validation FAILED');
+    const paramKeys = Object.keys(params);
+    console.log('[Telegram Callback] Validation FAILED. Keys:', paramKeys.join(','), 'Full URL:', c.req.url);
     return c.html(`<!DOCTYPE html>
 <html><head><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Castar — Auth Error</title>
-<style>body{display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;background:#101010;font-family:sans-serif;color:#fff;text-align:center}.container{padding:24px}h1{color:#F55858}a{color:#4B8DF5}</style>
+<style>body{display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;background:#101010;font-family:sans-serif;color:#fff;text-align:center}.container{padding:24px}h1{color:#F55858}a{color:#4B8DF5}pre{text-align:left;background:#1a1a1a;padding:12px;border-radius:8px;margin:12px 0;font-size:11px;word-break:break-all;max-width:90vw;overflow-x:auto;color:#ccc}</style>
 </head><body><div class="container">
 <h1>Auth Failed</h1>
 <p>Telegram auth validation failed.</p>
+<pre>keys: ${paramKeys.join(', ') || '(none)'}\nhash: ${params['hash'] ? 'present' : 'missing'}\nauth_date: ${params['auth_date'] || 'missing'}\nid: ${params['id'] || 'missing'}\nfull_url: ${c.req.url}</pre>
 <p><a href="${new URL(c.req.url).origin}/auth/telegram?bot=castar_bot">Try again</a></p>
 </div></body></html>`, 403);
   }
