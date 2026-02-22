@@ -1613,6 +1613,8 @@ export const ProfileScreen = () => {
             javaScriptEnabled={true}
             domStorageEnabled={true}
             sharedCookiesEnabled={false}
+            setSupportMultipleWindows={false}
+            javaScriptCanOpenWindowsAutomatically={true}
           />
         </View>
       )}
