@@ -81,7 +81,9 @@
     "confirmEmailTitle": "E-poçt təsdiqi",
     "confirmEmailSubtitle": "E-poçt ünvanınıza SMS mesaj göndərdik:",
     "confirmPhoneTitle": "Telefon nömrəsinin təsdiqi",
-    "confirmPhoneSubtitle": "Telefon nömrənizə SMS kod göndərdik:"
+    "confirmPhoneSubtitle": "Telefon nömrənizə SMS kod göndərdik:",
+    "invalidCode": "Yanlış kod. Yenidən cəhd edin.",
+    "resendCode": "Kodu yenidən göndər"
   },
   "tabs": {
     "home": "Ana səhifə",
@@ -146,9 +148,10 @@
     "notificationsSubtitle": "Spam göndərməyəcəyimizə söz veririk",
     "subscriptionManagement": "Abunəliyin idarə edilməsi",
     "subscriptionNoActive": "Aktiv abunəlik yoxdur",
-    "logout": "Çıxış",
-    "logoutTitle": "Çıxış",
-    "logoutConfirm": "Çıxmaq istədiyinizə əminsiniz?",
+    "logout": "Hesabdan çıxış",
+    "logoutTitle": "Tətbiqdən çıxmaq istəyirsiniz?",
+    "logoutConfirm": "Tətbiqdən çıxmaq istədiyinizə əminsiniz?",
+    "stayInApp": "Tətbiqdə qalmaq",
     "guest": "Qonaq",
     "name": "Ad",
     "phone": "Nömrə",
@@ -159,8 +162,9 @@
     "connectPhone": "Nömrəni təsdiqləyin",
     "connectEmail": "E-poçtu təsdiqləyin",
     "deleteAccount": "Hesabı sil",
-    "deleteAccountTitle": "Hesabı sil",
-    "deleteAccountConfirm": "Əminsiniz? Bu əməliyyat geri qaytarıla bilməz. Bütün məlumatlarınız həmişəlik silinəcək.",
+    "deleteAccountTitle": "Hesabı silmək?",
+    "deleteAccountConfirm": "Hesabınızı silmək istədiyinizə əminsiniz? Bu əməliyyat geri qaytarıla bilməz",
+    "keepAccount": "Hesabı saxlamaq",
     "selectCurrency": "Valyutanı seçin",
     "currencyDescription": "Seçilmiş valyuta ümumi məbləğin göstərilməsi və digər valyutaların konvertasiyası üçün əsas kimi təyin ediləcək. Hər əməliyyat öz orijinal valyutasında saxlanılacaq.",
     "phoneError": "Tam telefon nömrəsini daxil edin"

@@ -81,7 +81,9 @@
     "confirmEmailTitle": "Email confirmation",
     "confirmEmailSubtitle": "We have sent you an SMS message to your email address:",
     "confirmPhoneTitle": "Phone confirmation",
-    "confirmPhoneSubtitle": "We sent an SMS code to your phone number:"
+    "confirmPhoneSubtitle": "We sent an SMS code to your phone number:",
+    "invalidCode": "Invalid code. Please try again.",
+    "resendCode": "Resend code"
   },
   "tabs": {
     "home": "Home",
@@ -146,9 +148,10 @@
     "notificationsSubtitle": "We promise not to spam",
     "subscriptionManagement": "Subscription management",
     "subscriptionNoActive": "No active",
-    "logout": "Log out",
-    "logoutTitle": "Log out",
-    "logoutConfirm": "Are you sure you want to log out?",
+    "logout": "Log out of account",
+    "logoutTitle": "Log out of the application?",
+    "logoutConfirm": "Are you sure you want to exit the application?",
+    "stayInApp": "Stay in the app",
     "guest": "Guest",
     "name": "Name",
     "phone": "Number",
@@ -159,8 +162,9 @@
     "connectPhone": "Confirm number",
     "connectEmail": "Confirm e-mail",
     "deleteAccount": "Delete account",
-    "deleteAccountTitle": "Delete account",
-    "deleteAccountConfirm": "Are you sure? This action cannot be undone. All your data will be permanently deleted.",
+    "deleteAccountTitle": "Delete account?",
+    "deleteAccountConfirm": "Are you sure you want to delete your account? This action cannot be undone",
+    "keepAccount": "Keep account",
     "selectCurrency": "Select currency",
     "currencyDescription": "The selected currency will be set as the primary one for displaying the total amount and for converting other currencies. Each transaction will still be saved in its original currency.",
     "phoneError": "Enter a complete phone number"

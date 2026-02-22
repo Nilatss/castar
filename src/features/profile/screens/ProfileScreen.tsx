@@ -31,6 +31,7 @@ import {
   Keyboard,
   Linking,
   Platform,
+  Modal,
 } from 'react-native';
 import Reanimated, {
   FadeIn,
@@ -121,6 +122,28 @@ const glow2Svg = `<svg width="${GLOW2_RENDER_SIZE}" height="${GLOW2_RENDER_SIZE}
 // Settings icon — 28x28, filled white
 const settingsIconSvg = `<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path fill-rule="evenodd" clip-rule="evenodd" d="M16.6586 2.51094C16.2265 2.33333 15.6788 2.33333 14.5833 2.33333C13.4879 2.33333 12.9401 2.33333 12.5081 2.51094C11.932 2.74776 11.4743 3.202 11.2357 3.77373C11.1267 4.03473 11.0841 4.33825 11.0674 4.78098C11.0429 5.43162 10.7067 6.03387 10.1385 6.35941C9.57037 6.68495 8.87674 6.67279 8.29673 6.36855C7.90204 6.16151 7.61587 6.04639 7.33365 6.00951C6.71544 5.92874 6.09021 6.095 5.59552 6.47173C5.22449 6.75427 4.95062 7.22504 4.40289 8.16658C3.85515 9.10812 3.58128 9.57889 3.52024 10.0391C3.43885 10.6526 3.60638 11.2731 3.98597 11.7641C4.15923 11.9881 4.40274 12.1765 4.78065 12.4122C5.33623 12.7586 5.69371 13.3488 5.69367 14C5.69364 14.6511 5.33618 15.2412 4.78065 15.5877C4.40267 15.8233 4.15913 16.0117 3.98586 16.2359C3.60626 16.7268 3.43873 17.3473 3.52012 17.9609C3.58117 18.421 3.85503 18.8918 4.40277 19.8333C4.95051 20.7749 5.22438 21.2456 5.5954 21.5282C6.0901 21.9049 6.71532 22.0712 7.33354 21.9904C7.61574 21.9535 7.9019 21.8384 8.29655 21.6314C8.87661 21.3271 9.57028 21.315 10.1385 21.6405C10.7067 21.9661 11.0429 22.5684 11.0674 23.2191C11.0841 23.6618 11.1267 23.9653 11.2357 24.2263C11.4743 24.798 11.932 25.2522 12.5081 25.489C12.9401 25.6667 13.4879 25.6667 14.5833 25.6667C15.6788 25.6667 16.2265 25.6667 16.6586 25.489C17.2347 25.2522 17.6924 24.798 17.931 24.2263C18.04 23.9653 18.0826 23.6617 18.0993 23.219C18.1238 22.5683 18.46 21.9661 19.0281 21.6405C19.5963 21.3149 20.29 21.3271 20.87 21.6313C21.2647 21.8383 21.5508 21.9534 21.833 21.9903C22.4512 22.0711 23.0765 21.9048 23.5712 21.5281C23.9422 21.2456 24.216 20.7748 24.7638 19.8332C25.3115 18.8917 25.5854 18.4209 25.6464 17.9608C25.7278 17.3472 25.5603 16.7267 25.1807 16.2358C25.0074 16.0117 24.7639 15.8233 24.3859 15.5876C23.8304 15.2412 23.473 14.651 23.473 13.9999C23.473 13.3488 23.8305 12.7588 24.3859 12.4124C24.764 12.1767 25.0075 11.9883 25.1808 11.7641C25.5604 11.2732 25.7279 10.6527 25.6465 10.0391C25.5855 9.57897 25.3116 9.1082 24.7639 8.16666C24.2162 7.22512 23.9423 6.75435 23.5713 6.47181C23.0766 6.09508 22.4513 5.92882 21.8331 6.00959C21.5509 6.04647 21.2648 6.16158 20.8701 6.36859C20.2901 6.67285 19.5964 6.68502 19.0282 6.35945C18.46 6.03388 18.1238 5.4316 18.0993 4.78092C18.0826 4.33822 18.0399 4.03471 17.931 3.77373C17.6924 3.202 17.2347 2.74776 16.6586 2.51094ZM14.5833 17.5C16.531 17.5 18.11 15.933 18.11 14C18.11 12.067 16.531 10.5 14.5833 10.5C12.6356 10.5 11.0567 12.067 11.0567 14C11.0567 15.933 12.6356 17.5 14.5833 17.5Z" fill="white"/>
+</svg>`;
+
+// Delete popup trash icon — 28x28, #FF2626
+const deleteTrashSvg = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M3 6.38597C3 5.90152 3.34538 5.50879 3.77143 5.50879L6.43567 5.50832C6.96502 5.49306 7.43202 5.11033 7.61214 4.54412C7.61688 4.52923 7.62232 4.51087 7.64185 4.44424L7.75665 4.05256C7.8269 3.81241 7.8881 3.60318 7.97375 3.41617C8.31209 2.67736 8.93808 2.16432 9.66147 2.03297C9.84457 1.99972 10.0385 1.99986 10.2611 2.00002H13.7391C13.9617 1.99986 14.1556 1.99972 14.3387 2.03297C15.0621 2.16432 15.6881 2.67736 16.0264 3.41617C16.1121 3.60318 16.1733 3.81241 16.2435 4.05256L16.3583 4.44424C16.3778 4.51087 16.3833 4.52923 16.388 4.54412C16.5682 5.11033 17.1278 5.49353 17.6571 5.50879H20.2286C20.6546 5.50879 21 5.90152 21 6.38597C21 6.87043 20.6546 7.26316 20.2286 7.26316H3.77143C3.34538 7.26316 3 6.87043 3 6.38597Z" fill="white"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M11.5956 22.0001H12.4044C15.1871 22.0001 16.5785 22.0001 17.4831 21.1142C18.3878 20.2283 18.4803 18.7751 18.6654 15.8686L18.9321 11.6807C19.0326 10.1037 19.0828 9.31524 18.6289 8.81558C18.1751 8.31592 17.4087 8.31592 15.876 8.31592H8.12404C6.59127 8.31592 5.82488 8.31592 5.37105 8.81558C4.91722 9.31524 4.96744 10.1037 5.06788 11.6807L5.33459 15.8686C5.5197 18.7751 5.61225 20.2283 6.51689 21.1142C7.42153 22.0001 8.81289 22.0001 11.5956 22.0001ZM10.2463 12.1886C10.2051 11.7548 9.83753 11.4382 9.42537 11.4816C9.01321 11.525 8.71251 11.9119 8.75372 12.3457L9.25372 17.6089C9.29494 18.0427 9.66247 18.3593 10.0746 18.3159C10.4868 18.2725 10.7875 17.8856 10.7463 17.4518L10.2463 12.1886ZM14.5746 11.4816C14.9868 11.525 15.2875 11.9119 15.2463 12.3457L14.7463 17.6089C14.7051 18.0427 14.3375 18.3593 13.9254 18.3159C13.5132 18.2725 13.2125 17.8856 13.2537 17.4518L13.7537 12.1886C13.7949 11.7548 14.1625 11.4382 14.5746 11.4816Z" fill="white"/>
+</svg>`;
+
+// Logout popup door icon — 28x28, white
+const logoutDoorSvg = `<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M11.3251 2.81014C10.5 3.54163 10.5 4.87969 10.5 7.5558V20.4442C10.5 23.1203 10.5 24.4584 11.3251 25.1899C12.1503 25.9213 13.4115 25.7014 15.9339 25.2614L18.6508 24.7875C21.4444 24.3003 22.8411 24.0567 23.6706 23.032C24.5 22.0074 24.5 20.5255 24.5 17.5617V10.4383C24.5 7.4745 24.5 5.9926 23.6706 4.96796C22.8411 3.94332 21.4444 3.6997 18.6508 3.21245L15.9339 2.73858C13.4115 2.29863 12.1503 2.07865 11.3251 2.81014ZM14 11.8634C14.4832 11.8634 14.875 12.2734 14.875 12.7791V15.2209C14.875 15.7266 14.4832 16.1366 14 16.1366C13.5168 16.1366 13.125 15.7266 13.125 15.2209V12.7791C13.125 12.2734 13.5168 11.8634 14 11.8634Z" fill="white"/>
+<path d="M8.80503 5.25C6.40371 5.2535 5.15199 5.30631 4.35427 6.10402C3.5 6.9583 3.5 8.33323 3.5 11.0831V16.9164C3.5 19.6663 3.5 21.0412 4.35427 21.8955C5.15199 22.6932 6.40371 22.746 8.80503 22.7495C8.74982 22.0223 8.74991 21.1816 8.75001 20.273V7.72648C8.74991 6.81786 8.74982 5.97719 8.80503 5.25Z" fill="white"/>
+</svg>`;
+
+// Phone icon for verification — 24x24, white
+const verifyPhoneIconSvg = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M15.5562 14.4062L15.1007 14.859C15.1007 14.859 14.0181 15.9355 11.0631 12.9972C8.10812 10.059 9.1907 8.98257 9.1907 8.98257L9.47752 8.69738C10.1841 7.99484 10.2507 6.86691 9.63424 6.04348L8.37326 4.35908C7.61028 3.33992 6.13596 3.20529 5.26145 4.07483L3.69185 5.63552C3.25823 6.06668 2.96765 6.62559 3.00289 7.24561C3.09304 8.83182 3.81071 12.2447 7.81536 16.2266C12.0621 20.4492 16.0468 20.617 17.6763 20.4651C18.1917 20.4171 18.6399 20.1546 19.0011 19.7954L20.4217 18.383C21.3806 17.4295 21.1102 15.7949 19.8833 15.128L17.9728 14.0894C17.1672 13.6515 16.1858 13.7801 15.5562 14.4062Z" fill="white"/>
+</svg>`;
+
+// Email icon for verification — 24x24, white
+const verifyEmailIconSvg = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M3.17157 5.17157C2 6.34315 2 8.22876 2 12C2 15.7712 2 17.6569 3.17157 18.8284C4.34315 20 6.22876 20 10 20H14C17.7712 20 19.6569 20 20.8284 18.8284C22 17.6569 22 15.7712 22 12C22 8.22876 22 6.34315 20.8284 5.17157C19.6569 4 17.7712 4 14 4H10C6.22876 4 4.34315 4 3.17157 5.17157ZM18.5762 7.51986C18.8413 7.83807 18.7983 8.31099 18.4801 8.57617L16.2837 10.4066C15.3973 11.1452 14.6789 11.7439 14.0448 12.1517C13.3843 12.5765 12.7411 12.8449 12 12.8449C11.2589 12.8449 10.6157 12.5765 9.95518 12.1517C9.32112 11.7439 8.60271 11.1452 7.71636 10.4066L5.51986 8.57617C5.20165 8.31099 5.15866 7.83807 5.42383 7.51986C5.68901 7.20165 6.16193 7.15866 6.48014 7.42383L8.63903 9.22291C9.57199 10.0004 10.2197 10.5384 10.7666 10.8901C11.2959 11.2306 11.6549 11.3449 12 11.3449C12.3451 11.3449 12.7041 11.2306 13.2334 10.8901C13.7803 10.5384 14.428 10.0004 15.361 9.22291L17.5199 7.42383C17.8381 7.15866 18.311 7.20165 18.5762 7.51986Z" fill="white"/>
 </svg>`;
 
 // Exit icon — 28x28, filled #FF5151
@@ -429,11 +452,13 @@ const stripPhoneFormatting = (formatted: string): string =>
  * Returns true only when the exact expected number of digits is present.
  */
 const isPhoneComplete = (raw: string): boolean => {
-  const digitsOnly = '+' + raw.replace(/[^\d]/g, '');
-  const mask = PHONE_MASKS_SORTED.find((m) => digitsOnly.startsWith(m.prefix));
-  if (!mask) return digitsOnly.length >= 8; // fallback for unknown codes
+  // Normalize: strip everything except digits, then prepend +
+  const digits = raw.replace(/[^\d]/g, '');
+  const normalized = '+' + digits;
+  const mask = PHONE_MASKS_SORTED.find((m) => normalized.startsWith(m.prefix));
+  if (!mask) return normalized.length >= 9; // +XXXXXXXX minimum
   const expected = mask.prefix.length + mask.groups.reduce((sum, g) => sum + g, 0);
-  return digitsOnly.length === expected;
+  return normalized.length === expected;
 };
 
 const formatRateNumber = (num: number): string => {
@@ -568,8 +593,16 @@ export const ProfileScreen = () => {
   const storeSetLanguage = useProfileStore((s) => s.setLanguage);
   const storeSetCurrency = useProfileStore((s) => s.setDefaultCurrency);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [showLogoutPopup, setShowLogoutPopup] = useState(false);
+  const logoutPopupOpacity = useRef(new Animated.Value(0)).current;
+  const logoutPopupScale = useRef(new Animated.Value(0.9)).current;
+  const [showDeletePopup, setShowDeletePopup] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const deletePopupOpacity = useRef(new Animated.Value(0)).current;
+  const deletePopupScale = useRef(new Animated.Value(0.9)).current;
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [activePicker, setActivePicker] = useState<'language' | 'currency' | 'settings' | null>(null);
+  const [pickerModalVisible, setPickerModalVisible] = useState(false);
   const [scrolledDown, setScrolledDown] = useState(false);
   const [ratesMap, setRatesMap] = useState<Record<string, number>>(FALLBACK_RATES_FROM_USD);
   const [loadingRates, setLoadingRates] = useState(false);
@@ -585,12 +618,90 @@ export const ProfileScreen = () => {
   const [editingField, setEditingField] = useState<'name' | 'telegram' | 'phone' | 'email' | null>(null);
   const [editingValue, setEditingValue] = useState('');
   const [editingError, setEditingError] = useState(false);
+  const fieldErrorOpacity = useRef(new Animated.Value(0)).current;
+  const fieldShakeAnim = useRef(new Animated.Value(0)).current;
+  const fieldBorderAnim = useRef(new Animated.Value(0)).current; // 0=transparent/editing, 1=error red
+
+  const showFieldError = useCallback(() => {
+    setEditingError(true);
+    Animated.parallel([
+      Animated.timing(fieldErrorOpacity, { toValue: 1, duration: 250, useNativeDriver: true }),
+      Animated.timing(fieldBorderAnim, { toValue: 1, duration: 250, useNativeDriver: false }),
+    ]).start();
+    Animated.sequence([
+      Animated.timing(fieldShakeAnim, { toValue: 8, duration: 55, useNativeDriver: true }),
+      Animated.timing(fieldShakeAnim, { toValue: -8, duration: 55, useNativeDriver: true }),
+      Animated.timing(fieldShakeAnim, { toValue: 5, duration: 55, useNativeDriver: true }),
+      Animated.timing(fieldShakeAnim, { toValue: -3, duration: 50, useNativeDriver: true }),
+      Animated.timing(fieldShakeAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
+    ]).start();
+  }, [fieldErrorOpacity, fieldBorderAnim, fieldShakeAnim]);
+
+  const clearFieldError = useCallback(() => {
+    if (!editingError) return;
+    Animated.parallel([
+      Animated.timing(fieldErrorOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
+      Animated.timing(fieldBorderAnim, { toValue: 0, duration: 200, useNativeDriver: false }),
+    ]).start(() => setEditingError(false));
+  }, [editingError, fieldErrorOpacity, fieldBorderAnim]);
 
   // OTP verification state (phone/email linking from settings)
   const [verifyingField, setVerifyingField] = useState<'phone' | 'email' | null>(null);
   const [verifyCode, setVerifyCode] = useState('');
   const [verifySending, setVerifySending] = useState(false);
   const [verifyError, setVerifyError] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
+  const hiddenOtpRef = useRef<TextInput>(null);
+
+  // Per-cell dot animations (scale + opacity) — same as PhoneVerifyScreen
+  const otpDotAnims = useRef(
+    Array.from({ length: 4 }, () => new Animated.Value(0)),
+  ).current;
+  const otpBorderAnims = useRef(
+    Array.from({ length: 4 }, (_, i) => new Animated.Value(i === 0 ? 1 : 0)),
+  ).current;
+  const otpErrorOpacity = useRef(new Animated.Value(0)).current;
+  const otpShakeAnim = useRef(new Animated.Value(0)).current;
+
+  const otpShowDot = useCallback((index: number) => {
+    if (index > 0) Animated.timing(otpBorderAnims[index - 1], { toValue: 0, duration: 150, useNativeDriver: false }).start();
+    Animated.timing(otpBorderAnims[index], { toValue: 0, duration: 150, useNativeDriver: false }).start();
+    if (index + 1 < 4) Animated.timing(otpBorderAnims[index + 1], { toValue: 1, duration: 200, useNativeDriver: false }).start();
+    otpDotAnims[index].setValue(0);
+    Animated.spring(otpDotAnims[index], { toValue: 1, damping: 14, stiffness: 200, mass: 0.8, useNativeDriver: true }).start();
+  }, [otpDotAnims, otpBorderAnims]);
+
+  const otpHideDot = useCallback((index: number) => {
+    if (index + 1 < 4) Animated.timing(otpBorderAnims[index + 1], { toValue: 0, duration: 150, useNativeDriver: false }).start();
+    Animated.timing(otpBorderAnims[index], { toValue: 1, duration: 200, useNativeDriver: false }).start();
+    Animated.timing(otpDotAnims[index], { toValue: 0, duration: 150, useNativeDriver: true }).start();
+  }, [otpDotAnims, otpBorderAnims]);
+
+  const otpResetDots = useCallback(() => {
+    const dotFades = otpDotAnims.map((a) => Animated.timing(a, { toValue: 0, duration: 200, useNativeDriver: true }));
+    const borderFades = otpBorderAnims.map((a, i) => Animated.timing(a, { toValue: i === 0 ? 1 : 0, duration: 200, useNativeDriver: false }));
+    const errorFade = Animated.timing(otpErrorOpacity, { toValue: 0, duration: 250, useNativeDriver: true });
+    Animated.parallel([...dotFades, ...borderFades, errorFade]).start();
+  }, [otpDotAnims, otpBorderAnims, otpErrorOpacity]);
+
+  const otpShowError = useCallback(() => {
+    Animated.timing(otpErrorOpacity, { toValue: 1, duration: 300, useNativeDriver: true }).start();
+    Animated.sequence([
+      Animated.timing(otpShakeAnim, { toValue: 10, duration: 60, useNativeDriver: true }),
+      Animated.timing(otpShakeAnim, { toValue: -10, duration: 60, useNativeDriver: true }),
+      Animated.timing(otpShakeAnim, { toValue: 7, duration: 60, useNativeDriver: true }),
+      Animated.timing(otpShakeAnim, { toValue: -5, duration: 60, useNativeDriver: true }),
+      Animated.timing(otpShakeAnim, { toValue: 3, duration: 50, useNativeDriver: true }),
+      Animated.timing(otpShakeAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
+    ]).start();
+  }, [otpErrorOpacity, otpShakeAnim]);
+
+  // Resend OTP cooldown timer
+  useEffect(() => {
+    if (resendTimer <= 0) return;
+    const id = setTimeout(() => setResendTimer((v) => v - 1), 1000);
+    return () => clearTimeout(id);
+  }, [resendTimer]);
 
   // Incognito WebView for Telegram auth (no cookies → fresh login → can switch account)
   const [showTelegramWebView, setShowTelegramWebView] = useState(false);
@@ -671,30 +782,52 @@ export const ProfileScreen = () => {
     return () => { cancelled = true; };
   }, []);
 
-  const handleLogout = useCallback(() => {
-    Alert.alert(
-      t('profile.logoutTitle') || 'Log out',
-      t('profile.logoutConfirm') || 'Are you sure you want to log out?',
-      [
-        {
-          text: t('common.cancel') || 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: t('profile.logout') || 'Log out',
-          style: 'destructive',
-          onPress: async () => {
-            setIsLoggingOut(true);
-            try {
-              await logout();
-            } catch {
-              setIsLoggingOut(false);
-            }
-          },
-        },
-      ],
-    );
-  }, [logout, t]);
+  const openLogoutPopup = useCallback(() => {
+    setShowLogoutPopup(true);
+    logoutPopupOpacity.setValue(0);
+    logoutPopupScale.setValue(0.95);
+    Animated.parallel([
+      Animated.timing(logoutPopupOpacity, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.spring(logoutPopupScale, {
+        toValue: 1,
+        damping: 22,
+        stiffness: 90,
+        mass: 1,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [logoutPopupOpacity, logoutPopupScale]);
+
+  const closeLogoutPopup = useCallback(() => {
+    Animated.parallel([
+      Animated.timing(logoutPopupOpacity, {
+        toValue: 0,
+        duration: 350,
+        useNativeDriver: true,
+      }),
+      Animated.timing(logoutPopupScale, {
+        toValue: 0.95,
+        duration: 350,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setShowLogoutPopup(false);
+    });
+  }, [logoutPopupOpacity, logoutPopupScale]);
+
+  const confirmLogout = useCallback(async () => {
+    setIsLoggingOut(true);
+    try {
+      await logout();
+    } catch {
+      setIsLoggingOut(false);
+      setShowLogoutPopup(false);
+    }
+  }, [logout]);
 
   // Language picker scroll handler
   const handlePickerScroll = useCallback((e: any) => {
@@ -711,7 +844,6 @@ export const ProfileScreen = () => {
   }, [scrolledDown, topFadeOpacity]);
 
   const openPicker = useCallback((type: 'language' | 'currency' | 'settings') => {
-    navigation.getParent()?.setOptions({ tabBarStyle: { display: 'none' } });
     setScrolledDown(false);
     topFadeOpacity.setValue(0);
     // Ensure sheet is fully offscreen + overlay invisible before content switch
@@ -746,6 +878,7 @@ export const ProfileScreen = () => {
       setVerifyError(false);
     }
     setActivePicker(type);
+    setPickerModalVisible(true);
     // Wait for React to render correct content, THEN animate in
     requestAnimationFrame(() => {
       Animated.parallel([
@@ -769,8 +902,6 @@ export const ProfileScreen = () => {
   useEffect(() => { openPickerRef.current = openPicker; }, [openPicker]);
 
   const closePicker = useCallback(() => {
-    navigation.getParent()?.setOptions({ tabBarStyle: undefined });
-    setActivePicker(null);
     Animated.parallel([
       Animated.timing(overlayOpacity, {
         toValue: 0,
@@ -782,8 +913,11 @@ export const ProfileScreen = () => {
         duration: 300,
         useNativeDriver: true,
       }),
-    ]).start();
-  }, [navigation, overlayOpacity, sheetTranslateY]);
+    ]).start(() => {
+      setPickerModalVisible(false);
+      setActivePicker(null);
+    });
+  }, [overlayOpacity, sheetTranslateY]);
 
   const changeLanguage = useCallback((country: CountryOption) => {
     storeSetLanguage(country.code);
@@ -810,23 +944,51 @@ export const ProfileScreen = () => {
     }
   }, [settingsDirty, settingsName, displayName, setDisplayNameAndContinue, closePicker]);
 
-  const handleDeleteAccount = useCallback(() => {
-    Alert.alert(
-      t('profile.deleteAccountTitle') || 'Delete account',
-      t('profile.deleteAccountConfirm') || 'Are you sure? This action cannot be undone.',
-      [
-        { text: t('common.cancel') || 'Cancel', style: 'cancel' },
-        {
-          text: t('profile.deleteAccount') || 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            // TODO: call backend delete endpoint
-            await logout();
-          },
-        },
-      ],
-    );
-  }, [logout, t]);
+  const openDeletePopup = useCallback(() => {
+    setShowDeletePopup(true);
+    deletePopupOpacity.setValue(0);
+    deletePopupScale.setValue(0.95);
+    Animated.parallel([
+      Animated.timing(deletePopupOpacity, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.spring(deletePopupScale, {
+        toValue: 1,
+        damping: 22,
+        stiffness: 90,
+        mass: 1,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [deletePopupOpacity, deletePopupScale]);
+
+  const closeDeletePopup = useCallback(() => {
+    Animated.parallel([
+      Animated.timing(deletePopupOpacity, {
+        toValue: 0,
+        duration: 350,
+        useNativeDriver: true,
+      }),
+      Animated.timing(deletePopupScale, {
+        toValue: 0.95,
+        duration: 350,
+        useNativeDriver: true,
+      }),
+    ]).start(() => setShowDeletePopup(false));
+  }, [deletePopupOpacity, deletePopupScale]);
+
+  const confirmDeleteAccount = useCallback(async () => {
+    setIsDeleting(true);
+    try {
+      // TODO: call backend delete endpoint
+      await logout();
+    } catch {
+      setIsDeleting(false);
+      setShowDeletePopup(false);
+    }
+  }, [logout]);
 
   // Track settings form changes
   const onSettingsFieldChange = useCallback((setter: (v: string) => void) => (value: string) => {
@@ -842,30 +1004,37 @@ export const ProfileScreen = () => {
     if (field === 'phone' && !value) value = '+998';
     setEditingValue(value);
     setEditingError(false);
+    fieldErrorOpacity.setValue(0);
+    fieldBorderAnim.setValue(0);
+    fieldShakeAnim.setValue(0);
     setEditingField(field);
-  }, [settingsName, settingsTelegram, settingsPhone, settingsEmail]);
+  }, [settingsName, settingsTelegram, settingsPhone, settingsEmail, fieldErrorOpacity, fieldBorderAnim, fieldShakeAnim]);
 
   const cancelEditing = useCallback(() => {
     Keyboard.dismiss();
     setEditingError(false);
+    fieldErrorOpacity.setValue(0);
+    fieldBorderAnim.setValue(0);
+    fieldShakeAnim.setValue(0);
     setEditingField(null);
     setEditingValue('');
     setVerifyingField(null);
     setVerifyCode('');
     setVerifyError(false);
-  }, []);
+    otpResetDots();
+  }, [otpResetDots]);
 
   const saveEditing = useCallback(async () => {
     if (!editingField) return;
     const trimmed = editingValue.trim();
     // Validate name (min 3 chars)
     if (editingField === 'name' && trimmed.length < 3) {
-      setEditingError(true);
+      showFieldError();
       return;
     }
     // Validate email (require 3+ chars TLD: .com, .org, etc.)
     if (editingField === 'email' && trimmed && !/^[^\s@]+@[^\s@]+\.[^\s@]{3,}$/.test(trimmed)) {
-      setEditingError(true);
+      showFieldError();
       return;
     }
     Keyboard.dismiss();
@@ -939,12 +1108,12 @@ export const ProfileScreen = () => {
       : editingValue.trim();
     // Validate phone: must be complete per mask
     if (editingField === 'phone' && !isPhoneComplete(value)) {
-      setEditingError(true);
+      showFieldError();
       return;
     }
     // Validate email: require valid format with 3+ char TLD
     if (editingField === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]{3,}$/.test(value)) {
-      setEditingError(true);
+      showFieldError();
       return;
     }
     setVerifySending(true);
@@ -958,8 +1127,9 @@ export const ProfileScreen = () => {
       // Switch to verification mode
       setVerifyingField(editingField as 'phone' | 'email');
       setVerifyCode('');
+      setResendTimer(60);
     } catch {
-      setEditingError(true);
+      showFieldError();
     } finally {
       setVerifySending(false);
     }
@@ -977,21 +1147,33 @@ export const ProfileScreen = () => {
     setVerifyError(false);
     try {
       if (verifyingField === 'phone') {
-        await verifyPhoneCode(value, code);
+        const res = await verifyPhoneCode(value, code);
+        if (!res.ok) {
+          setVerifyError(true);
+          otpShowError();
+          return;
+        }
         await persistLinkedPhone(value);
         setSettingsPhone(value);
       } else if (verifyingField === 'email') {
-        await verifyEmailCode(value, code);
+        const res = await verifyEmailCode(value, code);
+        if (!res.ok) {
+          setVerifyError(true);
+          otpShowError();
+          return;
+        }
         await persistLinkedEmail(value);
         setSettingsEmail(value);
       }
       Keyboard.dismiss();
+      otpResetDots();
       setVerifyingField(null);
       setVerifyCode('');
       setEditingField(null);
       setEditingValue('');
     } catch {
       setVerifyError(true);
+      otpShowError();
     } finally {
       setVerifySending(false);
     }
@@ -1001,7 +1183,12 @@ export const ProfileScreen = () => {
   useEffect(() => {
     if (!activePicker) return;
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      if (editingField) {
+      if (verifyingField) {
+        setVerifyingField(null);
+        setVerifyCode('');
+        setVerifyError(false);
+        otpResetDots();
+      } else if (editingField) {
         cancelEditing();
       } else {
         closePicker();
@@ -1009,7 +1196,7 @@ export const ProfileScreen = () => {
       return true;
     });
     return () => sub.remove();
-  }, [activePicker, closePicker, editingField, cancelEditing]);
+  }, [activePicker, closePicker, editingField, cancelEditing, verifyingField]);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -1060,7 +1247,7 @@ export const ProfileScreen = () => {
 
               <TouchableOpacity
                 style={styles.exitButton}
-                onPress={handleLogout}
+                onPress={openLogoutPopup}
                 activeOpacity={0.7}
                 disabled={isLoggingOut}
               >
@@ -1160,17 +1347,19 @@ export const ProfileScreen = () => {
 
       </ScrollView>
 
-      {/* ══ Language Picker Overlay (same as OnboardingScreen) ══ */}
-      <View style={styles.overlayRoot} pointerEvents={activePicker ? 'auto' : 'none'}>
-        {/* Animated blur + tint backdrop — pointerEvents="none" so it doesn't steal touches */}
+      {/* ══ Picker Overlay (Modal renders above tab bar) ══ */}
+      <Modal visible={pickerModalVisible} transparent animationType="none" statusBarTranslucent>
+        <View style={styles.overlayRoot} pointerEvents="auto">
+        {/* Animated blur + tint backdrop — pointerEvents="none" at every level so nothing steals touches */}
         <Animated.View style={[StyleSheet.absoluteFill, { opacity: overlayOpacity }]} pointerEvents="none">
           <BlurView
             intensity={10}
             tint="dark"
             experimentalBlurMethod="dimezisBlurView"
             style={StyleSheet.absoluteFill}
+            pointerEvents="none"
           />
-          <View style={styles.overlayTint} />
+          <View style={styles.overlayTint} pointerEvents="none" />
         </Animated.View>
 
         {/* Tap outside sheet to close */}
@@ -1183,14 +1372,20 @@ export const ProfileScreen = () => {
         <Animated.View
           style={[
             styles.modalSheet,
+            verifyingField && { height: '85%' },
             { paddingBottom: insets.bottom + 24, transform: [{ translateY: sheetTranslateY }] },
           ]}
         >
           {/* Header: icon + title with close button */}
-          <View style={styles.modalHeader}>
+          <View style={[styles.modalHeader, verifyingField && { marginBottom: 8 }]}>
             <View style={styles.modalHeaderLeft}>
               <SvgXml
-                xml={activePicker === 'currency' ? currencyIconSvg : activePicker === 'settings' ? settingsIconSvg : languageIconSvg}
+                xml={
+                  activePicker === 'currency' ? currencyIconSvg
+                  : activePicker === 'settings'
+                    ? (verifyingField === 'phone' ? verifyPhoneIconSvg : verifyingField === 'email' ? verifyEmailIconSvg : settingsIconSvg)
+                    : languageIconSvg
+                }
                 width={24}
                 height={24}
               />
@@ -1198,67 +1393,217 @@ export const ProfileScreen = () => {
                 {activePicker === 'currency'
                   ? t('profile.selectCurrency')
                   : activePicker === 'settings'
-                    ? t('profile.settings') || 'Settings'
+                    ? (verifyingField === 'phone'
+                        ? (t('auth.confirmPhoneTitle') || 'Phone confirmation')
+                        : verifyingField === 'email'
+                          ? (t('auth.confirmEmailTitle') || 'Email confirmation')
+                          : (t('profile.settings') || 'Settings'))
                     : t('auth.selectLanguage')}
               </Text>
             </View>
-            <TouchableOpacity
-              style={styles.modalCloseBtn}
-              onPress={closePicker}
-              activeOpacity={0.7}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <SvgXml xml={closeCircleSvg} width={40} height={40} />
-            </TouchableOpacity>
+            {!verifyingField && (
+              <TouchableOpacity
+                style={styles.modalCloseBtn}
+                onPress={closePicker}
+                activeOpacity={0.7}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <SvgXml xml={closeCircleSvg} width={40} height={40} />
+              </TouchableOpacity>
+            )}
           </View>
-
-          {activePicker === 'currency' ? (
-            <View style={styles.currencyDescriptionRow}>
-              <Text style={styles.currencyDescription}>
-                {t('profile.currencyDescription')}
-              </Text>
-              {loadingRates ? (
-                <ActivityIndicator size="small" color={colors.white[40]} style={{ marginLeft: 8 }} />
-              ) : null}
-            </View>
-          ) : null}
 
           {/* Content area */}
           {activePicker === 'settings' ? (
+            verifyingField ? (
+            /* ── OTP Verification UI ── */
+            <View style={styles.verifyContent}>
+              <Text style={styles.verifySubtitle}>
+                {verifyingField === 'phone'
+                  ? (t('auth.confirmPhoneSubtitle') || 'We sent an SMS code to your phone number:')
+                  : (t('auth.confirmEmailSubtitle') || 'We have sent you an SMS message to your email address:')}{'\n'}
+                <Text style={styles.verifyHighlight}>
+                  {verifyingField === 'phone' ? formatPhoneWithMask(editingValue) : editingValue}
+                </Text>
+              </Text>
+
+              {/* Hidden TextInput to capture keyboard input */}
+              <TextInput
+                ref={hiddenOtpRef}
+                style={{ position: 'absolute', opacity: 0, height: 0, width: 0 }}
+                value={verifyCode}
+                onChangeText={(v) => {
+                  const digits = v.replace(/[^0-9]/g, '').slice(0, 4);
+                  const prevLen = verifyCode.length;
+                  const newLen = digits.length;
+                  if (verifyError) {
+                    setVerifyError(false);
+                    otpErrorOpacity.setValue(0);
+                  }
+                  setVerifyCode(digits);
+                  // Animate dots
+                  if (newLen > prevLen) {
+                    for (let idx = prevLen; idx < newLen; idx++) otpShowDot(idx);
+                  } else if (newLen < prevLen) {
+                    for (let idx = prevLen - 1; idx >= newLen; idx--) otpHideDot(idx);
+                  }
+                }}
+                keyboardType="number-pad"
+                maxLength={4}
+                autoFocus
+                caretHidden
+              />
+
+              {/* PIN-style cells — same as PhoneVerifyScreen */}
+              <Pressable
+                style={{ marginTop: 16 }}
+                onPress={() => hiddenOtpRef.current?.focus()}
+              >
+                <Animated.View style={[styles.otpRow, { transform: [{ translateX: otpShakeAnim }] }]}>
+                  {[0, 1, 2, 3].map((i) => (
+                    <View key={i} style={styles.otpCellWrap}>
+                      <Animated.View
+                        style={[
+                          styles.otpCell,
+                          {
+                            borderColor: otpBorderAnims[i].interpolate({
+                              inputRange: [0, 1],
+                              outputRange: ['transparent', 'rgba(255,255,255,0.2)'],
+                            }),
+                          },
+                        ]}
+                      >
+                        <Animated.View
+                          style={[
+                            styles.otpDot,
+                            { opacity: otpDotAnims[i], transform: [{ scale: otpDotAnims[i] }] },
+                          ]}
+                        />
+                      </Animated.View>
+                      {/* Error overlay */}
+                      <Animated.View
+                        style={[styles.otpCell, styles.otpCellError, styles.otpCellOverlay, { opacity: otpErrorOpacity }]}
+                        pointerEvents="none"
+                      >
+                        <View style={[styles.otpDot, styles.otpDotError]} />
+                      </Animated.View>
+                    </View>
+                  ))}
+                </Animated.View>
+              </Pressable>
+
+              {verifyError && (
+                <Text style={styles.verifyErrorText}>{t('auth.invalidCode') || 'Invalid code. Please try again.'}</Text>
+              )}
+
+              <TouchableOpacity
+                style={styles.resendBtn}
+                onPress={async () => {
+                  if (resendTimer > 0 || verifySending) return;
+                  const value = verifyingField === 'phone'
+                    ? stripPhoneFormatting(editingValue)
+                    : editingValue.trim();
+                  setVerifySending(true);
+                  try {
+                    if (verifyingField === 'phone') {
+                      await sendPhoneVerificationCode(value);
+                    } else {
+                      await sendVerificationCode(value);
+                    }
+                    setResendTimer(60);
+                    setVerifyCode('');
+                    setVerifyError(false);
+                    otpResetDots();
+                    hiddenOtpRef.current?.focus();
+                  } catch { /* ignore */ }
+                  finally { setVerifySending(false); }
+                }}
+                activeOpacity={0.7}
+                disabled={resendTimer > 0 || verifySending}
+              >
+                <Text style={[styles.resendBtnText, resendTimer > 0 && { opacity: 0.4 }]}>
+                  {resendTimer > 0
+                    ? `${t('auth.resendCode') || 'Resend code'} (${resendTimer}s)`
+                    : (t('auth.resendCode') || 'Resend code')}
+                </Text>
+              </TouchableOpacity>
+
+              <View style={{ flex: 1 }} />
+
+              <Reanimated.View style={[styles.settingsEditButtons, editBtnAnimStyle]}>
+                <TouchableOpacity
+                  style={styles.editCancelBtn}
+                  onPress={() => {
+                    setVerifyingField(null);
+                    setVerifyCode('');
+                    setVerifyError(false);
+                    otpResetDots();
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.editCancelBtnText}>
+                    {t('common.back') || 'Back'}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.editSaveBtn, (verifyCode.length < 4 || verifySending) && styles.editSaveBtnDisabled]}
+                  onPress={verifyLinkOtp}
+                  activeOpacity={0.8}
+                  disabled={verifyCode.length < 4 || verifySending}
+                >
+                  <Text style={styles.editSaveBtnText}>
+                    {verifySending ? '...' : (t('common.confirm') || 'Confirm')}
+                  </Text>
+                </TouchableOpacity>
+              </Reanimated.View>
+            </View>
+            ) : (
             /* ── Settings: reanimated FadeIn for fields, translateY for buttons ── */
-            <Pressable
+            <View
               style={{ flex: 1 }}
-              onPress={editingField !== null ? cancelEditing : undefined}
+              onStartShouldSetResponder={() => editingField !== null}
+              onResponderRelease={editingField !== null ? cancelEditing : undefined}
             >
               <View style={styles.settingsContent}>
                 <View style={styles.settingsFields}>
                   {/* Name */}
                   {(editingField === null || editingField === 'name') && (
                     <Reanimated.View entering={FadeIn.duration(350)}>
-                      <TouchableOpacity
-                        style={[styles.settingsField, editingField === 'name' && editingError && styles.settingsFieldError]}
-                        activeOpacity={0.7}
-                        onPress={editingField === null ? () => startEditing('name') : undefined}
-                        disabled={editingField !== null}
-                      >
-                        <View style={styles.settingsFieldTexts}>
-                          <Text style={styles.settingsLabel}>{t('profile.name') || 'Name'}</Text>
-                          {editingField === 'name' ? (
-                            <TextInput
-                              style={styles.settingsInput}
-                              value={editingValue}
-                              onChangeText={(v) => { setEditingValue(v); if (editingError) setEditingError(false); }}
-                              autoFocus
-                              placeholderTextColor={colors.white[20]}
-                            />
-                          ) : (
-                            <Text style={[styles.settingsValueText, !settingsName && { opacity: 0.5 }]}>{settingsName || '—'}</Text>
-                          )}
-                        </View>
-                        {editingField === null && <SvgXml xml={editPencilSvg} width={24} height={24} />}
-                      </TouchableOpacity>
+                      <Animated.View style={editingField === 'name' ? { transform: [{ translateX: fieldShakeAnim }] } : undefined}>
+                        <Animated.View
+                          style={[
+                            styles.settingsField,
+                            editingField === 'name' && styles.settingsFieldEditing,
+                            editingField === 'name' && editingError && { borderColor: fieldBorderAnim.interpolate({ inputRange: [0, 1], outputRange: ['rgba(255,255,255,0.2)', colors.error[700]] }) },
+                          ]}
+                        >
+                          <TouchableOpacity
+                            style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+                            activeOpacity={0.7}
+                            onPress={editingField === null ? () => startEditing('name') : undefined}
+                            disabled={editingField !== null}
+                          >
+                            <View style={styles.settingsFieldTexts}>
+                              <Text style={styles.settingsLabel}>{t('profile.name') || 'Name'}</Text>
+                              {editingField === 'name' ? (
+                                <TextInput
+                                  style={styles.settingsInput}
+                                  value={editingValue}
+                                  onChangeText={(v) => { setEditingValue(v); if (editingError) clearFieldError(); }}
+                                  autoFocus
+                                  placeholderTextColor={colors.white[20]}
+                                />
+                              ) : (
+                                <Text style={[styles.settingsValueText, !settingsName && { opacity: 0.5 }]}>{settingsName || '—'}</Text>
+                              )}
+                            </View>
+                            {editingField === null && <SvgXml xml={editPencilSvg} width={24} height={24} />}
+                          </TouchableOpacity>
+                        </Animated.View>
+                      </Animated.View>
                       {editingField === 'name' && editingError && (
-                        <Text style={styles.settingsErrorText}>{t('auth.nameMinLength') || 'Name must be at least 3 characters'}</Text>
+                        <Animated.Text style={[styles.settingsErrorText, { opacity: fieldErrorOpacity }]}>{t('auth.nameMinLength') || 'Name must be at least 3 characters'}</Animated.Text>
                       )}
                     </Reanimated.View>
                   )}
@@ -1267,7 +1612,7 @@ export const ProfileScreen = () => {
                   {(editingField === null || editingField === 'telegram') && (
                     <Reanimated.View entering={FadeIn.duration(350)}>
                       <TouchableOpacity
-                        style={styles.settingsField}
+                        style={[styles.settingsField, editingField === 'telegram' && styles.settingsFieldEditing]}
                         activeOpacity={0.7}
                         onPress={editingField === null ? () => startEditing('telegram') : undefined}
                         disabled={editingField !== null}
@@ -1284,58 +1629,53 @@ export const ProfileScreen = () => {
                   {/* Phone */}
                   {(editingField === null || editingField === 'phone') && (
                     <Reanimated.View entering={FadeIn.duration(350)}>
-                      <TouchableOpacity
-                        style={[styles.settingsField, editingField === 'phone' && (editingError || verifyError) && styles.settingsFieldError]}
-                        activeOpacity={0.7}
-                        onPress={editingField === null ? () => startEditing('phone') : undefined}
-                        disabled={editingField !== null}
-                      >
-                        <View style={styles.settingsFieldTexts}>
-                          <Text style={styles.settingsLabel}>
-                            {verifyingField === 'phone' ? (t('auth.confirmPhoneTitle') || 'Code') : (t('profile.phone') || 'Number')}
-                          </Text>
-                          {editingField === 'phone' ? (
-                            verifyingField === 'phone' ? (
-                              <TextInput
-                                style={styles.settingsInput}
-                                value={verifyCode}
-                                onChangeText={(v) => { setVerifyCode(v); if (verifyError) setVerifyError(false); }}
-                                autoFocus
-                                keyboardType="number-pad"
-                                maxLength={4}
-                                placeholderTextColor={colors.white[20]}
-                              />
-                            ) : (
-                              <TextInput
-                                style={styles.settingsInput}
-                                value={formatPhoneWithMask(editingValue)}
-                                onChangeText={(v) => {
-                                  let raw = stripPhoneFormatting(v);
-                                  if (!raw.startsWith('+')) raw = '+' + raw;
-                                  // Truncate to mask's max digits so user can't exceed the pattern
-                                  const m = PHONE_MASKS_SORTED.find((pm) => raw.startsWith(pm.prefix));
-                                  if (m) {
-                                    const maxLen = m.prefix.length + m.groups.reduce((s, g) => s + g, 0);
-                                    raw = raw.slice(0, maxLen);
-                                  } else {
-                                    raw = raw.slice(0, 16); // E.164 fallback
-                                  }
-                                  setEditingValue(raw);
-                                  if (editingError) setEditingError(false);
-                                }}
-                                autoFocus
-                                keyboardType="phone-pad"
-                                placeholderTextColor={colors.white[20]}
-                              />
-                            )
-                          ) : (
-                            <Text style={[styles.settingsValueText, !settingsPhone && { opacity: 0.5 }]}>{(settingsPhone && formatPhoneWithMask(settingsPhone)) || '+998'}</Text>
-                          )}
-                        </View>
-                        {editingField === null && <SvgXml xml={editPencilSvg} width={24} height={24} />}
-                      </TouchableOpacity>
+                      <Animated.View style={editingField === 'phone' ? { transform: [{ translateX: fieldShakeAnim }] } : undefined}>
+                        <Animated.View
+                          style={[
+                            styles.settingsField,
+                            editingField === 'phone' && styles.settingsFieldEditing,
+                            editingField === 'phone' && editingError && { borderColor: fieldBorderAnim.interpolate({ inputRange: [0, 1], outputRange: ['rgba(255,255,255,0.2)', colors.error[700]] }) },
+                          ]}
+                        >
+                          <TouchableOpacity
+                            style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+                            activeOpacity={0.7}
+                            onPress={editingField === null ? () => startEditing('phone') : undefined}
+                            disabled={editingField !== null}
+                          >
+                            <View style={styles.settingsFieldTexts}>
+                              <Text style={styles.settingsLabel}>{t('profile.phone') || 'Number'}</Text>
+                              {editingField === 'phone' ? (
+                                <TextInput
+                                  style={styles.settingsInput}
+                                  value={formatPhoneWithMask(editingValue)}
+                                  onChangeText={(v) => {
+                                    let raw = stripPhoneFormatting(v);
+                                    if (!raw.startsWith('+')) raw = '+' + raw;
+                                    const m = PHONE_MASKS_SORTED.find((pm) => raw.startsWith(pm.prefix));
+                                    if (m) {
+                                      const maxLen = m.prefix.length + m.groups.reduce((s, g) => s + g, 0);
+                                      raw = raw.slice(0, maxLen);
+                                    } else {
+                                      raw = raw.slice(0, 16);
+                                    }
+                                    setEditingValue(raw);
+                                    if (editingError) clearFieldError();
+                                  }}
+                                  autoFocus
+                                  keyboardType="phone-pad"
+                                  placeholderTextColor={colors.white[20]}
+                                />
+                              ) : (
+                                <Text style={[styles.settingsValueText, !settingsPhone && { opacity: 0.5 }]}>{(settingsPhone && formatPhoneWithMask(settingsPhone)) || '+998'}</Text>
+                              )}
+                            </View>
+                            {editingField === null && <SvgXml xml={editPencilSvg} width={24} height={24} />}
+                          </TouchableOpacity>
+                        </Animated.View>
+                      </Animated.View>
                       {editingField === 'phone' && editingError && (
-                        <Text style={styles.settingsErrorText}>{t('profile.phoneError') || 'Enter a complete phone number'}</Text>
+                        <Animated.Text style={[styles.settingsErrorText, { opacity: fieldErrorOpacity }]}>{t('profile.phoneError') || 'Enter a complete phone number'}</Animated.Text>
                       )}
                     </Reanimated.View>
                   )}
@@ -1343,45 +1683,41 @@ export const ProfileScreen = () => {
                   {/* Email */}
                   {(editingField === null || editingField === 'email') && (
                     <Reanimated.View entering={FadeIn.duration(350)}>
-                      <TouchableOpacity
-                        style={[styles.settingsField, editingField === 'email' && (editingError || verifyError) && styles.settingsFieldError]}
-                        activeOpacity={0.7}
-                        onPress={editingField === null ? () => startEditing('email') : undefined}
-                        disabled={editingField !== null}
-                      >
-                        <View style={styles.settingsFieldTexts}>
-                          <Text style={styles.settingsLabel}>
-                            {verifyingField === 'email' ? (t('auth.confirmEmailTitle') || 'Code') : (t('profile.email') || 'E-mail')}
-                          </Text>
-                          {editingField === 'email' ? (
-                            verifyingField === 'email' ? (
-                              <TextInput
-                                style={styles.settingsInput}
-                                value={verifyCode}
-                                onChangeText={(v) => { setVerifyCode(v); if (verifyError) setVerifyError(false); }}
-                                autoFocus
-                                keyboardType="number-pad"
-                                maxLength={4}
-                                placeholderTextColor={colors.white[20]}
-                              />
-                            ) : (
-                              <TextInput
-                                style={styles.settingsInput}
-                                value={editingValue}
-                                onChangeText={(v) => { setEditingValue(v); if (editingError) setEditingError(false); }}
-                                autoFocus
-                                keyboardType="email-address"
-                                placeholderTextColor={colors.white[20]}
-                              />
-                            )
-                          ) : (
-                            <Text style={[styles.settingsValueText, !settingsEmail && { opacity: 0.5 }]}>{settingsEmail || 'castar@gmail.com'}</Text>
-                          )}
-                        </View>
-                        {editingField === null && <SvgXml xml={editPencilSvg} width={24} height={24} />}
-                      </TouchableOpacity>
+                      <Animated.View style={editingField === 'email' ? { transform: [{ translateX: fieldShakeAnim }] } : undefined}>
+                        <Animated.View
+                          style={[
+                            styles.settingsField,
+                            editingField === 'email' && styles.settingsFieldEditing,
+                            editingField === 'email' && editingError && { borderColor: fieldBorderAnim.interpolate({ inputRange: [0, 1], outputRange: ['rgba(255,255,255,0.2)', colors.error[700]] }) },
+                          ]}
+                        >
+                          <TouchableOpacity
+                            style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+                            activeOpacity={0.7}
+                            onPress={editingField === null ? () => startEditing('email') : undefined}
+                            disabled={editingField !== null}
+                          >
+                            <View style={styles.settingsFieldTexts}>
+                              <Text style={styles.settingsLabel}>{t('profile.email') || 'E-mail'}</Text>
+                              {editingField === 'email' ? (
+                                <TextInput
+                                  style={styles.settingsInput}
+                                  value={editingValue}
+                                  onChangeText={(v) => { setEditingValue(v); if (editingError) clearFieldError(); }}
+                                  autoFocus
+                                  keyboardType="email-address"
+                                  placeholderTextColor={colors.white[20]}
+                                />
+                              ) : (
+                                <Text style={[styles.settingsValueText, !settingsEmail && { opacity: 0.5 }]}>{settingsEmail || 'castar@gmail.com'}</Text>
+                              )}
+                            </View>
+                            {editingField === null && <SvgXml xml={editPencilSvg} width={24} height={24} />}
+                          </TouchableOpacity>
+                        </Animated.View>
+                      </Animated.View>
                       {editingField === 'email' && editingError && (
-                        <Text style={styles.settingsErrorText}>{t('auth.emailError') || 'Please enter a valid email address'}</Text>
+                        <Animated.Text style={[styles.settingsErrorText, { opacity: fieldErrorOpacity }]}>{t('auth.emailError') || 'Please enter a valid email address'}</Animated.Text>
                       )}
                     </Reanimated.View>
                   )}
@@ -1399,7 +1735,7 @@ export const ProfileScreen = () => {
                       activeOpacity={0.8}
                     >
                       <Text style={styles.editCancelBtnText}>
-                        {t('common.cancel') || 'Cancel'}
+                        {t('common.back') || 'Back'}
                       </Text>
                     </TouchableOpacity>
 
@@ -1416,37 +1752,28 @@ export const ProfileScreen = () => {
                             : (t('profile.connectTelegram') || 'Connect Telegram')}
                         </Text>
                       </TouchableOpacity>
-                    ) : /* Phone/Email: verify mode → Confirm code */
-                    verifyingField ? (
-                      <TouchableOpacity
-                        style={[styles.editSaveBtn, (!verifyCode.trim() || verifySending) && styles.editSaveBtnDisabled]}
-                        onPress={verifyLinkOtp}
-                        activeOpacity={0.8}
-                        disabled={!verifyCode.trim() || verifySending}
-                      >
-                        <Text style={styles.editSaveBtnText}>
-                          {verifySending ? '...' : (t('common.confirm') || 'Confirm')}
-                        </Text>
-                      </TouchableOpacity>
-                    ) : /* Phone/Email: not connected → Confirm (sends OTP) */
-                    (editingField === 'phone' && !settingsPhone) || (editingField === 'email' && !settingsEmail) ? (
-                      <TouchableOpacity
-                        style={[styles.editSaveBtn, (
-                          (editingField === 'phone' ? !isPhoneComplete(editingValue) : !editingValue.trim())
-                          || verifySending
-                        ) && styles.editSaveBtnDisabled]}
-                        onPress={sendLinkOtp}
-                        activeOpacity={0.8}
-                        disabled={
-                          (editingField === 'phone' ? !isPhoneComplete(editingValue) : !editingValue.trim())
-                          || verifySending
-                        }
-                      >
-                        <Text style={styles.editSaveBtnText}>
-                          {verifySending ? '...' : (t('common.confirm') || 'Confirm')}
-                        </Text>
-                      </TouchableOpacity>
-                    ) : /* Already connected → Save */
+                    ) : /* Phone/Email: show Confirm if value changed or not connected yet */
+                    (editingField === 'phone' || editingField === 'email') ? (
+                      (() => {
+                        const currentVal = editingField === 'phone' ? settingsPhone : settingsEmail;
+                        const rawEditing = editingField === 'phone' ? stripPhoneFormatting(editingValue) : editingValue.trim();
+                        const changed = !currentVal || rawEditing !== currentVal;
+                        if (!changed) return null;
+                        const invalid = editingField === 'phone' ? !isPhoneComplete(editingValue) : !editingValue.trim();
+                        return (
+                          <TouchableOpacity
+                            style={[styles.editSaveBtn, (invalid || verifySending) && styles.editSaveBtnDisabled]}
+                            onPress={sendLinkOtp}
+                            activeOpacity={0.8}
+                            disabled={invalid || verifySending}
+                          >
+                            <Text style={styles.editSaveBtnText}>
+                              {verifySending ? '...' : (t('common.confirm') || 'Confirm')}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })()
+                    ) : /* Name → Save */
                     (
                       <TouchableOpacity
                         style={styles.editSaveBtn}
@@ -1463,7 +1790,7 @@ export const ProfileScreen = () => {
                   <View style={styles.settingsButtons}>
                     <TouchableOpacity
                       style={styles.settingsDeleteBtn}
-                      onPress={handleDeleteAccount}
+                      onPress={openDeletePopup}
                       activeOpacity={0.7}
                     >
                       <Text style={styles.settingsDeleteText}>
@@ -1473,9 +1800,21 @@ export const ProfileScreen = () => {
                   </View>
                 )}
               </View>
-            </Pressable>
+            </View>
+            )
           ) : (
           /* ── Picker list with fade gradients ── */
+          <>
+          {activePicker === 'currency' ? (
+            <View style={styles.currencyDescriptionRow}>
+              <Text style={styles.currencyDescription}>
+                {t('profile.currencyDescription')}
+              </Text>
+              {loadingRates ? (
+                <ActivityIndicator size="small" color={colors.white[40]} style={{ marginLeft: 8 }} />
+              ) : null}
+            </View>
+          ) : null}
           <View style={styles.countryListWrapper}>
             <ScrollView
               ref={pickerScrollRef}
@@ -1568,9 +1907,129 @@ export const ProfileScreen = () => {
               pointerEvents="none"
             />
           </View>
+          </>
           )}
         </Animated.View>
-      </View>
+        </View>
+      </Modal>
+
+      {/* ── Logout Confirmation Popup (Modal renders above tab bar) ── */}
+      <Modal visible={showLogoutPopup} transparent animationType="none" statusBarTranslucent>
+        <View style={styles.logoutOverlay}>
+          <Animated.View style={[StyleSheet.absoluteFill, { opacity: logoutPopupOpacity }]} pointerEvents="none">
+            <BlurView
+              intensity={10}
+              tint="dark"
+              experimentalBlurMethod="dimezisBlurView"
+              style={StyleSheet.absoluteFill}
+              pointerEvents="none"
+            />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(16, 16, 16, 0.5)' }]} pointerEvents="none" />
+          </Animated.View>
+          <Pressable style={StyleSheet.absoluteFill} onPress={closeLogoutPopup} />
+          <Animated.View
+            style={[
+              styles.logoutCard,
+              {
+                opacity: logoutPopupOpacity,
+                transform: [{ scale: logoutPopupScale }],
+              },
+            ]}
+          >
+            <SvgXml xml={logoutDoorSvg} width={28} height={28} />
+            <Text style={styles.logoutCardTitle}>
+              {t('profile.logoutTitle') || 'Log out of the application?'}
+            </Text>
+            <Text style={styles.logoutCardSubtitle}>
+              {t('profile.logoutConfirm') || 'Are you sure you want to exit the application?'}
+            </Text>
+            <View style={styles.logoutCardButtons}>
+              <TouchableOpacity
+                style={styles.logoutStayBtn}
+                onPress={closeLogoutPopup}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.logoutStayText}>
+                  {t('profile.stayInApp') || 'Stay in the app'}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.logoutConfirmBtn}
+                onPress={confirmLogout}
+                activeOpacity={0.8}
+                disabled={isLoggingOut}
+              >
+                {isLoggingOut ? (
+                  <ActivityIndicator size="small" color="#FF5151" />
+                ) : (
+                  <Text style={styles.logoutConfirmText}>
+                    {t('profile.logout') || 'Log out of account'}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        </View>
+      </Modal>
+
+      {/* ── Delete Account Confirmation Popup ── */}
+      <Modal visible={showDeletePopup} transparent animationType="none" statusBarTranslucent>
+        <View style={styles.logoutOverlay}>
+          <Animated.View style={[StyleSheet.absoluteFill, { opacity: deletePopupOpacity }]} pointerEvents="none">
+            <BlurView
+              intensity={10}
+              tint="dark"
+              experimentalBlurMethod="dimezisBlurView"
+              style={StyleSheet.absoluteFill}
+              pointerEvents="none"
+            />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(16, 16, 16, 0.5)' }]} pointerEvents="none" />
+          </Animated.View>
+          <Pressable style={StyleSheet.absoluteFill} onPress={closeDeletePopup} />
+          <Animated.View
+            style={[
+              styles.logoutCard,
+              {
+                opacity: deletePopupOpacity,
+                transform: [{ scale: deletePopupScale }],
+              },
+            ]}
+          >
+            <SvgXml xml={deleteTrashSvg} width={28} height={28} />
+            <Text style={styles.logoutCardTitle}>
+              {t('profile.deleteAccountTitle') || 'Delete account?'}
+            </Text>
+            <Text style={styles.logoutCardSubtitle}>
+              {t('profile.deleteAccountConfirm') || 'Are you sure you want to delete your account? This action cannot be undone'}
+            </Text>
+            <View style={styles.logoutCardButtons}>
+              <TouchableOpacity
+                style={styles.logoutStayBtn}
+                onPress={closeDeletePopup}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.logoutStayText}>
+                  {t('profile.keepAccount') || 'Keep account'}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.logoutConfirmBtn}
+                onPress={confirmDeleteAccount}
+                activeOpacity={0.8}
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <ActivityIndicator size="small" color="#FF2626" />
+                ) : (
+                  <Text style={styles.logoutConfirmText}>
+                    {t('profile.deleteAccount') || 'Delete account'}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        </View>
+      </Modal>
 
       {/* ── Telegram Auth WebView Modal (incognito = fresh session, no auto-auth) ── */}
       {showTelegramWebView && (
@@ -1903,7 +2362,7 @@ const styles = StyleSheet.create({
   currencyDescriptionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 4,
   },
   currencyDescription: {
     fontFamily: fontFamily.regular,
@@ -1913,6 +2372,88 @@ const styles = StyleSheet.create({
   },
 
   // === Settings modal ===
+  verifyContent: {
+    flex: 1,
+    paddingBottom: 8,
+  },
+  verifyHeader: {
+    gap: 12,
+    marginBottom: 24,
+  },
+  verifyHeaderTexts: {
+    gap: 8,
+  },
+  verifyTitle: {
+    fontFamily: fontFamily.medium,
+    fontSize: 24,
+    lineHeight: 30,
+    color: colors.white[100],
+  },
+  verifySubtitle: {
+    fontFamily: fontFamily.regular,
+    fontSize: 16,
+    lineHeight: 22,
+    color: colors.white[20],
+  },
+  verifyHighlight: {
+    fontFamily: fontFamily.regular,
+    fontSize: 16,
+    lineHeight: 22,
+    color: colors.white[100],
+  },
+  otpRow: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  otpCellWrap: {
+    width: 42,
+    height: 51,
+  },
+  otpCell: {
+    width: 42,
+    height: 51,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'transparent',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  otpCellOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+  },
+  otpCellError: {
+    borderColor: '#FF2626',
+  },
+  otpDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.white[100],
+  },
+  otpDotError: {
+    backgroundColor: '#FF2626',
+  },
+  verifyErrorText: {
+    fontFamily: fontFamily.regular,
+    fontSize: 13,
+    lineHeight: 18,
+    color: colors.error[500],
+    marginTop: 8,
+    marginLeft: 4,
+  },
+  resendBtn: {
+    marginTop: 16,
+    alignSelf: 'flex-start',
+  },
+  resendBtnText: {
+    fontFamily: fontFamily.regular,
+    fontSize: 14,
+    lineHeight: 18,
+    color: colors.white[100],
+  },
   settingsContent: {
     flex: 1,
     paddingTop: 8,
@@ -1978,8 +2519,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'transparent',
   },
-  settingsFieldError: {
-    borderColor: colors.error[700],
+  settingsFieldEditing: {
+    borderColor: 'rgba(255,255,255,0.2)',
   },
   settingsErrorText: {
     fontFamily: fontFamily.regular,
@@ -2087,5 +2628,65 @@ const styles = StyleSheet.create({
   telegramWebView: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+
+  // === Logout popup ===
+  logoutOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  logoutCard: {
+    backgroundColor: colors.neutral[900],
+    borderRadius: 24,
+    padding: 24,
+    width: '100%',
+    maxWidth: 360,
+    gap: 8,
+  },
+  logoutCardTitle: {
+    fontFamily: fontFamily.medium,
+    fontSize: 24,
+    lineHeight: 30,
+    color: colors.white[100],
+    marginTop: 8,
+  },
+  logoutCardSubtitle: {
+    fontFamily: fontFamily.regular,
+    fontSize: 16,
+    lineHeight: 22,
+    color: colors.white[40],
+  },
+  logoutCardButtons: {
+    gap: 8,
+    marginTop: 16,
+  },
+  logoutStayBtn: {
+    height: 52,
+    borderRadius: 43,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  logoutStayText: {
+    fontFamily: fontFamily.regular,
+    fontSize: 16,
+    lineHeight: 22,
+    color: colors.white[100],
+  },
+  logoutConfirmBtn: {
+    height: 52,
+    borderRadius: 43,
+    backgroundColor: 'rgba(255, 38, 38, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  logoutConfirmText: {
+    fontFamily: fontFamily.regular,
+    fontSize: 16,
+    lineHeight: 22,
+    color: '#FF2626',
   },
 });

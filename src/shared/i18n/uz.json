@@ -81,7 +81,9 @@
     "confirmEmailTitle": "Email tasdiqlash",
     "confirmEmailSubtitle": "Biz sizning elektron pochta manzilingizga SMS xabar yubordik:",
     "confirmPhoneTitle": "Telefon raqamini tasdiqlash",
-    "confirmPhoneSubtitle": "Telefon raqamingizga SMS kod yubordik:"
+    "confirmPhoneSubtitle": "Telefon raqamingizga SMS kod yubordik:",
+    "invalidCode": "Kod noto'g'ri. Qayta urinib ko'ring.",
+    "resendCode": "Kodni qayta yuborish"
   },
   "tabs": {
     "home": "Bosh sahifa",
@@ -146,9 +148,10 @@
     "notificationsSubtitle": "Biz spam yubormaslikka va'da beramiz",
     "subscriptionManagement": "Obunani boshqarish",
     "subscriptionNoActive": "Faol obuna yo'q",
-    "logout": "Chiqish",
-    "logoutTitle": "Chiqish",
-    "logoutConfirm": "Haqiqatan ham chiqishni xohlaysizmi?",
+    "logout": "Akkauntdan chiqish",
+    "logoutTitle": "Ilovadan chiqasizmi?",
+    "logoutConfirm": "Ilovadan chiqmoqchi ekanligingizga ishonchingiz komilmi?",
+    "stayInApp": "Ilovada qolish",
     "guest": "Mehmon",
     "name": "Ism",
     "phone": "Raqam",
@@ -159,8 +162,9 @@
     "connectPhone": "Raqamni tasdiqlash",
     "connectEmail": "E-mailni tasdiqlash",
     "deleteAccount": "Akkauntni o'chirish",
-    "deleteAccountTitle": "Akkauntni o'chirish",
-    "deleteAccountConfirm": "Ishonchingiz komilmi? Bu amalni bekor qilib bo'lmaydi. Barcha ma'lumotlaringiz butunlay o'chiriladi.",
+    "deleteAccountTitle": "Akkauntni o'chirish?",
+    "deleteAccountConfirm": "Akkauntingizni o'chirmoqchi ekanligingizga ishonchingiz komilmi? Bu amalni bekor qilib bo'lmaydi",
+    "keepAccount": "Akkauntni saqlash",
     "selectCurrency": "Valyutani tanlang",
     "currencyDescription": "Tanlangan valyuta umumiy summani ko'rsatish va boshqa valyutalarni konvertatsiya qilish uchun asosiy sifatida o'rnatiladi. Har bir tranzaksiya o'zining asl valyutasida saqlanadi.",
     "phoneError": "To'liq telefon raqamini kiriting"

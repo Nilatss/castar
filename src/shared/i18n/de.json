@@ -81,7 +81,9 @@
     "confirmEmailTitle": "E-Mail-Bestätigung",
     "confirmEmailSubtitle": "Wir haben eine SMS-Nachricht an Ihre E-Mail-Adresse gesendet:",
     "confirmPhoneTitle": "Telefonnummer bestätigen",
-    "confirmPhoneSubtitle": "Wir haben einen SMS-Code an Ihre Telefonnummer gesendet:"
+    "confirmPhoneSubtitle": "Wir haben einen SMS-Code an Ihre Telefonnummer gesendet:",
+    "invalidCode": "Ungültiger Code. Bitte versuchen Sie es erneut.",
+    "resendCode": "Code erneut senden"
   },
   "tabs": {
     "home": "Startseite",
@@ -147,8 +149,9 @@
     "subscriptionManagement": "Abonnement verwalten",
     "subscriptionNoActive": "Kein aktives Abonnement",
     "logout": "Abmelden",
-    "logoutTitle": "Abmelden",
-    "logoutConfirm": "Sind Sie sicher, dass Sie sich abmelden möchten?",
+    "logoutTitle": "Aus der App abmelden?",
+    "logoutConfirm": "Sind Sie sicher, dass Sie die App verlassen möchten?",
+    "stayInApp": "In der App bleiben",
     "guest": "Gast",
     "name": "Name",
     "phone": "Nummer",
@@ -159,8 +162,9 @@
     "connectPhone": "Nummer bestätigen",
     "connectEmail": "E-Mail bestätigen",
     "deleteAccount": "Konto löschen",
-    "deleteAccountTitle": "Konto löschen",
-    "deleteAccountConfirm": "Sind Sie sicher? Diese Aktion kann nicht rückgängig gemacht werden. Alle Ihre Daten werden dauerhaft gelöscht.",
+    "deleteAccountTitle": "Konto löschen?",
+    "deleteAccountConfirm": "Sind Sie sicher, dass Sie Ihr Konto löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden",
+    "keepAccount": "Konto behalten",
     "selectCurrency": "Währung wählen",
     "currencyDescription": "Die ausgewählte Währung wird als Hauptwährung für die Anzeige des Gesamtbetrags und die Umrechnung anderer Währungen festgelegt. Jede Transaktion wird weiterhin in ihrer ursprünglichen Währung gespeichert.",
     "phoneError": "Geben Sie eine vollständige Telefonnummer ein"
