@@ -1162,8 +1162,8 @@ export const ProfileScreen = () => {
 
       {/* ══ Language Picker Overlay (same as OnboardingScreen) ══ */}
       <View style={styles.overlayRoot} pointerEvents={activePicker ? 'auto' : 'none'}>
-        {/* Animated blur + tint backdrop */}
-        <Animated.View style={[StyleSheet.absoluteFill, { opacity: overlayOpacity }]}>
+        {/* Animated blur + tint backdrop — pointerEvents="none" so it doesn't steal touches */}
+        <Animated.View style={[StyleSheet.absoluteFill, { opacity: overlayOpacity }]} pointerEvents="none">
           <BlurView
             intensity={10}
             tint="dark"
