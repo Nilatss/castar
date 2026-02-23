@@ -10,10 +10,10 @@ Every prompt must be treated as ending with **"MAKE NO MISTAKES."**:
 
 ---
 
-# CaStar — Актуальный архитектурный план
+# Castar — Актуальный архитектурный план
 
 ## Обзор проекта
-CaStar — мобильное приложение для личного, семейного финансового учёта и бухгалтерии.
+Castar — мобильное приложение для личного, семейного финансового учёта и бухгалтерии.
 Платформы: iOS, Android. Стек: Expo SDK 54, React Native 0.81, TypeScript 5.9.
 
 **Main repo: `C:/Users/KDFX Modes/Desktop/castar` — НЕ ТРОГАТЬ без прямого указания.**
@@ -35,7 +35,7 @@ src/
 │
 ├── features/
 │   ├── auth/
-│   │   ├── screens/               # 12 экранов (см. §2)
+│   │   ├── screens/               # 11 экранов (Onboarding, Telegram, Email, Phone, SetName, SetPin, etc.)
 │   │   ├── services/              # emailAuth, phoneAuth, telegramAuth
 │   │   └── store/                 # authStore (Zustand + SecureStore)
 │   ├── transactions/
@@ -48,29 +48,32 @@ src/
 │   │   ├── screens/               # Categories, CreateCategory
 │   │   └── store/                 # categoryStore → Drizzle/SQLite
 │   ├── analytics/
-│   │   ├── screens/               # Analytics
+│   │   ├── screens/               # Analytics (→ Monitoring tab)
 │   │   └── store/                 # analyticsStore
+│   ├── tasks/
+│   │   └── screens/               # Tasks (stub)
 │   └── profile/
-│       ├── screens/               # Profile, Settings
+│       ├── screens/               # Profile (встроенная Settings модалка), SubscriptionManagement
 │       └── store/                 # profileStore
 │
 ├── shared/
-│   ├── constants/                 # colors, typography, spacing, config, defaultCategories
-│   ├── i18n/                      # uz, ru, en + index.ts
+│   ├── constants/                 # colors, typography, spacing, config, defaultCategories, scaling
+│   ├── i18n/                      # uz, ru, en, be, uk, kk, de, az, pl, ka, zh (11 языков)
 │   ├── services/
 │   │   ├── api/apiClient.ts       # HTTP stub (ждёт бэкенд)
-│   │   ├── currency/              # frankfurter.app + кэш
+│   │   ├── analytics/             # PostHog (posthog.ts)
+│   │   ├── currency/              # open.er-api.com + SecureStore кэш 24ч
 │   │   ├── database/              # ✅ Drizzle ORM
 │   │   │   ├── schema/            # 7 таблиц (Drizzle schema definitions)
 │   │   │   ├── drizzle/           # auto-generated migrations (.sql + journal)
-│   │   │   ├── *Queries.ts        # 6 query modules
+│   │   │   ├── *Queries.ts        # 7 query modules
 │   │   │   ├── connection.ts      # drizzle(expoDb, { schema }) + rawDb
 │   │   │   ├── migrations.ts      # bridge from legacy + migrate()
 │   │   │   ├── seed.ts            # seedDefaults(userId)
 │   │   │   └── index.ts           # barrel: *Repository aliases
 │   │   ├── validation/            # ✅ Zod schemas
 │   │   ├── sync/syncService.ts    # Stub
-│   │   └── voice/voiceParser.ts   # 3 языка, text parsing
+│   │   └── voice/                 # voiceParser + cloudRecognition + offlineRecognition + voiceService
 │   ├── components/
 │   │   ├── GlowImage.tsx          # GPU-accelerated glow backgrounds (PNG <Image>)
 │   │   └── svg/AuthSvgs.tsx       # Shared JSX SVG components for auth screens
@@ -92,8 +95,6 @@ src/
 RootNavigator (conditional)
 ├── AuthNavigator (if !isOnboarded)
 │   ├── Onboarding         ✅ полный UI
-│   ├── Login              ⬜ stub
-│   ├── Register           ⬜ stub
 │   ├── TermsOfUse         ✅ полный UI
 │   ├── PrivacyPolicy      ✅ полный UI
 │   ├── TelegramAuth       ✅ WebView → Worker → deep link callback
@@ -109,9 +110,9 @@ RootNavigator (conditional)
 │
 └── TabNavigator (if isOnboarded && isPinVerified) — 4 таба
     ├── HomeTab → Home, AddTransaction, TransactionDetail
-    ├── BudgetTab → Budgets, BudgetDetail, CreateBudget, FamilyBudget
-    ├── AnalyticsTab → Analytics
-    └── ProfileTab → Profile, Settings, Categories, CreateCategory
+    ├── MonitoringTab → Analytics
+    ├── TasksTab → Tasks (stub)
+    └── ProfileTab → Profile (встроенные модалки), SubscriptionManagement, Settings, Categories, CreateCategory
 ```
 
 ---
@@ -131,13 +132,24 @@ RootNavigator (conditional)
 - `setDisplayNameAndContinue(name)`, `setPinAndContinue(pin)`, `verifyPin(pin)`
 - `logout()` — сохраняет displayName для returning users
 
-### Ожидаемые backend endpoints (из config.ts)
+### Auth Flow
+```
+Onboarding → [Telegram | Email → EmailVerify | Phone → PhoneVerify]
+           → SetName → SetPin → Main App
+
+При повторном запуске: PinLock → Main App
+При returning user: Auth → (skip SetName/SetPin) → Main App
+```
+
+### Backend endpoints
 - Worker URL: `https://castar-auth.ivcswebofficial.workers.dev`
-- `GET /auth/telegram?bot=castar_bot` → Telegram OAuth
-- `POST /auth/email/send-code` → `{ email }` → `{ ok, expiresIn }`
-- `POST /auth/email/verify-code` → `{ email, code }` → `{ ok, token, email }`
-- `POST /auth/phone/send-code` → `{ phone }` → `{ ok, expiresIn }`
-- `POST /auth/phone/verify-code` → `{ phone, code }` → `{ ok, token, phone }`
+- `GET  /auth/telegram?bot=castar_bot` — ✅ Telegram Login Widget page
+- `GET  /auth/telegram/callback` — ✅ HMAC-SHA256 → JWT → deep link + HTML fallback
+- `POST /auth/email/send-code` — ✅ in-memory OTP + Resend.com + rate limit
+- `POST /auth/email/verify-code` — ✅ verify OTP → JWT
+- `POST /auth/phone/send-code` — ✅ in-memory OTP + console.log + rate limit
+- `POST /auth/phone/verify-code` — ✅ verify OTP → JWT
+- `POST /api/voice/recognize` — ✅ Google Cloud STT V2 proxy
 
 ---
 
@@ -157,6 +169,7 @@ RootNavigator (conditional)
 - `budgetQueries` — findByUser, findByCategory, findActive, deactivate, insert, update, delete
 - `recurringQueries` — findByUser, findDue, pause, resume, updateNextDate, insert, update, delete
 - `syncQueueQueries` — enqueue, findPending, markSynced, recordFailure, pendingCount, clearAll
+- `exchangeRateQueries` — для будущей SQLite интеграции курсов валют
 
 ### Barrel (index.ts)
 Query modules экспортируются как `categoryRepository`, `accountRepository`, etc. — backward compat со сторами.
@@ -195,6 +208,7 @@ Query modules экспортируются как `categoryRepository`, `account
 ### profileStore
 - `user`, `settings` (theme, notifications, biometricLock)
 - `updateUser()`, `updateSettings()`, `setDefaultCurrency()`, `setLanguage()`
+- `language`, `currency`, `initializeSettings()` — персистентность через SecureStore
 
 ---
 
@@ -246,6 +260,13 @@ Query modules экспортируются как `categoryRepository`, `account
 - react-native-webview (Telegram OAuth)
 - expo-linking (deep link callback: castar://)
 
+### Voice
+- expo-av (аудио запись), react-native-vosk (offline STT)
+- @react-native-community/netinfo (online/offline detection)
+
+### Analytics
+- posthog-react-native (EU instance, screen tracking)
+
 ### Utils
 - date-fns ^4.1.0, uuid ^13.0.0
 
@@ -257,27 +278,53 @@ Query modules экспортируются как `categoryRepository`, `account
 ## 8. Текущий статус
 
 ### DONE ✅
-- [x] Feature-first архитектура (55 файлов .ts/.tsx)
-- [x] Навигация: Auth (11 экранов) + PinLock + 4 таба с вложенными стеками
-- [x] Полный auth flow UI: Onboarding, Telegram, Email, Phone, SetName, SetPin, PinLock
-- [x] Auth services: Telegram (WebView + deep link), Email (OTP), Phone (OTP)
-- [x] Auth store: initializeAuth, login (3 метода), PIN, returning users
-- [x] Legal screens: Terms, Privacy Policy
-- [x] 6 Zustand сторов
-- [x] Полная система типов TypeScript (common.ts, navigation.ts)
-- [x] Дизайн-система (colors, typography, spacing)
-- [x] i18n (3 языка, auto-detection)
-- [x] Сервисы: API client (stub), currency (frankfurter.app), voice parser, sync (stub)
-- [x] Утилиты: formatCurrency, formatDate
-- [x] 14 дефолтных категорий (defaultCategories.ts)
-- [x] config.ts с auth endpoints (Telegram, Email, Phone)
-- [x] Drizzle ORM database layer (7 schema + 6 query modules + migrations + seed)
-- [x] Zustand ↔ Drizzle/SQLite integration (transaction, budget, category stores)
-- [x] Zod validation schemas (transaction, budget, category, account, recurring)
-- [x] SyncQueue для будущей синхронизации
-- [x] expo-sqlite plugin в app.json
 
-### Performance Optimization ✅ (13 коммитов)
+#### Фаза 1 — Фундамент
+- [x] Feature-first архитектура
+- [x] React Navigation v7: Auth (11 screens) + PinLock + 4 таба
+- [x] 6 Zustand сторов (auth, transaction, budget, category, analytics, profile)
+- [x] TypeScript типы (common.ts, navigation.ts)
+- [x] Дизайн-система: colors (dark #101010), typography (Inter), spacing
+- [x] i18n: 11 языков (uz, ru, en, be, uk, kk, de, az, pl, ka, zh), auto-detection
+- [x] config.ts с backend URL + bot username
+
+#### Фаза 1.5 — Auth Flow
+- [x] 11 auth screens — полный Figma UI
+- [x] Auth services: telegramAuth, emailAuth, phoneAuth
+- [x] Auth store: initializeAuth, 3 login метода, PIN verify, SecureStore persistence
+
+#### Фаза 2 (частично) — Profile UI + Subscription + Tasks
+- [x] ProfileScreen — полный Figma UI (2500+ строк)
+- [x] SubscriptionManagementScreen — полный Figma UI, perf optimized
+- [x] TasksScreen — stub
+- [x] 4 таба (Home, Monitoring, Tasks, Profile) + кастомный таб-бар
+- [x] Currency picker (26 валют, live курсы, radio selection)
+- [x] Language picker (11 языков, radio selection)
+- [x] Settings модалка (Name, Telegram, Phone, Email, Save, Delete account)
+- [x] OTP верификация телефона/email из настроек
+- [x] Персистентность: язык + валюта в SecureStore
+
+#### Фаза 3 — Локальная БД (Drizzle ORM)
+- [x] expo-sqlite + Drizzle ORM (7 schema, 7 query modules)
+- [x] Zustand сторы интегрированы с SQLite
+- [x] Zod validation schemas
+- [x] SyncQueue для будущей синхронизации
+
+#### Фаза 4 (частично) — Backend
+- [x] Cloudflare Worker `castar-auth` задеплоен
+- [x] D1 база `castar-db` создана (WEUR) — миграция написана, **НЕ ПРИМЕНЕНА**
+- [x] JWT service + middleware (jose, 30 дней)
+- [x] Telegram auth — полный цикл (Login Widget → HMAC-SHA256 → JWT → deep link)
+- [x] Email OTP — Resend.com (реальная отправка)
+- [x] Phone OTP — console.log (Eskiz.uz ещё не подключён)
+- [x] Voice route — Google Cloud STT V2 proxy
+
+#### Сервисы (клиент)
+- [x] Currency service (open.er-api.com + SecureStore кэш 24ч + fallback)
+- [x] Voice: voiceParser + cloudRecognition (Google STT) + offlineRecognition (VOSK) + voiceService
+- [x] PostHog analytics (EU instance, screen tracking)
+
+#### Performance Optimization ✅ (13 коммитов)
 - [x] Quick wins: `useShallow`, `React.memo`, `useCallback`/`useMemo` — меньше ре-рендеров
 - [x] SvgXml → JSX SVG: ProfileScreen (16 иконок), 11 auth screens — **0 SvgXml** в проекте
 - [x] Shared SVG: `src/shared/components/svg/AuthSvgs.tsx` + `scaling.ts` (`scale()` утилита)
@@ -296,27 +343,25 @@ Query modules экспортируются как `categoryRepository`, `account
 - [ ] Home, AddTransaction, TransactionDetail, Transactions
 - [ ] Budgets, BudgetDetail, CreateBudget, FamilyBudget
 - [ ] Analytics
-- [ ] Profile, Settings
 - [ ] Categories, CreateCategory
 
 ### TODO 📋
 
-#### Фаза 2 — UI экранов (main app screens)
+#### Фаза 2 (продолжение) — UI основных экранов
 - [ ] Home экран (карточка баланса, доход/расход, список транзакций)
 - [ ] AddTransaction экран (форма + voice input)
 - [ ] TransactionDetail экран
 - [ ] Budgets + BudgetDetail + CreateBudget
-- [ ] Analytics экран (графики)
+- [ ] Analytics экран (графики) — нужен `react-native-gifted-charts`
 - [ ] Categories + CreateCategory
-- [ ] Profile + Settings
 - [ ] Shared UI компоненты
 
-#### Фаза 4 — Бэкенд
-- [ ] Заполнить auth routes, email, sms, telegram stubs
+#### Фаза 4 (продолжение) — Бэкенд
+- [ ] Применить D1 миграцию
+- [ ] SMS через Eskiz.uz (заменить console.log)
 - [ ] CRUD routes: transactions, categories, budgets, recurrings, settings
 - [ ] Sync endpoint
 - [ ] React Query для серверных данных
-- [ ] Задеплоить на Cloudflare Workers + D1
 
 #### Фаза 5 — Продвинутые фичи
 - [ ] Семейные бюджеты
@@ -328,29 +373,18 @@ Query modules экспортируются как `categoryRepository`, `account
 
 ---
 
-## 9. PRD расхождения
+## 9. Конфигурация
 
-| PRD | Реальность | Решение |
-|-----|-----------|---------|
-| React Navigation v6 | v7 | ✅ Обновить PRD — v7 лучше |
-| Zustand + React Query | Только Zustand | ✅ Решено: RQ в Фазе 4 |
-| Drizzle ORM | Drizzle ORM | ✅ Решено: миграция завершена |
-| expo-speech-recognition | Только text parser | Решить: нужен ли voice recognition |
-| react-native-gifted-charts | Нет | Нужно для Analytics |
-| React Native Paper | Кастомные компоненты | Решить: Paper или свои |
-| React Hook Form + Zod | Только Zod | Решить: нужен ли RHF |
-| DatabaseProvider, ThemeProvider | AppProviders.tsx | Обновить PRD |
-
----
-
-## 10. Конфигурация
-
-- **App name:** CaStar / Castar
-- **Bundle:** castar
-- **Deep link scheme:** castar://
-- **Orientation:** Portrait
-- **New Architecture:** Enabled
-- **Platforms:** iOS (tablet support), Android (edge-to-edge)
-- **Plugins:** expo-localization, expo-secure-store, expo-sqlite
-- **Backend URL:** https://castar-auth.ivcswebofficial.workers.dev
+- **App:** Castar (bundle: castar)
+- **Deep link:** castar://
+- **Portrait only, New Architecture enabled**
+- **iOS** (tablet support) + **Android** (edge-to-edge)
+- **Backend:** https://castar-auth.ivcswebofficial.workers.dev
+- **D1 Database:** castar-db (WEUR, id: e658fde0-7bbe-46ad-a52e-0c528bfba242)
 - **Telegram bot:** @castar_bot
+- **Языки (i18n):** uz, ru, en, be, uk, kk, de, az, pl, ka, zh — 11 языков, auto-detection, fallback: en
+- **Валюты:** UZS (default), USD, EUR, RUB, GBP, TRY, KZT, CNY, JPY, KRW, CHF, AED, INR, BRL, CAD, AUD, PLN, UAH, GEL, BYN, AZN, AMD, KGS, TJS, MDL, TMT — 26 валют (open.er-api.com, кэш 24ч)
+- **Resend.com:** from `Castar <onboarding@resend.dev>` (бесплатный план)
+- **Plugins:** expo-localization, expo-secure-store, expo-sqlite
+
+> **ВАЖНО:** Название пишется **Castar** или **castar**. Никогда не писать "CaStar" (s с большой буквы).
