@@ -785,18 +785,18 @@ export const ProfileScreen = () => {
   const openLogoutPopup = useCallback(() => {
     setShowLogoutPopup(true);
     logoutPopupOpacity.setValue(0);
-    logoutPopupScale.setValue(0.92);
+    logoutPopupScale.setValue(0.94);
     Animated.parallel([
       Animated.timing(logoutPopupOpacity, {
         toValue: 1,
-        duration: 450,
+        duration: 500,
         useNativeDriver: true,
       }),
       Animated.spring(logoutPopupScale, {
         toValue: 1,
-        damping: 20,
-        stiffness: 140,
-        mass: 0.9,
+        damping: 24,
+        stiffness: 110,
+        mass: 1,
         useNativeDriver: true,
       }),
     ]).start();
@@ -945,18 +945,18 @@ export const ProfileScreen = () => {
   const openDeletePopup = useCallback(() => {
     setShowDeletePopup(true);
     deletePopupOpacity.setValue(0);
-    deletePopupScale.setValue(0.92);
+    deletePopupScale.setValue(0.94);
     Animated.parallel([
       Animated.timing(deletePopupOpacity, {
         toValue: 1,
-        duration: 450,
+        duration: 500,
         useNativeDriver: true,
       }),
       Animated.spring(deletePopupScale, {
         toValue: 1,
-        damping: 20,
-        stiffness: 140,
-        mass: 0.9,
+        damping: 24,
+        stiffness: 110,
+        mass: 1,
         useNativeDriver: true,
       }),
     ]).start();
