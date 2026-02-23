@@ -92,6 +92,11 @@
     "profile": "Profile"
   },
   "home": {
+    "greeting": "Hi",
+    "monthlyBudget": "Monthly budget",
+    "spent": "Spent",
+    "remaining": "Remaining",
+    "addManually": "Add manually",
     "balance": "Balance",
     "income": "Income",
     "expense": "Expense",

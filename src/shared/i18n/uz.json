@@ -92,6 +92,11 @@
     "profile": "Profil"
   },
   "home": {
+    "greeting": "Salom",
+    "monthlyBudget": "Oylik byudjet",
+    "spent": "Sarflangan",
+    "remaining": "Qolgan",
+    "addManually": "Qo'lda qo'shish",
     "balance": "Balans",
     "income": "Daromad",
     "expense": "Xarajat",

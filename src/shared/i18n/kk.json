@@ -92,6 +92,11 @@
     "profile": "Профиль"
   },
   "home": {
+    "greeting": "Сәлем",
+    "monthlyBudget": "Айлық бюджет",
+    "spent": "Жұмсалған",
+    "remaining": "Қалды",
+    "addManually": "Қолмен қосу",
     "balance": "Баланс",
     "income": "Кіріс",
     "expense": "Шығыс",

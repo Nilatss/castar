@@ -92,6 +92,11 @@
     "profile": "Профіль"
   },
   "home": {
+    "greeting": "Прывітанне",
+    "monthlyBudget": "Месячны бюджэт",
+    "spent": "Выдаткавана",
+    "remaining": "Засталося",
+    "addManually": "Дадаць уручную",
     "balance": "Баланс",
     "income": "Даход",
     "expense": "Выдатак",

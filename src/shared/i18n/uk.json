@@ -92,6 +92,11 @@
     "profile": "Профіль"
   },
   "home": {
+    "greeting": "Привіт",
+    "monthlyBudget": "Місячний бюджет",
+    "spent": "Витрачено",
+    "remaining": "Залишилось",
+    "addManually": "Додати вручну",
     "balance": "Баланс",
     "income": "Дохід",
     "expense": "Витрата",

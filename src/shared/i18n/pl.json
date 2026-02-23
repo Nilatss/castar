@@ -90,12 +90,17 @@
     "profile": "Profil"
   },
   "home": {
+    "greeting": "Cześć",
+    "monthlyBudget": "Budżet miesięczny",
+    "spent": "Wydano",
+    "remaining": "Pozostało",
+    "addManually": "Dodaj ręcznie",
     "balance": "Saldo",
     "income": "Przychody",
     "expense": "Wydatki",
     "recentTransactions": "Ostatnie transakcje",
     "seeAll": "Zobacz wszystkie",
-    "addTransaction": "Dodaj transakcj\u0119"
+    "addTransaction": "Dodaj transakcję"
   },
   "transactions": {
     "title": "Transakcje",

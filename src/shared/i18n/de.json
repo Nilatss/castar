@@ -92,6 +92,11 @@
     "profile": "Profil"
   },
   "home": {
+    "greeting": "Hallo",
+    "monthlyBudget": "Monatsbudget",
+    "spent": "Ausgegeben",
+    "remaining": "Verbleibend",
+    "addManually": "Manuell hinzufügen",
     "balance": "Saldo",
     "income": "Einnahmen",
     "expense": "Ausgaben",

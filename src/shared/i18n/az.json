@@ -92,6 +92,11 @@
     "profile": "Profil"
   },
   "home": {
+    "greeting": "Salam",
+    "monthlyBudget": "Aylıq büdcə",
+    "spent": "Xərclənib",
+    "remaining": "Qalıb",
+    "addManually": "Əl ilə əlavə et",
     "balance": "Balans",
     "income": "Gəlir",
     "expense": "Xərc",
