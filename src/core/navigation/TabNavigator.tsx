@@ -37,7 +37,7 @@ const ICON_TEXT_GAP = 6;
 
 /* ── SVG Icons (Solar Icon Set — Bold) ── */
 
-const HomeIcon = ({ color }: { color: string }) => (
+const HomeIcon = React.memo(({ color }: { color: string }) => (
   <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
     <Path
       d="M22 22L2 22"
@@ -50,9 +50,10 @@ const HomeIcon = ({ color }: { color: string }) => (
       fill={color}
     />
   </Svg>
-);
+));
+HomeIcon.displayName = 'HomeIcon';
 
-const TasksIcon = ({ color }: { color: string }) => (
+const TasksIcon = React.memo(({ color }: { color: string }) => (
   <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
     <Path
       fillRule="evenodd"
@@ -61,9 +62,10 @@ const TasksIcon = ({ color }: { color: string }) => (
       fill={color}
     />
   </Svg>
-);
+));
+TasksIcon.displayName = 'TasksIcon';
 
-const MonitoringIcon = ({ color }: { color: string }) => (
+const MonitoringIcon = React.memo(({ color }: { color: string }) => (
   <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
     <Path
       fillRule="evenodd"
@@ -72,14 +74,16 @@ const MonitoringIcon = ({ color }: { color: string }) => (
       fill={color}
     />
   </Svg>
-);
+));
+MonitoringIcon.displayName = 'MonitoringIcon';
 
-const ProfileIcon = ({ color }: { color: string }) => (
+const ProfileIcon = React.memo(({ color }: { color: string }) => (
   <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
     <Circle cx={12} cy={6} r={4} fill={color} />
     <Ellipse cx={12} cy={17} rx={7} ry={4} fill={color} />
   </Svg>
-);
+));
+ProfileIcon.displayName = 'ProfileIcon';
 
 /* ── Stack Navigators ── */
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
@@ -144,7 +148,7 @@ const TAB_CONFIG: Record<
 };
 
 /* ── Custom Tab Bar ── */
-const CustomTabBar = ({ state, navigation, descriptors }: BottomTabBarProps) => {
+const CustomTabBar = React.memo(({ state, navigation, descriptors }: BottomTabBarProps) => {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
@@ -204,7 +208,8 @@ const CustomTabBar = ({ state, navigation, descriptors }: BottomTabBarProps) => 
       </View>
     </View>
   );
-};
+});
+CustomTabBar.displayName = 'CustomTabBar';
 
 /* ── Tab Navigator ── */
 const Tab = createBottomTabNavigator<MainTabParamList>();

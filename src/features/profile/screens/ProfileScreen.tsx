@@ -14,7 +14,7 @@
  * └──────────────────────────────────────────────────┘
  */
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -645,6 +645,16 @@ export const ProfileScreen = () => {
     ]).start(() => setEditingError(false));
   }, [editingError, fieldErrorOpacity, fieldBorderAnim]);
 
+  // Memoize sorted currencies (selected currency first) — avoids re-sorting on every render
+  const sortedCurrencies = useMemo(
+    () => [...CURRENCIES].sort((a, b) => {
+      if (a.code === selectedCurrency) return -1;
+      if (b.code === selectedCurrency) return 1;
+      return 0;
+    }),
+    [selectedCurrency],
+  );
+
   // OTP verification state (phone/email linking from settings)
   const [verifyingField, setVerifyingField] = useState<'phone' | 'email' | null>(null);
   const [verifyCode, setVerifyCode] = useState('');
@@ -989,12 +999,6 @@ export const ProfileScreen = () => {
       setShowDeletePopup(false);
     }
   }, [logout]);
-
-  // Track settings form changes
-  const onSettingsFieldChange = useCallback((setter: (v: string) => void) => (value: string) => {
-    setter(value);
-    setSettingsDirty(true);
-  }, []);
 
   // Settings field editing mode (animations handled by reanimated entering/exiting)
   const startEditing = useCallback((field: 'name' | 'telegram' | 'phone' | 'email') => {
@@ -1824,11 +1828,7 @@ export const ProfileScreen = () => {
               scrollEventThrottle={16}
             >
               {activePicker === 'currency' ? (
-                [...CURRENCIES].sort((a, b) => {
-                  if (a.code === selectedCurrency) return -1;
-                  if (b.code === selectedCurrency) return 1;
-                  return 0;
-                }).map((currency) => {
+                sortedCurrencies.map((currency) => {
                     const isSelected = currency.code === selectedCurrency;
                     const rateText = getExchangeRateText(currency.code, selectedCurrency, ratesMap);
                     return (

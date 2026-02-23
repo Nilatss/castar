@@ -12,13 +12,18 @@ import { EmailVerifyScreen } from '../../features/auth/screens/EmailVerifyScreen
 import { PhoneAuthScreen } from '../../features/auth/screens/PhoneAuthScreen';
 import { PhoneVerifyScreen } from '../../features/auth/screens/PhoneVerifyScreen';
 import { useAuthStore } from '../../features/auth/store/authStore';
+import { useShallow } from 'zustand/react/shallow';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 
 export const AuthNavigator = () => {
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const displayName = useAuthStore((s) => s.displayName);
-  const hasPin = useAuthStore((s) => s.hasPin);
+  const { isAuthenticated, displayName, hasPin } = useAuthStore(
+    useShallow((s) => ({
+      isAuthenticated: s.isAuthenticated,
+      displayName: s.displayName,
+      hasPin: s.hasPin,
+    })),
+  );
 
   // Determine initial route based on auth state:
   // - Has auth + displayName but no PIN → go to SetPin

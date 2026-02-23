@@ -50,13 +50,19 @@ export const useProfileStore = create<ProfileStore>((set) => ({
         SecureStore.getItemAsync(CURRENCY_KEY),
       ]);
 
+      const updates: Partial<Pick<ProfileStore, 'language' | 'currency'>> = {};
+
       if (savedLanguage) {
-        set({ language: savedLanguage });
+        updates.language = savedLanguage;
         await i18n.changeLanguage(savedLanguage);
       }
 
       if (savedCurrency) {
-        set({ currency: savedCurrency });
+        updates.currency = savedCurrency;
+      }
+
+      if (Object.keys(updates).length > 0) {
+        set(updates);
       }
     } catch {
       // Ignore errors — use defaults

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import type { NavigationState } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
@@ -61,10 +61,14 @@ export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
     init();
   }, [initializeAuth, initializeSettings]);
 
-  // Persist navigation state on every change
+  // Persist navigation state (debounced — avoids writing on every tab switch)
+  const debounceTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const onStateChange = useCallback((state: NavigationState | undefined) => {
     if (state) {
-      SecureStore.setItemAsync(NAV_STATE_KEY, JSON.stringify(state)).catch(() => {});
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+      debounceTimer.current = setTimeout(() => {
+        SecureStore.setItemAsync(NAV_STATE_KEY, JSON.stringify(state)).catch(() => {});
+      }, 1000);
     }
   }, []);
 

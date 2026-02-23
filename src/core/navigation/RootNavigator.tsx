@@ -6,15 +6,20 @@ import { AuthNavigator } from './AuthNavigator';
 import { TabNavigator } from './TabNavigator';
 import { PinLockScreen } from '../../features/auth/screens/PinLockScreen';
 import { useAuthStore } from '../../features/auth/store/authStore';
+import { useShallow } from 'zustand/react/shallow';
 import { colors } from '../../shared/constants';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export const RootNavigator = () => {
-  const isOnboarded = useAuthStore((s) => s.isOnboarded);
-  const isPinVerified = useAuthStore((s) => s.isPinVerified);
-  const hasPin = useAuthStore((s) => s.hasPin);
-  const isLoading = useAuthStore((s) => s.isLoading);
+  const { isOnboarded, isPinVerified, hasPin, isLoading } = useAuthStore(
+    useShallow((s) => ({
+      isOnboarded: s.isOnboarded,
+      isPinVerified: s.isPinVerified,
+      hasPin: s.hasPin,
+      isLoading: s.isLoading,
+    })),
+  );
 
   // Show loading screen while checking SecureStore for persisted session
   if (isLoading) {
