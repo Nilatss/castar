@@ -883,7 +883,7 @@ export const ProfileScreen = () => {
     Animated.parallel([
       Animated.timing(overlayOpacity, {
         toValue: 1,
-        duration: 350,
+        duration: 500,
         useNativeDriver: true,
       }),
       Animated.spring(sheetTranslateY, {
