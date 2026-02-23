@@ -38,6 +38,8 @@ import { format } from 'date-fns';
 import { enUS, ru, uz } from 'date-fns/locale';
 
 import { colors, typography, spacing, borderRadius } from '../../../shared/constants';
+import { scale, GLOW_RENDER_SIZE, GLOW2_RENDER_SIZE } from '../../../shared/constants/scaling';
+import { GlowCircle1, GlowCircle2 } from '../../../shared/components/GlowImage';
 import type { HomeStackParamList } from '../../../shared/types';
 import { useAuthStore } from '../../auth/store/authStore';
 import { useProfileStore } from '../../profile/store/profileStore';
@@ -192,6 +194,14 @@ export const HomeScreen = () => {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* ── Background Glows (GPU-accelerated PNG) ── */}
+      <View style={styles.glowContainer} pointerEvents="none">
+        <GlowCircle1 />
+      </View>
+      <View style={styles.glow2Container} pointerEvents="none">
+        <GlowCircle2 />
+      </View>
+
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -315,6 +325,19 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+
+  // ── Background Glows ──
+  glowContainer: {
+    position: 'absolute',
+    left: scale(22 + 175 - GLOW_RENDER_SIZE / 2),
+    top: scale(-175 + 175 - GLOW_RENDER_SIZE / 2),
+  },
+  glow2Container: {
+    position: 'absolute',
+    left: scale(267.5 - GLOW2_RENDER_SIZE / 2),
+    top: scale(-64.5 - GLOW2_RENDER_SIZE / 2),
+  },
+
   scrollView: {
     flex: 1,
   },
