@@ -1345,6 +1345,7 @@ export const ProfileScreen = () => {
           <BlurView
             intensity={10}
             tint="dark"
+            experimentalBlurMethod="dimezisBlurView"
             style={StyleSheet.absoluteFill}
             pointerEvents="none"
           />
@@ -1899,7 +1900,8 @@ export const ProfileScreen = () => {
             <BlurView
               intensity={10}
               tint="dark"
-                style={StyleSheet.absoluteFill}
+              experimentalBlurMethod="dimezisBlurView"
+              style={StyleSheet.absoluteFill}
               pointerEvents="none"
             />
             <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(16, 16, 16, 0.5)' }]} pointerEvents="none" />
@@ -1957,7 +1959,8 @@ export const ProfileScreen = () => {
             <BlurView
               intensity={10}
               tint="dark"
-                style={StyleSheet.absoluteFill}
+              experimentalBlurMethod="dimezisBlurView"
+              style={StyleSheet.absoluteFill}
               pointerEvents="none"
             />
             <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(16, 16, 16, 0.5)' }]} pointerEvents="none" />
