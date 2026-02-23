@@ -888,9 +888,9 @@ export const ProfileScreen = () => {
       }),
       Animated.spring(sheetTranslateY, {
         toValue: 0,
-        damping: 26,
-        stiffness: 200,
-        mass: 0.9,
+        damping: 32,
+        stiffness: 150,
+        mass: 1,
         useNativeDriver: true,
       }),
     ]).start();
