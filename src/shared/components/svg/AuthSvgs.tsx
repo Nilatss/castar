@@ -2,84 +2,18 @@
  * Shared SVG components for auth screens.
  * All components use JSX SVG (no XML string parsing at runtime).
  * Extracted from 9+ auth screens to eliminate ~55KB of duplication.
+ *
+ * Glow circles are GPU-accelerated PNG images (see GlowImage.tsx).
  */
 import React from 'react';
 import Svg, {
   Path,
   Circle as SvgCircle,
   Ellipse as SvgEllipse,
-  Defs,
-  RadialGradient,
-  Stop,
 } from 'react-native-svg';
-import { scale, GLOW_RENDER_SIZE, GLOW2_RENDER_SIZE } from '../../constants/scaling';
 
-// ═══════════════════════════════════════════════
-// Glow radial gradient stops (shared by all glows)
-// ═══════════════════════════════════════════════
-
-const GLOW_STOPS = [
-  { offset: '0', opacity: 0.16 },
-  { offset: '0.05', opacity: 0.15 },
-  { offset: '0.12', opacity: 0.13 },
-  { offset: '0.20', opacity: 0.11 },
-  { offset: '0.30', opacity: 0.08 },
-  { offset: '0.42', opacity: 0.055 },
-  { offset: '0.55', opacity: 0.03 },
-  { offset: '0.70', opacity: 0.015 },
-  { offset: '0.85', opacity: 0.005 },
-  { offset: '1', opacity: 0 },
-];
-
-// Higher opacity version for colored glows (SetPin/PinLock/EmailVerify/PhoneVerify success/error)
-const VIVID_GLOW_STOPS = [
-  { offset: '0', opacity: 0.45 },
-  { offset: '0.05', opacity: 0.40 },
-  { offset: '0.12', opacity: 0.33 },
-  { offset: '0.20', opacity: 0.26 },
-  { offset: '0.30', opacity: 0.19 },
-  { offset: '0.42', opacity: 0.12 },
-  { offset: '0.55', opacity: 0.07 },
-  { offset: '0.70', opacity: 0.03 },
-  { offset: '0.85', opacity: 0.01 },
-  { offset: '1', opacity: 0 },
-];
-
-// ═══════════════════════════════════════════════
-// Glow circles
-// ═══════════════════════════════════════════════
-
-/** Large background glow (1050px render). color defaults to white. */
-export const GlowCircle1 = React.memo(({ color = '#FFF', vivid = false, id = 'g1' }: { color?: string; vivid?: boolean; id?: string }) => {
-  const stops = vivid ? VIVID_GLOW_STOPS : GLOW_STOPS;
-  return (
-    <Svg width={scale(GLOW_RENDER_SIZE)} height={scale(GLOW_RENDER_SIZE)} viewBox={`0 0 ${GLOW_RENDER_SIZE} ${GLOW_RENDER_SIZE}`}>
-      <Defs>
-        <RadialGradient id={id} cx="0.5" cy="0.5" r="0.5">
-          {stops.map((s) => <Stop key={s.offset} offset={s.offset} stopColor={color} stopOpacity={s.opacity} />)}
-        </RadialGradient>
-      </Defs>
-      <SvgEllipse cx={GLOW_RENDER_SIZE / 2} cy={GLOW_RENDER_SIZE / 2} rx={GLOW_RENDER_SIZE / 2} ry={GLOW_RENDER_SIZE / 2} fill={`url(#${id})`} />
-    </Svg>
-  );
-});
-GlowCircle1.displayName = 'GlowCircle1';
-
-/** Small background glow (477px render). color defaults to white. */
-export const GlowCircle2 = React.memo(({ color = '#FFF', vivid = false, id = 'g2' }: { color?: string; vivid?: boolean; id?: string }) => {
-  const stops = vivid ? VIVID_GLOW_STOPS : GLOW_STOPS;
-  return (
-    <Svg width={scale(GLOW2_RENDER_SIZE)} height={scale(GLOW2_RENDER_SIZE)} viewBox={`0 0 ${GLOW2_RENDER_SIZE} ${GLOW2_RENDER_SIZE}`}>
-      <Defs>
-        <RadialGradient id={id} cx="0.5" cy="0.5" r="0.5">
-          {stops.map((s) => <Stop key={s.offset} offset={s.offset} stopColor={color} stopOpacity={s.opacity} />)}
-        </RadialGradient>
-      </Defs>
-      <SvgEllipse cx={GLOW2_RENDER_SIZE / 2} cy={GLOW2_RENDER_SIZE / 2} rx={GLOW2_RENDER_SIZE / 2} ry={GLOW2_RENDER_SIZE / 2} fill={`url(#${id})`} />
-    </Svg>
-  );
-});
-GlowCircle2.displayName = 'GlowCircle2';
+// Re-export GPU-accelerated glow circles (PNG instead of SVG RadialGradient)
+export { GlowCircle1, GlowCircle2 } from '../GlowImage';
 
 // ═══════════════════════════════════════════════
 // Castar Logo — 49×46, white fill

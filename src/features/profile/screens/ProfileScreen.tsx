@@ -43,7 +43,8 @@ import { BlurView } from 'expo-blur';
 import WebView from 'react-native-webview';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Path, Circle as SvgCircle, Ellipse as SvgEllipse, Defs, RadialGradient, Stop } from 'react-native-svg';
+import Svg, { Path, Circle as SvgCircle } from 'react-native-svg';
+import { GlowCircle1, GlowCircle2 } from '../../../shared/components/GlowImage';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -73,49 +74,9 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const FIGMA_WIDTH = 393;
 const scale = (v: number) => (v / FIGMA_WIDTH) * SCREEN_WIDTH;
 
-// ═══════════════════════════════════════════════
-// Glow SVGs (JSX — no XML parsing at runtime)
-// ═══════════════════════════════════════════════
-
+// Glow positioning constants (GlowCircle1/GlowCircle2 imported from GlowImage)
 const GLOW_RENDER_SIZE = 1050;
 const GLOW2_RENDER_SIZE = 477;
-
-const GLOW_STOPS = [
-  { offset: '0', opacity: 0.16 },
-  { offset: '0.05', opacity: 0.15 },
-  { offset: '0.12', opacity: 0.13 },
-  { offset: '0.20', opacity: 0.11 },
-  { offset: '0.30', opacity: 0.08 },
-  { offset: '0.42', opacity: 0.055 },
-  { offset: '0.55', opacity: 0.03 },
-  { offset: '0.70', opacity: 0.015 },
-  { offset: '0.85', opacity: 0.005 },
-  { offset: '1', opacity: 0 },
-];
-
-const GlowCircle1 = React.memo(() => (
-  <Svg width={scale(GLOW_RENDER_SIZE)} height={scale(GLOW_RENDER_SIZE)} viewBox={`0 0 ${GLOW_RENDER_SIZE} ${GLOW_RENDER_SIZE}`}>
-    <Defs>
-      <RadialGradient id="pg1" cx="0.5" cy="0.5" r="0.5">
-        {GLOW_STOPS.map((s) => <Stop key={s.offset} offset={s.offset} stopColor="#FFF" stopOpacity={s.opacity} />)}
-      </RadialGradient>
-    </Defs>
-    <SvgEllipse cx={GLOW_RENDER_SIZE / 2} cy={GLOW_RENDER_SIZE / 2} rx={GLOW_RENDER_SIZE / 2} ry={GLOW_RENDER_SIZE / 2} fill="url(#pg1)" />
-  </Svg>
-));
-GlowCircle1.displayName = 'GlowCircle1';
-
-const GlowCircle2 = React.memo(() => (
-  <Svg width={scale(GLOW2_RENDER_SIZE)} height={scale(GLOW2_RENDER_SIZE)} viewBox={`0 0 ${GLOW2_RENDER_SIZE} ${GLOW2_RENDER_SIZE}`}>
-    <Defs>
-      <RadialGradient id="pg2" cx="0.5" cy="0.5" r="0.5">
-        {GLOW_STOPS.map((s) => <Stop key={s.offset} offset={s.offset} stopColor="#FFF" stopOpacity={s.opacity} />)}
-      </RadialGradient>
-    </Defs>
-    <SvgEllipse cx={GLOW2_RENDER_SIZE / 2} cy={GLOW2_RENDER_SIZE / 2} rx={GLOW2_RENDER_SIZE / 2} ry={GLOW2_RENDER_SIZE / 2} fill="url(#pg2)" />
-  </Svg>
-));
-GlowCircle2.displayName = 'GlowCircle2';
 
 // ═══════════════════════════════════════════════
 // SVG Icons (JSX — no XML parsing at runtime)
