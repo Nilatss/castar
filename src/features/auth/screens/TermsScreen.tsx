@@ -10,13 +10,16 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
-import { SvgXml } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 import { colors, fontFamily } from '../../../shared/constants';
 
-// Back arrow icon — 24x24
-const backArrowSvg = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M15 18L9 12L15 6" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>`;
+// Back arrow chevron — 24x24
+const BackChevronIcon = React.memo(() => (
+  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+    <Path d="M15 18L9 12L15 6" stroke="white" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+));
+BackChevronIcon.displayName = 'BackChevronIcon';
 
 export const TermsScreen = () => {
   const insets = useSafeAreaInsets();
@@ -35,7 +38,7 @@ export const TermsScreen = () => {
           activeOpacity={0.7}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <SvgXml xml={backArrowSvg} width={24} height={24} />
+          <BackChevronIcon />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('terms.headerTitle')}</Text>
         <View style={styles.headerSpacer} />

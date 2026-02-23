@@ -31,15 +31,15 @@ const GLOW_STOPS = [
   { offset: '1', opacity: 0 },
 ];
 
-// Higher opacity version for colored glows (SetPin/PinLock success/error)
+// Higher opacity version for colored glows (SetPin/PinLock/EmailVerify/PhoneVerify success/error)
 const VIVID_GLOW_STOPS = [
-  { offset: '0', opacity: 0.32 },
-  { offset: '0.05', opacity: 0.29 },
-  { offset: '0.12', opacity: 0.25 },
-  { offset: '0.20', opacity: 0.20 },
-  { offset: '0.30', opacity: 0.15 },
-  { offset: '0.42', opacity: 0.10 },
-  { offset: '0.55', opacity: 0.06 },
+  { offset: '0', opacity: 0.45 },
+  { offset: '0.05', opacity: 0.40 },
+  { offset: '0.12', opacity: 0.33 },
+  { offset: '0.20', opacity: 0.26 },
+  { offset: '0.30', opacity: 0.19 },
+  { offset: '0.42', opacity: 0.12 },
+  { offset: '0.55', opacity: 0.07 },
   { offset: '0.70', opacity: 0.03 },
   { offset: '0.85', opacity: 0.01 },
   { offset: '1', opacity: 0 },
