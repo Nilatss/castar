@@ -71,11 +71,17 @@ src/
 │   │   ├── validation/            # ✅ Zod schemas
 │   │   ├── sync/syncService.ts    # Stub
 │   │   └── voice/voiceParser.ts   # 3 языка, text parsing
+│   ├── components/
+│   │   ├── GlowImage.tsx          # GPU-accelerated glow backgrounds (PNG <Image>)
+│   │   └── svg/AuthSvgs.tsx       # Shared JSX SVG components for auth screens
 │   ├── types/                     # common.ts, navigation.ts
 │   └── utils/                     # formatCurrency, formatDate
 │
 └── assets/
-    └── icons/
+    ├── icons/
+    └── images/
+        ├── glow.png            # 256×256 standard radial gradient (GPU-scaled)
+        └── glow-vivid.png      # 256×256 vivid radial gradient (GPU-scaled)
 ```
 
 ---
@@ -270,6 +276,21 @@ Query modules экспортируются как `categoryRepository`, `account
 - [x] Zod validation schemas (transaction, budget, category, account, recurring)
 - [x] SyncQueue для будущей синхронизации
 - [x] expo-sqlite plugin в app.json
+
+### Performance Optimization ✅ (13 коммитов)
+- [x] Quick wins: `useShallow`, `React.memo`, `useCallback`/`useMemo` — меньше ре-рендеров
+- [x] SvgXml → JSX SVG: ProfileScreen (16 иконок), 11 auth screens — **0 SvgXml** в проекте
+- [x] Shared SVG: `src/shared/components/svg/AuthSvgs.tsx` + `scaling.ts` (`scale()` утилита)
+- [x] Lazy i18n: при старте грузится 1 язык, остальные 10 — `InteractionManager.runAfterInteractions`
+- [x] SVG RadialGradient → GPU PNG: pre-rendered 256×256 PNG через `sharp` → `<Image>` (GPU-scaled)
+  - `glow.png` (4.6KB) + `glow-vivid.png` (7.9KB) → `GlowCircle1`, `GlowCircle2` в `GlowImage.tsx`
+  - Заменены glows в SubscriptionManagement, Profile, AuthSvgs
+- [x] Modal delay fix: убран `requestAnimationFrame` (native driver не нуждается в rAF)
+- [x] Анимации модалок/попапов (финальные значения):
+  - Picker sheet: overlay 500ms, spring stiffness 150, damping 32, mass 1
+  - Popup (logout/delete): fade 500ms, scale 0.94→1, spring stiffness 110, damping 24, mass 1
+  - FadeIn полей: 200ms
+- [x] `experimentalBlurMethod="dimezisBlurView"` — обязателен для blur на Android (expo-blur)
 
 ### Экраны — UI stubs (заглушки, ещё не реализованы)
 - [ ] Home, AddTransaction, TransactionDetail, Transactions
