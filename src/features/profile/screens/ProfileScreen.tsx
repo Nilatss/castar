@@ -789,14 +789,14 @@ export const ProfileScreen = () => {
     Animated.parallel([
       Animated.timing(logoutPopupOpacity, {
         toValue: 1,
-        duration: 600,
+        duration: 200,
         useNativeDriver: true,
       }),
       Animated.spring(logoutPopupScale, {
         toValue: 1,
         damping: 22,
-        stiffness: 90,
-        mass: 1,
+        stiffness: 300,
+        mass: 0.8,
         useNativeDriver: true,
       }),
     ]).start();
@@ -879,23 +879,21 @@ export const ProfileScreen = () => {
     }
     setActivePicker(type);
     setPickerModalVisible(true);
-    // Wait for React to render correct content, THEN animate in
-    requestAnimationFrame(() => {
-      Animated.parallel([
-        Animated.timing(overlayOpacity, {
-          toValue: 1,
-          duration: 350,
-          useNativeDriver: true,
-        }),
-        Animated.spring(sheetTranslateY, {
-          toValue: 0,
-          damping: 28,
-          stiffness: 220,
-          mass: 0.9,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    });
+    // Animate in immediately — native driver runs on UI thread, no need for rAF delay
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.spring(sheetTranslateY, {
+        toValue: 0,
+        damping: 28,
+        stiffness: 280,
+        mass: 0.8,
+        useNativeDriver: true,
+      }),
+    ]).start();
   }, [navigation, overlayOpacity, sheetTranslateY, topFadeOpacity, displayName, telegramUser, userId]);
 
   // Keep ref in sync so deep link handler always uses fresh openPicker
@@ -951,14 +949,14 @@ export const ProfileScreen = () => {
     Animated.parallel([
       Animated.timing(deletePopupOpacity, {
         toValue: 1,
-        duration: 600,
+        duration: 200,
         useNativeDriver: true,
       }),
       Animated.spring(deletePopupScale, {
         toValue: 1,
         damping: 22,
-        stiffness: 90,
-        mass: 1,
+        stiffness: 300,
+        mass: 0.8,
         useNativeDriver: true,
       }),
     ]).start();
@@ -1347,7 +1345,7 @@ export const ProfileScreen = () => {
           <BlurView
             intensity={10}
             tint="dark"
-            experimentalBlurMethod="dimezisBlurView"
+            experimentalBlurMethod="none"
             style={StyleSheet.absoluteFill}
             pointerEvents="none"
           />
@@ -1555,7 +1553,7 @@ export const ProfileScreen = () => {
                 <View style={styles.settingsFields}>
                   {/* Name */}
                   {(editingField === null || editingField === 'name') && (
-                    <Reanimated.View entering={FadeIn.duration(350)}>
+                    <Reanimated.View entering={FadeIn.duration(150)}>
                       <Animated.View style={editingField === 'name' ? { transform: [{ translateX: fieldShakeAnim }] } : undefined}>
                         <Animated.View
                           style={[
@@ -1596,7 +1594,7 @@ export const ProfileScreen = () => {
 
                   {/* Telegram (read-only — connect via auth flow, no manual input) */}
                   {(editingField === null || editingField === 'telegram') && (
-                    <Reanimated.View entering={FadeIn.duration(350)}>
+                    <Reanimated.View entering={FadeIn.duration(150)}>
                       <TouchableOpacity
                         style={[styles.settingsField, editingField === 'telegram' && styles.settingsFieldEditing]}
                         activeOpacity={0.7}
@@ -1614,7 +1612,7 @@ export const ProfileScreen = () => {
 
                   {/* Phone */}
                   {(editingField === null || editingField === 'phone') && (
-                    <Reanimated.View entering={FadeIn.duration(350)}>
+                    <Reanimated.View entering={FadeIn.duration(150)}>
                       <Animated.View style={editingField === 'phone' ? { transform: [{ translateX: fieldShakeAnim }] } : undefined}>
                         <Animated.View
                           style={[
@@ -1668,7 +1666,7 @@ export const ProfileScreen = () => {
 
                   {/* Email */}
                   {(editingField === null || editingField === 'email') && (
-                    <Reanimated.View entering={FadeIn.duration(350)}>
+                    <Reanimated.View entering={FadeIn.duration(150)}>
                       <Animated.View style={editingField === 'email' ? { transform: [{ translateX: fieldShakeAnim }] } : undefined}>
                         <Animated.View
                           style={[
@@ -1712,7 +1710,7 @@ export const ProfileScreen = () => {
                 {/* Buttons: edit mode → Cancel + action btn (Save / Connect X), normal → Delete */}
                 {editingField !== null ? (
                   <Reanimated.View
-                    entering={FadeIn.duration(300)}
+                    entering={FadeIn.duration(150)}
                     style={[styles.settingsEditButtons, editBtnAnimStyle]}
                   >
                     <TouchableOpacity
@@ -1902,7 +1900,7 @@ export const ProfileScreen = () => {
             <BlurView
               intensity={10}
               tint="dark"
-              experimentalBlurMethod="dimezisBlurView"
+              experimentalBlurMethod="none"
               style={StyleSheet.absoluteFill}
               pointerEvents="none"
             />
@@ -1961,7 +1959,7 @@ export const ProfileScreen = () => {
             <BlurView
               intensity={10}
               tint="dark"
-              experimentalBlurMethod="dimezisBlurView"
+              experimentalBlurMethod="none"
               style={StyleSheet.absoluteFill}
               pointerEvents="none"
             />
