@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
-import i18n from '../../../shared/i18n';
+import i18n, { ensureLanguageLoaded } from '../../../shared/i18n';
 import type { User, AppSettings, Currency } from '../../../shared/types';
 
 // ═══════════════════════════════════════════════
@@ -54,6 +54,7 @@ export const useProfileStore = create<ProfileStore>((set) => ({
 
       if (savedLanguage) {
         updates.language = savedLanguage;
+        ensureLanguageLoaded(savedLanguage);
         await i18n.changeLanguage(savedLanguage);
       }
 
@@ -87,9 +88,10 @@ export const useProfileStore = create<ProfileStore>((set) => ({
     SecureStore.setItemAsync(CURRENCY_KEY, currency).catch(() => {});
   },
 
-  // Persist language to SecureStore + change i18n + update state
+  // Persist language to SecureStore + lazy-load bundle + change i18n + update state
   setLanguage: (lang) => {
     set({ language: lang });
+    ensureLanguageLoaded(lang);
     i18n.changeLanguage(lang);
     SecureStore.setItemAsync(LANGUAGE_KEY, lang).catch(() => {});
   },
