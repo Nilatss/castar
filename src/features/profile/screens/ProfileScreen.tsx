@@ -785,17 +785,17 @@ export const ProfileScreen = () => {
   const openLogoutPopup = useCallback(() => {
     setShowLogoutPopup(true);
     logoutPopupOpacity.setValue(0);
-    logoutPopupScale.setValue(0.95);
+    logoutPopupScale.setValue(0.92);
     Animated.parallel([
       Animated.timing(logoutPopupOpacity, {
         toValue: 1,
-        duration: 350,
+        duration: 450,
         useNativeDriver: true,
       }),
       Animated.spring(logoutPopupScale, {
         toValue: 1,
-        damping: 22,
-        stiffness: 180,
+        damping: 20,
+        stiffness: 140,
         mass: 0.9,
         useNativeDriver: true,
       }),
@@ -883,14 +883,14 @@ export const ProfileScreen = () => {
     Animated.parallel([
       Animated.timing(overlayOpacity, {
         toValue: 1,
-        duration: 300,
+        duration: 350,
         useNativeDriver: true,
       }),
       Animated.spring(sheetTranslateY, {
         toValue: 0,
-        damping: 28,
-        stiffness: 240,
-        mass: 0.85,
+        damping: 26,
+        stiffness: 200,
+        mass: 0.9,
         useNativeDriver: true,
       }),
     ]).start();
@@ -945,17 +945,17 @@ export const ProfileScreen = () => {
   const openDeletePopup = useCallback(() => {
     setShowDeletePopup(true);
     deletePopupOpacity.setValue(0);
-    deletePopupScale.setValue(0.95);
+    deletePopupScale.setValue(0.92);
     Animated.parallel([
       Animated.timing(deletePopupOpacity, {
         toValue: 1,
-        duration: 350,
+        duration: 450,
         useNativeDriver: true,
       }),
       Animated.spring(deletePopupScale, {
         toValue: 1,
-        damping: 22,
-        stiffness: 180,
+        damping: 20,
+        stiffness: 140,
         mass: 0.9,
         useNativeDriver: true,
       }),
