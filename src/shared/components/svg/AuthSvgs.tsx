@@ -1,0 +1,193 @@
+/**
+ * Shared SVG components for auth screens.
+ * All components use JSX SVG (no XML string parsing at runtime).
+ * Extracted from 9+ auth screens to eliminate ~55KB of duplication.
+ */
+import React from 'react';
+import Svg, {
+  Path,
+  Circle as SvgCircle,
+  Ellipse as SvgEllipse,
+  Defs,
+  RadialGradient,
+  Stop,
+} from 'react-native-svg';
+import { scale, GLOW_RENDER_SIZE, GLOW2_RENDER_SIZE } from '../../constants/scaling';
+
+// ═══════════════════════════════════════════════
+// Glow radial gradient stops (shared by all glows)
+// ═══════════════════════════════════════════════
+
+const GLOW_STOPS = [
+  { offset: '0', opacity: 0.16 },
+  { offset: '0.05', opacity: 0.15 },
+  { offset: '0.12', opacity: 0.13 },
+  { offset: '0.20', opacity: 0.11 },
+  { offset: '0.30', opacity: 0.08 },
+  { offset: '0.42', opacity: 0.055 },
+  { offset: '0.55', opacity: 0.03 },
+  { offset: '0.70', opacity: 0.015 },
+  { offset: '0.85', opacity: 0.005 },
+  { offset: '1', opacity: 0 },
+];
+
+// Higher opacity version for colored glows (SetPin/PinLock success/error)
+const VIVID_GLOW_STOPS = [
+  { offset: '0', opacity: 0.32 },
+  { offset: '0.05', opacity: 0.29 },
+  { offset: '0.12', opacity: 0.25 },
+  { offset: '0.20', opacity: 0.20 },
+  { offset: '0.30', opacity: 0.15 },
+  { offset: '0.42', opacity: 0.10 },
+  { offset: '0.55', opacity: 0.06 },
+  { offset: '0.70', opacity: 0.03 },
+  { offset: '0.85', opacity: 0.01 },
+  { offset: '1', opacity: 0 },
+];
+
+// ═══════════════════════════════════════════════
+// Glow circles
+// ═══════════════════════════════════════════════
+
+/** Large background glow (1050px render). color defaults to white. */
+export const GlowCircle1 = React.memo(({ color = '#FFF', vivid = false, id = 'g1' }: { color?: string; vivid?: boolean; id?: string }) => {
+  const stops = vivid ? VIVID_GLOW_STOPS : GLOW_STOPS;
+  return (
+    <Svg width={scale(GLOW_RENDER_SIZE)} height={scale(GLOW_RENDER_SIZE)} viewBox={`0 0 ${GLOW_RENDER_SIZE} ${GLOW_RENDER_SIZE}`}>
+      <Defs>
+        <RadialGradient id={id} cx="0.5" cy="0.5" r="0.5">
+          {stops.map((s) => <Stop key={s.offset} offset={s.offset} stopColor={color} stopOpacity={s.opacity} />)}
+        </RadialGradient>
+      </Defs>
+      <SvgEllipse cx={GLOW_RENDER_SIZE / 2} cy={GLOW_RENDER_SIZE / 2} rx={GLOW_RENDER_SIZE / 2} ry={GLOW_RENDER_SIZE / 2} fill={`url(#${id})`} />
+    </Svg>
+  );
+});
+GlowCircle1.displayName = 'GlowCircle1';
+
+/** Small background glow (477px render). color defaults to white. */
+export const GlowCircle2 = React.memo(({ color = '#FFF', vivid = false, id = 'g2' }: { color?: string; vivid?: boolean; id?: string }) => {
+  const stops = vivid ? VIVID_GLOW_STOPS : GLOW_STOPS;
+  return (
+    <Svg width={scale(GLOW2_RENDER_SIZE)} height={scale(GLOW2_RENDER_SIZE)} viewBox={`0 0 ${GLOW2_RENDER_SIZE} ${GLOW2_RENDER_SIZE}`}>
+      <Defs>
+        <RadialGradient id={id} cx="0.5" cy="0.5" r="0.5">
+          {stops.map((s) => <Stop key={s.offset} offset={s.offset} stopColor={color} stopOpacity={s.opacity} />)}
+        </RadialGradient>
+      </Defs>
+      <SvgEllipse cx={GLOW2_RENDER_SIZE / 2} cy={GLOW2_RENDER_SIZE / 2} rx={GLOW2_RENDER_SIZE / 2} ry={GLOW2_RENDER_SIZE / 2} fill={`url(#${id})`} />
+    </Svg>
+  );
+});
+GlowCircle2.displayName = 'GlowCircle2';
+
+// ═══════════════════════════════════════════════
+// Castar Logo — 49×46, white fill
+// ═══════════════════════════════════════════════
+
+export const LogoIcon = React.memo(() => (
+  <Svg width={49} height={46} viewBox="0 0 49 46" fill="none">
+    <Path d="M3.98343 12.3283C9.38617 7.58872 17.3686 8.05095 23.4014 11.1007L26.0342 12.5929L23.0137 12.9122C17.9759 13.7619 12.904 16.6709 9.34573 20.4992C7.73404 22.2779 6.427 24.318 5.7637 26.5929C3.91853 32.235 6.23411 39.3068 11.711 42.4367C11.9636 42.5582 12.215 42.6705 12.4737 42.7736C12.7146 42.869 12.9604 42.956 13.209 43.0343V43.0792C12.953 43.0077 12.6994 42.9276 12.4492 42.84C12.185 42.7467 11.9254 42.6464 11.6651 42.5363C6.63598 40.019 3.29201 34.1617 3.75101 28.2579C2.85842 27.3331 2.06319 26.2967 1.42093 25.1554C-0.0703107 22.6104 -0.591641 19.1283 0.858429 16.2677C1.6097 14.7162 2.72509 13.4227 3.98343 12.3283ZM19.8086 11.6564C14.8857 9.95133 9.03349 10.1057 5.03421 13.5636C3.88096 14.5325 2.89663 15.6528 2.24417 16.9493C1.01094 19.2996 1.10202 22.1936 2.24026 24.7423C2.65692 25.6991 3.19715 26.6165 3.83304 27.463C3.89172 27.0328 3.97033 26.6028 4.07132 26.1749C4.63209 23.5131 6.03578 21.0835 7.82327 19.1154C11.1341 15.6147 15.1903 12.9953 19.8086 11.6564Z" fill="white" />
+    <Path d="M15.3069 21.3875C14.8183 26.4871 16.26 32.1312 18.9642 36.6004C20.2524 38.6682 21.879 40.5149 23.9232 41.7762C28.8235 45.0399 36.2344 44.5748 40.6058 40.0613C40.7923 39.8405 40.9701 39.6156 41.139 39.3846C41.7102 38.5996 42.1929 37.7341 42.4671 36.7996H42.4691C42.201 37.7366 41.7404 38.6138 41.1976 39.4266C41.0372 39.6655 40.8687 39.8995 40.6917 40.1307C37.0274 44.3594 30.526 46.1244 24.9944 44.1512C23.8696 44.7876 22.659 45.2991 21.3851 45.6297C18.5348 46.4303 15.0116 45.9797 12.679 43.7898C11.4276 42.6628 10.5076 41.2695 9.80499 39.7977C6.68362 33.3116 9.15251 25.6928 13.6526 20.5584L15.7835 18.3514L15.3069 21.3875ZM13.2562 24.2186C10.3536 28.5938 9.01148 34.3172 11.2757 39.1111C11.8883 40.4532 12.6812 41.6805 13.721 42.6463C15.629 44.4858 18.4405 45.1847 21.1995 44.7312C22.2397 44.5716 23.2745 44.2765 24.263 43.867C23.8591 43.6955 23.4604 43.5047 23.0706 43.2908C20.6151 42.0257 18.6354 39.9791 17.2142 37.6922C14.7704 33.5765 13.3442 29.0021 13.2562 24.2186Z" fill="white" />
+    <Path d="M45.0168 33.7147C39.6141 38.4543 31.6317 37.992 25.5989 34.9423L22.9661 33.4501L25.9866 33.1307C31.0244 32.281 36.0962 29.3721 39.6545 25.5438C41.2663 23.7651 42.5732 21.7249 43.2366 19.4501C45.0817 13.8079 42.7662 6.73613 37.2893 3.60632C37.0367 3.48482 36.7852 3.37252 36.5266 3.26941C36.2859 3.17403 36.0405 3.08694 35.7922 3.00867V2.96375C36.0479 3.03517 36.3011 3.11553 36.551 3.203C36.8153 3.29623 37.0748 3.39659 37.3352 3.50671C42.3644 6.02393 45.7083 11.8813 45.2493 17.785C46.1419 18.7099 46.9371 19.7463 47.5793 20.8876C49.0706 23.4326 49.5919 26.9147 48.1418 29.7753C47.3905 31.3268 46.2752 32.6203 45.0168 33.7147ZM29.1926 34.3866C34.1154 36.0915 39.9669 35.9371 43.9661 32.4794C45.1193 31.5105 46.1036 30.3902 46.7561 29.0936C47.9894 26.7434 47.8983 23.8494 46.76 21.3007C46.3433 20.3438 45.8031 19.4265 45.1672 18.58C45.1085 19.0102 45.0299 19.4402 44.929 19.868C44.3682 22.5299 42.9645 24.9594 41.177 26.9276C37.8662 30.4281 33.8107 33.0477 29.1926 34.3866Z" fill="white" />
+    <Path d="M27.4159 0.369598C30.2663 -0.43102 33.7894 0.0194238 36.122 2.20944C37.3734 3.33655 38.2934 4.72975 38.996 6.20163C42.1172 12.6877 39.6484 20.3066 35.1483 25.4409L33.0175 27.6479L33.494 24.6118C33.9827 19.5123 32.5409 13.8681 29.8368 9.3989C28.5485 7.331 26.922 5.48442 24.8778 4.22311C19.9775 0.959157 12.5666 1.42437 8.19521 5.93796C8.00866 6.15875 7.83088 6.38368 7.662 6.61472C7.07998 7.4146 6.58849 8.29751 6.31728 9.25241C6.58293 8.29549 7.05041 7.40073 7.60341 6.57272C7.76374 6.33381 7.93227 6.09982 8.10927 5.86862C11.7737 1.63979 18.2748 -0.125343 23.8065 1.84811C24.9314 1.21162 26.1419 0.700218 27.4159 0.369598ZM35.08 3.353C33.172 1.51334 30.3606 0.814541 27.6015 1.26804C26.5611 1.42768 25.5265 1.72271 24.538 2.13229C24.942 2.3038 25.3405 2.49451 25.7304 2.70847C28.1859 3.97362 30.1656 6.02014 31.5868 8.3071C34.0305 12.4228 35.4568 16.9972 35.5448 21.7807C38.4474 17.4055 39.7894 11.682 37.5253 6.88815C36.9126 5.546 36.1198 4.31887 35.08 3.353Z" fill="white" />
+  </Svg>
+));
+LogoIcon.displayName = 'LogoIcon';
+
+// ═══════════════════════════════════════════════
+// Navigation icons
+// ═══════════════════════════════════════════════
+
+/** Back arrow — 28×28, stroke white */
+export const ArrowLeftIcon = React.memo(() => (
+  <Svg width={28} height={28} viewBox="0 0 28 28" fill="none">
+    <Path d="M17.5 5.83334L10.5 14L17.5 22.1667" stroke="white" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+));
+ArrowLeftIcon.displayName = 'ArrowLeftIcon';
+
+/** Keypad delete/backspace — 32×32, stroke white */
+export const DeleteKeyIcon = React.memo(() => (
+  <Svg width={32} height={32} viewBox="0 0 32 32" fill="none">
+    <Path fillRule="evenodd" clipRule="evenodd" d="M11.1057 6.66666H21.3332C24.0946 6.66666 25.4753 6.66666 26.4043 7.59562C27.3332 8.52458 27.3332 9.90526 27.3332 12.6667V19.3333C27.3332 22.0947 27.3332 23.4754 26.4043 24.4044C25.4753 25.3333 24.0946 25.3333 21.3332 25.3333H11.1057C11.1057 25.3333 11.1057 25.3333 11.1057 25.3333C10.2457 25.3333 9.53338 25.3333 8.9709 24.9505C8.40842 24.5677 8.06848 24.0006 7.64853 23.2955L5.6247 19.9622C4.84152 18.6732 4.44992 18.0288 4.44992 17.3333C4.44992 16.6379 4.84152 15.9934 5.6247 14.7045L7.64853 11.3712C8.06848 10.666 8.40842 10.099 8.9709 9.71615C9.53338 9.33332 10.2457 9.33332 11.1057 9.33332L11.1057 6.66666ZM15.138 12.862C14.7475 12.4715 14.1143 12.4715 13.7238 12.862C13.3333 13.2526 13.3333 13.8857 13.7238 14.2763L15.4475 16L13.7238 17.7237C13.3333 18.1142 13.3333 18.7474 13.7238 19.1379C14.1143 19.5284 14.7475 19.5284 15.138 19.1379L16.8617 17.4142L18.5855 19.1379C18.976 19.5284 19.6092 19.5284 19.9997 19.1379C20.3902 18.7474 20.3902 18.1142 19.9997 17.7237L18.2759 16L19.9997 14.2763C20.3902 13.8857 20.3902 13.2526 19.9997 12.862C19.6092 12.4715 18.976 12.4715 18.5855 12.862L16.8617 14.5858L15.138 12.862Z" fill="white" />
+  </Svg>
+));
+DeleteKeyIcon.displayName = 'DeleteKeyIcon';
+
+// ═══════════════════════════════════════════════
+// Auth step indicator icons
+// ═══════════════════════════════════════════════
+
+/** User icon — 24×24 (circle + ellipse person) */
+export const UserIcon = React.memo(() => (
+  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+    <SvgCircle cx={12} cy={6} r={4} fill="white" />
+    <SvgEllipse cx={12} cy={17} rx={7} ry={4} fill="white" />
+  </Svg>
+));
+UserIcon.displayName = 'UserIcon';
+
+/** Pin/password icon — 24×24 (rounded rect with 3 dots) */
+export const PinIcon = React.memo(() => (
+  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+    <Path d="M2 16C2 13.1716 2 11.7574 2.87868 10.8787C3.75736 10 5.17157 10 8 10H16C18.8284 10 20.2426 10 21.1213 10.8787C22 11.7574 22 13.1716 22 16C22 18.8284 22 20.2426 21.1213 21.1213C20.2426 22 18.8284 22 16 22H8C5.17157 22 3.75736 22 2.87868 21.1213C2 20.2426 2 18.8284 2 16Z" stroke="white" strokeWidth={1.5} />
+    <Path d="M6 10V8C6 4.68629 8.68629 2 12 2C15.3137 2 18 4.68629 18 8V10" stroke="white" strokeWidth={1.5} strokeLinecap="round" />
+    <Path d="M8 16H8.01M12 16H12.01M16 16H16.01" stroke="white" strokeWidth={2} strokeLinecap="round" />
+  </Svg>
+));
+PinIcon.displayName = 'PinIcon';
+
+/** Mailbox/letter icon — 24×24 */
+export const MailboxIcon = React.memo(() => (
+  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+    <Path fillRule="evenodd" clipRule="evenodd" d="M3.17157 5.17157C2 6.34315 2 8.22876 2 12C2 15.7712 2 17.6569 3.17157 18.8284C4.34315 20 6.22876 20 10 20H14C17.7712 20 19.6569 20 20.8284 18.8284C22 17.6569 22 15.7712 22 12C22 8.22876 22 6.34315 20.8284 5.17157C19.6569 4 17.7712 4 14 4H10C6.22876 4 4.34315 4 3.17157 5.17157ZM18.5762 7.51986C18.8413 7.83807 18.7983 8.31099 18.4801 8.57617L16.2837 10.4066C15.3973 11.1452 14.6789 11.7439 14.0448 12.1517C13.3843 12.5765 12.7411 12.8449 12 12.8449C11.2589 12.8449 10.6157 12.5765 9.95518 12.1517C9.32112 11.7439 8.60271 11.1452 7.71636 10.4066L5.51986 8.57617C5.20165 8.31099 5.15866 7.83807 5.42383 7.51986C5.68901 7.20165 6.16193 7.15866 6.48014 7.42383L8.63903 9.22291C9.57199 10.0004 10.2197 10.5384 10.7666 10.8901C11.2959 11.2306 11.6549 11.3449 12 11.3449C12.3451 11.3449 12.7041 11.2306 13.2334 10.8901C13.7803 10.5384 14.428 10.0004 15.361 9.22291L17.5199 7.42383C17.8381 7.15866 18.311 7.20165 18.5762 7.51986Z" fill="white" />
+  </Svg>
+));
+MailboxIcon.displayName = 'MailboxIcon';
+
+/** Phone icon — 24×24 */
+export const PhoneIcon = React.memo(() => (
+  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+    <Path d="M15.5562 14.4062L15.1007 14.859C15.1007 14.859 14.0181 15.9355 11.0631 12.9972C8.10812 10.059 9.1907 8.98257 9.1907 8.98257L9.47752 8.69738C10.1841 7.99484 10.2507 6.86691 9.63424 6.04348L8.37326 4.35908C7.61028 3.33992 6.13596 3.20529 5.26145 4.07483L3.69185 5.63552C3.25823 6.06668 2.96765 6.62559 3.00289 7.24561C3.09304 8.83182 3.81071 12.2447 7.81536 16.2266C12.0621 20.4492 16.0468 20.617 17.6763 20.4651C18.1917 20.4171 18.6399 20.1546 19.0011 19.7954L20.4217 18.383C21.3806 17.4295 21.1102 15.7949 19.8833 15.128L17.9728 14.0894C17.1672 13.6515 16.1858 13.7801 15.5562 14.4062Z" fill="white" />
+  </Svg>
+));
+PhoneIcon.displayName = 'PhoneIcon';
+
+// ═══════════════════════════════════════════════
+// Modal/picker icons
+// ═══════════════════════════════════════════════
+
+/** Language icon — 24×24, stroke #F6F6F6 */
+export const LanguageIcon = React.memo(() => (
+  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+    <Path d="M5 8L11 14M4 14L10 8L12 5M2 5H14M7 2H8M22 22L17 12L12 22M14 18H20" stroke="#F6F6F6" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+));
+LanguageIcon.displayName = 'LanguageIcon';
+
+/** Close circle — 40×40 */
+export const CloseCircleIcon = React.memo(() => (
+  <Svg width={40} height={40} viewBox="0 0 40 40" fill="none">
+    <SvgCircle cx={20} cy={20} r={16.6667} fill="white" fillOpacity={0.2} />
+    <Path d="M24.1666 15.8333L15.8333 24.1666M15.8333 15.8333L24.1666 24.1666" stroke="white" strokeWidth={1.5} strokeLinecap="round" />
+  </Svg>
+));
+CloseCircleIcon.displayName = 'CloseCircleIcon';
+
+/** Check circle — 24×24 (selected indicator) */
+export const CheckCircleIcon = React.memo(() => (
+  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+    <SvgCircle cx={12} cy={12} r={10} fill="white" />
+    <Path d="M8.5 12.5L10.5 14.5L15.5 9.5" stroke="#101010" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+));
+CheckCircleIcon.displayName = 'CheckCircleIcon';
+
+/** Arrow down — 20×20, white 40% opacity */
+export const ArrowDownIcon = React.memo(() => (
+  <Svg width={20} height={20} viewBox="0 0 20 20" fill="none">
+    <Path d="M15.8333 7.5L9.99999 12.5L4.16666 7.5" stroke="white" strokeOpacity={0.4} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+));
+ArrowDownIcon.displayName = 'ArrowDownIcon';
