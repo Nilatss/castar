@@ -1,7 +1,6 @@
 import { openDatabaseSync } from 'expo-sqlite';
 import { drizzle } from 'drizzle-orm/expo-sqlite';
 import * as SecureStore from 'expo-secure-store';
-import * as Crypto from 'expo-crypto';
 import * as schema from './schema';
 
 const DB_KEY_STORE = 'castar_db_encryption_key';
@@ -14,8 +13,10 @@ async function getOrCreateDbKey(): Promise<string> {
   let key = await SecureStore.getItemAsync(DB_KEY_STORE);
   if (!key) {
     // Generate a random 32-byte hex key (256-bit AES)
-    key = Crypto.getRandomValues(new Uint8Array(32))
-      .reduce((s, b) => s + b.toString(16).padStart(2, '0'), '');
+    // Uses Web Crypto API (built into Hermes / RN 0.81+)
+    key = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
     await SecureStore.setItemAsync(DB_KEY_STORE, key);
   }
   return key;

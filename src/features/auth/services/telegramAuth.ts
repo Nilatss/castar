@@ -8,7 +8,6 @@
  */
 
 import * as SecureStore from 'expo-secure-store';
-import * as Crypto from 'expo-crypto';
 import { TELEGRAM_CONFIG } from '../../../shared/constants/config';
 
 // ===================== Types =====================
@@ -163,21 +162,25 @@ export async function clearPersistedDisplayName(): Promise<void> {
 
 /**
  * Generate a random 16-byte hex salt.
+ * Uses Web Crypto API (built into Hermes / RN 0.81+).
  */
 function generateSalt(): string {
-  return Crypto.getRandomValues(new Uint8Array(16))
-    .reduce((s, b) => s + b.toString(16).padStart(2, '0'), '');
+  return Array.from(crypto.getRandomValues(new Uint8Array(16)))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
 }
 
 /**
  * Hash a PIN with a salt using SHA-256.
- * Returns hex digest.
+ * Uses Web Crypto API (crypto.subtle.digest, available in RN 0.76+).
+ * Returns lowercase hex digest — identical output to expo-crypto digestStringAsync.
  */
 async function hashPin(pin: string, salt: string): Promise<string> {
-  return Crypto.digestStringAsync(
-    Crypto.CryptoDigestAlgorithm.SHA256,
-    salt + pin,
-  );
+  const data = new TextEncoder().encode(salt + pin);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
 }
 
 /**

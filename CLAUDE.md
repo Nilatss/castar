@@ -37,7 +37,7 @@ src/
 ├── features/
 │   ├── auth/
 │   │   ├── screens/               # 11 экранов (Onboarding, Telegram, Email, Phone, SetName, SetPin, etc.)
-│   │   ├── services/              # emailAuth, phoneAuth, telegramAuth (PIN hashing: SHA-256 + salt)
+│   │   ├── services/              # emailAuth, phoneAuth, telegramAuth (PIN hashing: SHA-256 + salt via Web Crypto)
 │   │   └── store/                 # authStore (Zustand + SecureStore)
 │   ├── transactions/
 │   │   ├── screens/               # Home, AddTransaction, TransactionDetail, Transactions
@@ -320,7 +320,7 @@ Backward-compatible Proxy exports: `db` and `rawDb` forward to initialized insta
 
 ### Auth & Security
 - expo-secure-store (JWT + PIN hash + user persistence + DB encryption key)
-- expo-crypto (SHA-256 PIN hashing + salt generation)
+- Web Crypto API (SHA-256 PIN hashing + salt generation — built into Hermes)
 - react-native-webview (Telegram OAuth)
 - expo-linking (deep link callback: castar://)
 
@@ -343,7 +343,7 @@ Backward-compatible Proxy exports: `db` and `rawDb` forward to initialized insta
 
 | Мера | Статус | Детали |
 |------|--------|--------|
-| PIN hashing | ✅ | SHA-256 + random salt (expo-crypto), stored in SecureStore |
+| PIN hashing | ✅ | SHA-256 + random salt (Web Crypto API), stored in SecureStore |
 | SQLite encryption | ✅ | SQLCipher 256-bit AES, key in SecureStore |
 | JWT auth | ✅ | Bearer token, 30d expiry, jose HS256 |
 | JWT refresh | ✅ | `POST /auth/refresh` — new 30d token |
