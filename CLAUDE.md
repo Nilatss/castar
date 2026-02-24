@@ -64,14 +64,14 @@ src/
 │   │   ├── api/                   # ✅ apiClient + queryClient + RQ hooks (7 entity modules)
 │   │   ├── analytics/             # ✅ PostHog (posthog.ts)
 │   │   ├── currency/              # ✅ open.er-api.com + SecureStore кэш 24ч
-│   │   ├── database/              # ✅ Drizzle ORM (7 schema, 7 query modules, SQLCipher encryption)
+│   │   ├── database/              # ✅ Drizzle ORM (7 schema, 7 query modules)
 │   │   │   ├── schema/            # 7 таблиц (Drizzle schema definitions)
 │   │   │   ├── drizzle/           # auto-generated migrations (.sql + journal)
 │   │   │   ├── *Queries.ts        # 7 query modules
-│   │   │   ├── connection.ts      # async initEncryptedDb() + SQLCipher PRAGMA key
+│   │   │   ├── connection.ts      # async initDb() + WAL mode + foreign keys (initEncryptedDb kept as alias)
 │   │   │   ├── migrations.ts      # bridge from legacy + migrate()
 │   │   │   ├── seed.ts            # seedDefaults(userId)
-│   │   │   └── index.ts           # barrel: *Repository aliases + initEncryptedDb
+│   │   │   └── index.ts           # barrel: *Repository aliases + initDb
 │   │   ├── validation/            # ✅ Zod schemas
 │   │   ├── sync/syncService.ts    # Stub (backend sync fully implemented)
 │   │   └── voice/                 # ✅ voiceParser + cloudRecognition + offlineRecognition + voiceService
@@ -197,7 +197,7 @@ Worker URL: `https://castar-auth.ivcswebofficial.workers.dev`
 
 ---
 
-## 4. Database Layer (Drizzle ORM + expo-sqlite + SQLCipher)
+## 4. Database Layer (Drizzle ORM + expo-sqlite)
 
 ### Schema (src/shared/services/database/schema/)
 7 таблиц: categories, accounts, transactions, budgets, recurrings, syncQueue, exchangeRates.
@@ -206,11 +206,12 @@ Worker URL: `https://castar-auth.ivcswebofficial.workers.dev`
 - Enums: `text('...', { enum: [...] })`
 - Nullable поля: `string | null` (не `undefined`)
 
-### Encryption (SQLCipher)
-- `app.json` → `["expo-sqlite", { "useSQLCipher": true }]`
-- 256-bit AES encryption key → SecureStore (`castar_db_encryption_key`)
-- `PRAGMA key` applied before any other operations
-- Async init: `initEncryptedDb()` called in AppProviders before auth/settings
+### Encryption (SQLCipher) — DEFERRED
+- SQLCipher **отложен** до создания кастомного нативного билда (expo prebuild / EAS Build)
+- `app.json` plugins: `"expo-sqlite"` (без `useSQLCipher`)
+- `connection.ts` использует стандартный expo-sqlite без шифрования
+- Стандартный expo-sqlite работает в Expo Go и dev builds
+- **Будет восстановлено:** `["expo-sqlite", { "useSQLCipher": true }]` + PRAGMA key + SecureStore ключ
 
 ### Query Modules (src/shared/services/database/*Queries.ts)
 - `categoryQueries` — findByUser, findByType, countByUser, insert, update, delete
@@ -222,7 +223,8 @@ Worker URL: `https://castar-auth.ivcswebofficial.workers.dev`
 - `exchangeRateQueries` — для будущей SQLite интеграции курсов валют
 
 ### Connection (async init)
-`initEncryptedDb()` → generates/loads key → `PRAGMA key` → WAL mode → foreign keys → `drizzle(expoDb, { schema })`
+`initDb()` → WAL mode → foreign keys → `drizzle(expoDb, { schema })`
+`initEncryptedDb()` kept as backward-compatible alias for `initDb()`.
 Backward-compatible Proxy exports: `db` and `rawDb` forward to initialized instance.
 
 ---
@@ -307,7 +309,7 @@ Backward-compatible Proxy exports: `db` and `rawDb` forward to initialized insta
 - zod ^4.3.6
 
 ### Database
-- drizzle-orm ^0.45.1, expo-sqlite ~16.0.10 (SQLCipher enabled)
+- drizzle-orm ^0.45.1, expo-sqlite ~16.0.10 (standard, SQLCipher deferred)
 - drizzle-kit ^0.31.9 (dev), babel-plugin-inline-import ^3.0.0 (dev)
 
 ### i18n
@@ -319,7 +321,7 @@ Backward-compatible Proxy exports: `db` and `rawDb` forward to initialized insta
 - expo-blur
 
 ### Auth & Security
-- expo-secure-store (JWT + PIN hash + user persistence + DB encryption key)
+- expo-secure-store (JWT + PIN hash + user persistence)
 - Web Crypto API (SHA-256 PIN hashing + salt generation — built into Hermes)
 - react-native-webview (Telegram OAuth)
 - expo-linking (deep link callback: castar://)
@@ -344,7 +346,7 @@ Backward-compatible Proxy exports: `db` and `rawDb` forward to initialized insta
 | Мера | Статус | Детали |
 |------|--------|--------|
 | PIN hashing | ✅ | SHA-256 + random salt (Web Crypto API), stored in SecureStore |
-| SQLite encryption | ✅ | SQLCipher 256-bit AES, key in SecureStore |
+| SQLite encryption | ⏳ | SQLCipher deferred — will be enabled with custom native build (expo prebuild / EAS Build) |
 | JWT auth | ✅ | Bearer token, 30d expiry, jose HS256 |
 | JWT refresh | ✅ | `POST /auth/refresh` — new 30d token |
 | CORS | ✅ | Blocks all browser origins, allows mobile (no Origin header) |
@@ -399,7 +401,7 @@ Backward-compatible Proxy exports: `db` and `rawDb` forward to initialized insta
 
 #### Фаза 3 — Локальная БД (Drizzle ORM)
 - [x] expo-sqlite + Drizzle ORM (7 schema, 7 query modules)
-- [x] SQLCipher 256-bit AES encryption (ключ в SecureStore)
+- [ ] SQLCipher encryption — deferred until custom native build (expo prebuild / EAS Build)
 - [x] Zustand сторы интегрированы с SQLite
 - [x] Zod validation schemas
 - [x] SyncQueue для будущей синхронизации
@@ -415,7 +417,7 @@ Backward-compatible Proxy exports: `db` and `rawDb` forward to initialized insta
 - [x] CRUD routes — полная реализация с Zod валидацией
 - [x] Sync endpoint — push/pull/full (390 строк)
 - [x] React Query — 7 hook-модулей + apiClient + queryClient
-- [x] Безопасность: PIN hash, CORS, voice auth, JWT refresh, SQLCipher, rate limiting
+- [x] Безопасность: PIN hash, CORS, voice auth, JWT refresh, rate limiting
 
 #### Performance Optimization ✅
 - [x] useShallow, React.memo, useCallback/useMemo
@@ -467,6 +469,6 @@ Backward-compatible Proxy exports: `db` and `rawDb` forward to initialized insta
 - **Языки (i18n):** uz, ru, en, be, uk, kk, de, az, pl, ka, zh — 11 языков, auto-detection, fallback: en
 - **Валюты:** UZS (default), USD, EUR, RUB, GBP, TRY, KZT, CNY, JPY, KRW, CHF, AED, INR, BRL, CAD, AUD, PLN, UAH, GEL, BYN, AZN, AMD, KGS, TJS, MDL, TMT — 26 валют (open.er-api.com, кэш 24ч)
 - **Resend.com:** from `Castar <onboarding@resend.dev>` (бесплатный план)
-- **Plugins:** expo-localization, expo-secure-store, ["expo-sqlite", { "useSQLCipher": true }]
+- **Plugins:** expo-localization, expo-secure-store, expo-sqlite
 
 > **ВАЖНО:** Название пишется **Castar** или **castar**. Никогда не писать "CaStar" (s с большой буквы).

@@ -32,7 +32,7 @@
       "expo-localization",
       "expo-secure-store",
       "expo-asset",
-      ["expo-sqlite", { "useSQLCipher": true }]
+      "expo-sqlite"
     ],
     "owner": "nilats",
     "extra": {

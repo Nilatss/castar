@@ -1,46 +1,26 @@
 import { openDatabaseSync } from 'expo-sqlite';
 import { drizzle } from 'drizzle-orm/expo-sqlite';
-import * as SecureStore from 'expo-secure-store';
 import * as schema from './schema';
 
-const DB_KEY_STORE = 'castar_db_encryption_key';
-
-/**
- * Get or generate the SQLite encryption key.
- * Stored in SecureStore (hardware-backed keychain on iOS, EncryptedSharedPreferences on Android).
- */
-async function getOrCreateDbKey(): Promise<string> {
-  let key = await SecureStore.getItemAsync(DB_KEY_STORE);
-  if (!key) {
-    // Generate a random 32-byte hex key (256-bit AES)
-    // Uses Web Crypto API (built into Hermes / RN 0.81+)
-    key = Array.from(crypto.getRandomValues(new Uint8Array(32)))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
-    await SecureStore.setItemAsync(DB_KEY_STORE, key);
-  }
-  return key;
-}
-
-// Synchronous database reference — initialized in initEncryptedDb()
+// Synchronous database reference — initialized in initDb()
 let _db: ReturnType<typeof drizzle> | null = null;
 let _rawDb: ReturnType<typeof openDatabaseSync> | null = null;
 
 /**
- * Initialize the encrypted SQLite database.
+ * Initialize the SQLite database.
  * Must be called once at app startup (before any DB access).
- * Uses SQLCipher for 256-bit AES encryption of the database file.
+ *
+ * NOTE: SQLCipher encryption is deferred until a custom native build
+ * is created (expo prebuild / EAS Build). The standard expo-sqlite
+ * module works in Expo Go and dev builds without config plugins.
+ * When ready, re-add `["expo-sqlite", { "useSQLCipher": true }]` to
+ * app.json and restore PRAGMA key logic here.
  */
-export async function initEncryptedDb(): Promise<void> {
+export async function initDb(): Promise<void> {
   if (_db) return; // Already initialized
-
-  const key = await getOrCreateDbKey();
 
   const expoDb = openDatabaseSync('castar.db');
 
-  // Set encryption key FIRST — before any other PRAGMA or query
-  // SQLCipher uses PRAGMA key to decrypt/encrypt the database file
-  expoDb.execSync(`PRAGMA key = '${key}'`);
   expoDb.execSync('PRAGMA journal_mode = WAL');
   expoDb.execSync('PRAGMA foreign_keys = ON');
 
@@ -48,24 +28,27 @@ export async function initEncryptedDb(): Promise<void> {
   _db = drizzle(expoDb, { schema });
 }
 
+// Keep old name as alias so callers using initEncryptedDb() still work
+export const initEncryptedDb = initDb;
+
 /**
  * Get the Drizzle ORM database instance.
- * Throws if initEncryptedDb() hasn't been called yet.
+ * Throws if initDb() hasn't been called yet.
  */
 export function getDb(): ReturnType<typeof drizzle> {
   if (!_db) {
-    throw new Error('Database not initialized. Call initEncryptedDb() first.');
+    throw new Error('Database not initialized. Call initDb() first.');
   }
   return _db;
 }
 
 /**
  * Get the raw expo-sqlite database instance.
- * Throws if initEncryptedDb() hasn't been called yet.
+ * Throws if initDb() hasn't been called yet.
  */
 export function getRawDb(): ReturnType<typeof openDatabaseSync> {
   if (!_rawDb) {
-    throw new Error('Database not initialized. Call initEncryptedDb() first.');
+    throw new Error('Database not initialized. Call initDb() first.');
   }
   return _rawDb;
 }
