@@ -36,5 +36,5 @@ export function formatCurrency(
     maximumFractionDigits: 2,
   }).format(amount);
 
-  return `${formatted} ${currencySymbols[currency] || currency}`;
+  return `${formatted}${currencySymbols[currency] || currency}`;
 }

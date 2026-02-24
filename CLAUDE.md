@@ -151,6 +151,65 @@ Onboarding → [Telegram | Email → EmailVerify | Phone → PhoneVerify]
 - `POST /auth/phone/verify-code` — ✅ verify OTP → JWT
 - `POST /api/voice/recognize` — ✅ Google Cloud STT V2 proxy
 
+### CRUD endpoints (protected, JWT required)
+- `GET    /categories` — List user categories (default + custom, ordered by sort_order)
+- `POST   /categories` — Create custom category (max 20 per user)
+- `PUT    /categories/:id` — Update
+- `DELETE /categories/:id` — Hard delete + nullify refs in transactions/budgets
+
+- `GET    /accounts` — List (?include_archived=1)
+- `POST   /accounts` — Create
+- `PUT    /accounts/:id` — Update
+- `DELETE /accounts/:id` — Soft archive (is_archived = 1)
+
+- `GET    /transactions` — List (filters: type, category_id, date_from, date_to, limit max 200, offset)
+- `GET    /transactions/summary` — Aggregated income/expense/net for period
+- `POST   /transactions` — Create + auto adjust account balance
+- `GET    /transactions/:id` — Get single
+- `PUT    /transactions/:id` — Update + revert/reapply balance on amount/type change
+- `DELETE /transactions/:id` — Delete + revert balance
+
+- `GET    /budgets` — List active (?include_inactive=1), enriched: spent/remaining/percentage
+- `POST   /budgets` — Create
+- `PUT    /budgets/:id` — Update
+- `DELETE /budgets/:id` — Soft delete (is_active = 0)
+
+- `GET    /recurrings` — List all recurring rules
+- `POST   /recurrings` — Create
+- `PUT    /recurrings/:id` — Update
+- `PATCH  /recurrings/:id/pause` — Toggle is_active
+- `DELETE /recurrings/:id` — Hard delete
+
+- `GET    /settings` — User settings (defaults if no row)
+- `PUT    /settings` — Upsert (create user row if missing)
+
+### Backend architecture
+```
+backend/
+├── src/
+│   ├── index.ts            # Hono entry + CORS + health + route mounting + auth middleware
+│   ├── types.ts            # Env (DB, JWT_SECRET, RESEND_API_KEY, ESKIZ_TOKEN, etc.)
+│   ├── middleware/auth.ts  # JWT verify → userId in context
+│   ├── services/
+│   │   ├── jwt.ts          # sign/verify (jose, HS256, 30d)
+│   │   ├── telegram.ts     # HMAC-SHA256 validation + Login Widget + Authorized callback
+│   │   ├── email.ts        # Resend.com API
+│   │   └── sms.ts          # stub (console.log)
+│   └── routes/
+│       ├── auth.ts         # Telegram + Email OTP + Phone OTP
+│       ├── voice.ts        # Google STT V2 proxy
+│       ├── transactions.ts # ✅ Full CRUD + balance adjustment
+│       ├── categories.ts   # ✅ Full CRUD + batch cleanup
+│       ├── accounts.ts     # ✅ Full CRUD + soft archive
+│       ├── budgets.ts      # ✅ Full CRUD + enriched GET (spent/remaining/%)
+│       ├── recurrings.ts   # ✅ Full CRUD + pause toggle
+│       ├── settings.ts     # ✅ GET/PUT upsert
+│       └── sync.ts         # 🔲 501 stub
+├── migrations/0001_initial.sql  # ✅ APPLIED (7 tables, 15 indexes)
+├── wrangler.toml
+└── package.json
+```
+
 ---
 
 ## 4. Database Layer (Drizzle ORM + expo-sqlite)
@@ -293,7 +352,7 @@ Query modules экспортируются как `categoryRepository`, `account
 - [x] Auth services: telegramAuth, emailAuth, phoneAuth
 - [x] Auth store: initializeAuth, 3 login метода, PIN verify, SecureStore persistence
 
-#### Фаза 2 (частично) — Profile UI + Subscription + Tasks
+#### Фаза 2 (частично) — Profile UI + Subscription + Tasks + HomeScreen
 - [x] ProfileScreen — полный Figma UI (2500+ строк)
 - [x] SubscriptionManagementScreen — полный Figma UI, perf optimized
 - [x] TasksScreen — stub
@@ -303,6 +362,12 @@ Query modules экспортируются как `categoryRepository`, `account
 - [x] Settings модалка (Name, Telegram, Phone, Email, Save, Delete account)
 - [x] OTP верификация телефона/email из настроек
 - [x] Персистентность: язык + валюта в SecureStore
+- [x] HomeScreen — layout по Figma (дата с i18n, приветствие, budget card, period pills с анимацией, spent/remaining, action кнопки)
+- [x] Tab bar: flex layout + ellipsis для длинных названий (вместо фиксированной ширины)
+- [x] Date i18n: все 11 date-fns локалей для перевода названия месяца
+- [x] Баг-фикс: язык сбрасывался на русский при logout → fallback English
+- [x] Баг-фикс: добавлены недостающие языки (pl, ka, zh) в OnboardingScreen
+- [x] Modal animation fix: double requestAnimationFrame для устранения visual "jump"
 
 #### Фаза 3 — Локальная БД (Drizzle ORM)
 - [x] expo-sqlite + Drizzle ORM (7 schema, 7 query modules)
@@ -310,14 +375,23 @@ Query modules экспортируются как `categoryRepository`, `account
 - [x] Zod validation schemas
 - [x] SyncQueue для будущей синхронизации
 
-#### Фаза 4 (частично) — Backend
+#### Фаза 4 — Backend ✅
 - [x] Cloudflare Worker `castar-auth` задеплоен
-- [x] D1 база `castar-db` создана (WEUR) — миграция написана, **НЕ ПРИМЕНЕНА**
+- [x] D1 база `castar-db` создана (WEUR) — **миграция ПРИМЕНЕНА** (7 таблиц, 15 индексов)
 - [x] JWT service + middleware (jose, 30 дней)
 - [x] Telegram auth — полный цикл (Login Widget → HMAC-SHA256 → JWT → deep link)
 - [x] Email OTP — Resend.com (реальная отправка)
 - [x] Phone OTP — console.log (Eskiz.uz ещё не подключён)
 - [x] Voice route — Google Cloud STT V2 proxy
+- [x] CRUD routes — полная реализация с Zod валидацией:
+  - `categories.ts` — GET, POST, PUT, DELETE (batch cleanup transactions + budgets)
+  - `accounts.ts` — GET (?include_archived), POST, PUT, DELETE (soft archive)
+  - `transactions.ts` — GET (filters), GET /summary, POST, GET/:id, PUT, DELETE + auto balance adjustment
+  - `budgets.ts` — GET (enriched: spent/remaining/%), POST, PUT, DELETE (soft)
+  - `recurrings.ts` — GET, POST, PUT, PATCH /:id/pause (toggle), DELETE
+  - `settings.ts` — GET (defaults if no row), PUT (upsert)
+- [x] Root-level auth middleware для всех protected routes
+- [x] Worker задеплоен с CRUD routes
 
 #### Сервисы (клиент)
 - [x] Currency service (open.er-api.com + SecureStore кэш 24ч + fallback)
@@ -332,18 +406,19 @@ Query modules экспортируются как `categoryRepository`, `account
 - [x] SVG RadialGradient → GPU PNG: pre-rendered 256×256 PNG через `sharp` → `<Image>` (GPU-scaled)
   - `glow.png` (4.6KB) + `glow-vivid.png` (7.9KB) → `GlowCircle1`, `GlowCircle2` в `GlowImage.tsx`
   - Заменены glows в SubscriptionManagement, Profile, AuthSvgs
-- [x] Modal delay fix: убран `requestAnimationFrame` (native driver не нуждается в rAF)
+- [x] Modal animation: double `requestAnimationFrame` для mount → animate (устранение "jump" при открытии)
 - [x] Анимации модалок/попапов (финальные значения):
   - Picker sheet: overlay 500ms, spring stiffness 150, damping 32, mass 1
   - Popup (logout/delete): fade 500ms, scale 0.94→1, spring stiffness 110, damping 24, mass 1
   - FadeIn полей: 200ms
 - [x] `experimentalBlurMethod="dimezisBlurView"` — обязателен для blur на Android (expo-blur)
 
-### Экраны — UI stubs (заглушки, ещё не реализованы)
-- [ ] Home, AddTransaction, TransactionDetail, Transactions
-- [ ] Budgets, BudgetDetail, CreateBudget, FamilyBudget
-- [ ] Analytics
-- [ ] Categories, CreateCategory
+### Экраны — UI статус
+- [x] HomeScreen — layout готов (дата, приветствие, budget card, period pills, spent/remaining, кнопки)
+- [ ] AddTransaction, TransactionDetail, Transactions — stubs
+- [ ] Budgets, BudgetDetail, CreateBudget, FamilyBudget — stubs
+- [ ] Analytics — stub
+- [ ] Categories, CreateCategory — stubs
 
 ### TODO 📋
 
@@ -356,12 +431,14 @@ Query modules экспортируются как `categoryRepository`, `account
 - [ ] Categories + CreateCategory
 - [ ] Shared UI компоненты
 
-#### Фаза 4 (продолжение) — Бэкенд
-- [ ] Применить D1 миграцию
-- [ ] SMS через Eskiz.uz (заменить console.log)
-- [ ] CRUD routes: transactions, categories, budgets, recurrings, settings
-- [ ] Sync endpoint
-- [ ] React Query для серверных данных
+#### Фаза 4 (остаток) — Бэкенд
+- [ ] SMS через Eskiz.uz (заменить console.log → реальный API)
+- [ ] OTP хранение в D1 (заменить in-memory Map → persistent storage)
+- [ ] Sync endpoint (bulk operations для offline → online)
+- [ ] React Query (@tanstack/react-query) для серверных данных
+- [ ] apiClient.ts — заполнить baseUrl и методы (подключить к backend)
+- [ ] `wrangler secret put GOOGLE_CLOUD_STT_KEY`
+- [ ] `wrangler secret put ESKIZ_TOKEN`
 
 #### Фаза 5 — Продвинутые фичи
 - [ ] Семейные бюджеты

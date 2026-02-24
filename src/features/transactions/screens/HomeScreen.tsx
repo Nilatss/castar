@@ -20,14 +20,21 @@
  * └──────────────────────────────────────────────────┘
  */
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  LayoutChangeEvent,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
@@ -35,11 +42,12 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useShallow } from 'zustand/react/shallow';
 import Svg, { Path } from 'react-native-svg';
 import { format } from 'date-fns';
-import { enUS, ru, uz } from 'date-fns/locale';
+import { enUS, ru, uz, be, uk, kk, de, az, pl, ka, zhCN } from 'date-fns/locale';
 
-import { colors, typography, spacing, borderRadius } from '../../../shared/constants';
+import { colors, typography, spacing, borderRadius, fontFamily } from '../../../shared/constants';
 import { scale, GLOW_RENDER_SIZE, GLOW2_RENDER_SIZE } from '../../../shared/constants/scaling';
 import { GlowCircle1, GlowCircle2 } from '../../../shared/components/GlowImage';
+import { LogoIcon } from '../../../shared/components/svg/AuthSvgs';
 import type { HomeStackParamList } from '../../../shared/types';
 import { useAuthStore } from '../../auth/store/authStore';
 import { useProfileStore } from '../../profile/store/profileStore';
@@ -70,18 +78,26 @@ const dateLocales: Record<string, typeof enUS> = {
   en: enUS,
   ru: ru,
   uz: uz,
+  be: be,
+  uk: uk,
+  kk: kk,
+  de: de,
+  az: az,
+  pl: pl,
+  ka: ka,
+  zh: zhCN,
 };
 
 // ═══════════════════════════════════════════════
 // SVG Icons (JSX — no XML parsing at runtime)
 // ═══════════════════════════════════════════════
 
-const ChevronRightIcon = React.memo(({ size = 24, color = colors.textTertiary }: { size?: number; color?: string }) => (
+const ChevronRightIcon = React.memo(({ size = 24, color = '#F6F6F6' }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
-      d="M9 18L15 12L9 6"
+      d="M9 5L15 12L9 19"
       stroke={color}
-      strokeWidth={2}
+      strokeWidth={1.5}
       strokeLinecap="round"
       strokeLinejoin="round"
     />
@@ -89,46 +105,18 @@ const ChevronRightIcon = React.memo(({ size = 24, color = colors.textTertiary }:
 ));
 ChevronRightIcon.displayName = 'ChevronRightIcon';
 
-const PlusCircleIcon = React.memo(({ size = 20, color = colors.text }: { size?: number; color?: string }) => (
-  <Svg width={size} height={size} viewBox="0 0 20 20" fill="none">
+const AddCircleIcon = React.memo(({ size = 24, color = '#F6F6F6' }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
-      d="M10 1.667C5.398 1.667 1.667 5.398 1.667 10S5.398 18.333 10 18.333 18.333 14.602 18.333 10 14.602 1.667 10 1.667Z"
-      stroke={color}
-      strokeWidth={1.5}
-    />
-    <Path
-      d="M10 6.667v6.666M13.333 10H6.667"
-      stroke={color}
-      strokeWidth={1.5}
-      strokeLinecap="round"
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22ZM12.75 9C12.75 8.58579 12.4142 8.25 12 8.25C11.5858 8.25 11.25 8.58579 11.25 9L11.25 11.25H9C8.58579 11.25 8.25 11.5858 8.25 12C8.25 12.4142 8.58579 12.75 9 12.75H11.25V15C11.25 15.4142 11.5858 15.75 12 15.75C12.4142 15.75 12.75 15.4142 12.75 15L12.75 12.75H15C15.4142 12.75 15.75 12.4142 15.75 12C15.75 11.5858 15.4142 11.25 15 11.25H12.75V9Z"
+      fill={color}
     />
   </Svg>
 ));
-PlusCircleIcon.displayName = 'PlusCircleIcon';
+AddCircleIcon.displayName = 'AddCircleIcon';
 
-const VoiceSwirl = React.memo(({ size = 28 }: { size?: number }) => (
-  <Svg width={size} height={size} viewBox="0 0 28 28" fill="none">
-    <Path
-      d="M14 3C8.477 3 4 7.477 4 13s4.477 10 10 10 10-4.477 10-10"
-      stroke="white"
-      strokeWidth={2.5}
-      strokeLinecap="round"
-    />
-    <Path
-      d="M14 8c-2.761 0-5 2.239-5 5s2.239 5 5 5"
-      stroke="white"
-      strokeWidth={2.5}
-      strokeLinecap="round"
-    />
-    <Path
-      d="M14 13h6"
-      stroke="white"
-      strokeWidth={2.5}
-      strokeLinecap="round"
-    />
-  </Svg>
-));
-VoiceSwirl.displayName = 'VoiceSwirl';
 
 // ═══════════════════════════════════════════════
 // HomeScreen Component
@@ -141,6 +129,27 @@ export const HomeScreen = () => {
 
   // ── State ──
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodFilter>('7D');
+  const [pillWidth, setPillWidth] = useState(0);
+
+  // ── Animated period indicator ──
+  const selectedIndex = PERIODS.indexOf(selectedPeriod);
+  const indicatorX = useSharedValue(selectedIndex * (pillWidth + 4));
+
+  useEffect(() => {
+    indicatorX.value = withTiming(selectedIndex * (pillWidth + 4), {
+      duration: 250,
+      easing: Easing.out(Easing.cubic),
+    });
+  }, [selectedIndex, pillWidth]);
+
+  const indicatorStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: indicatorX.value }],
+  }));
+
+  const handlePillLayout = useCallback((e: LayoutChangeEvent) => {
+    const w = e.nativeEvent.layout.width;
+    if (w > 0 && w !== pillWidth) setPillWidth(w);
+  }, [pillWidth]);
 
   // ── Store data ──
   const displayName = useAuthStore(useShallow((s) => s.displayName));
@@ -231,7 +240,7 @@ export const HomeScreen = () => {
                 {t('home.monthlyBudget')}
               </Text>
             </View>
-            <ChevronRightIcon size={24} color={colors.textTertiary} />
+            <ChevronRightIcon size={24} />
           </TouchableOpacity>
 
           {/* Budget amount */}
@@ -240,17 +249,25 @@ export const HomeScreen = () => {
           </Text>
 
           {/* Period pills */}
-          <View style={styles.periodRow}>
-            {PERIODS.map((period) => {
+          <View style={styles.periodContainer}>
+            {/* Animated sliding indicator */}
+            {pillWidth > 0 && (
+              <Animated.View
+                style={[
+                  styles.periodIndicator,
+                  { width: pillWidth, height: 35 },
+                  indicatorStyle,
+                ]}
+              />
+            )}
+            {PERIODS.map((period, index) => {
               const isActive = period === selectedPeriod;
               return (
                 <TouchableOpacity
                   key={period}
-                  style={[
-                    styles.periodPill,
-                    isActive && styles.periodPillActive,
-                  ]}
+                  style={styles.periodPill}
                   onPress={() => handlePeriodPress(period)}
+                  onLayout={index === 0 ? handlePillLayout : undefined}
                   activeOpacity={0.7}
                 >
                   <Text
@@ -266,41 +283,41 @@ export const HomeScreen = () => {
             })}
           </View>
 
-          {/* Spent / Remaining sub-cards */}
+          {/* Spent / Remaining sub-cards (1:1 settingsField style) */}
           <View style={styles.subCardsRow}>
             {/* Spent */}
             <TouchableOpacity style={styles.subCard} activeOpacity={0.7}>
-              <Text style={styles.subCardLabel}>{t('home.spent')}</Text>
-              <View style={styles.subCardValueRow}>
+              <View style={styles.subCardTexts}>
+                <Text style={styles.subCardLabel}>{t('home.spent')}</Text>
                 <Text style={styles.subCardValue}>
                   -{formatCurrency(spent, currency)}
                 </Text>
-                <ChevronRightIcon size={20} color={colors.textTertiary} />
               </View>
+              <ChevronRightIcon size={24} />
             </TouchableOpacity>
 
             {/* Remaining */}
             <TouchableOpacity style={styles.subCard} activeOpacity={0.7}>
-              <Text style={styles.subCardLabel}>{t('home.remaining')}</Text>
-              <View style={styles.subCardValueRow}>
+              <View style={styles.subCardTexts}>
+                <Text style={styles.subCardLabel}>{t('home.remaining')}</Text>
                 <Text style={styles.subCardValue}>
                   {formatCurrency(remaining >= 0 ? remaining : 0, currency)}
                 </Text>
-                <ChevronRightIcon size={20} color={colors.textTertiary} />
               </View>
+              <ChevronRightIcon size={24} />
             </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
 
       {/* ── Floating Bottom Actions ── */}
-      <View style={[styles.bottomActions, { paddingBottom: insets.bottom + 80 }]}>
+      <View style={[styles.bottomActions, { bottom: 32 }]}>
         <TouchableOpacity
           style={styles.addManuallyButton}
           onPress={handleAddManually}
           activeOpacity={0.7}
         >
-          <PlusCircleIcon size={20} color={colors.text} />
+          <AddCircleIcon size={24} />
           <Text style={styles.addManuallyText}>{t('home.addManually')}</Text>
         </TouchableOpacity>
 
@@ -309,7 +326,7 @@ export const HomeScreen = () => {
           onPress={handleVoicePress}
           activeOpacity={0.7}
         >
-          <VoiceSwirl size={28} />
+          <LogoIcon width={34} height={32} />
         </TouchableOpacity>
       </View>
     </View>
@@ -343,7 +360,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: spacing.xl,
-    paddingTop: spacing.lg,
+    paddingTop: 24,
     paddingBottom: 160,
   },
 
@@ -351,41 +368,48 @@ const styles = StyleSheet.create({
   dateRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    marginBottom: spacing.xs,
+    marginBottom: 10,
   },
   dayNumber: {
-    ...typography.heading2,
+    fontFamily: fontFamily.medium,
+    fontSize: 24,
+    lineHeight: 30,
     color: colors.text,
   },
   monthName: {
-    ...typography.heading5,
+    fontFamily: fontFamily.medium,
+    fontSize: 20,
+    lineHeight: 26,
     color: colors.textTertiary,
+    flexShrink: 0,
   },
 
   // ── Greeting ──
   greeting: {
-    ...typography.heading1,
+    fontFamily: fontFamily.medium,
+    fontSize: 40,
+    lineHeight: 40,
     color: colors.text,
-    marginBottom: spacing.xl,
+    marginBottom: 24,
   },
 
   // ── Budget Card ──
   budgetCard: {
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius['3xl'],
-    padding: spacing.lg,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 16,
+    padding: spacing.md,
   },
   budgetHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.md,
+    marginBottom: 24,
   },
   budgetBadge: {
-    backgroundColor: colors.neutral[800],
+    backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: borderRadius.full,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
   },
   budgetBadgeText: {
     ...typography.captionMedium,
@@ -396,61 +420,79 @@ const styles = StyleSheet.create({
 
   // ── Budget Amount ──
   budgetAmount: {
-    ...typography.heading1,
+    fontFamily: fontFamily.medium,
+    fontSize: 36,
+    lineHeight: 36,
     color: colors.text,
-    marginBottom: spacing.lg,
+    marginBottom: 24,
   },
 
   // ── Period Pills ──
-  periodRow: {
+  periodContainer: {
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 12,
     flexDirection: 'row',
-    gap: spacing.sm,
-    marginBottom: spacing.lg,
+    gap: 4,
+    padding: 4,
+    marginBottom: 6,
   },
   periodPill: {
-    backgroundColor: colors.neutral[800],
-    borderRadius: borderRadius.full,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
+    flex: 1,
+    height: 35,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  periodPillActive: {
-    backgroundColor: colors.neutral[600],
+  periodIndicator: {
+    position: 'absolute',
+    top: 4,
+    left: 4,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 10,
   },
+  periodPillActive: {},
   periodPillText: {
-    ...typography.bodyMedium,
+    fontFamily: fontFamily.regular,
+    fontSize: 16,
+    lineHeight: 20,
     color: colors.textTertiary,
   },
   periodPillTextActive: {
+    fontFamily: fontFamily.medium,
     color: colors.text,
   },
 
-  // ── Sub Cards ──
+  // ── Sub Cards (1:1 settingsField from ProfileScreen) ──
   subCardsRow: {
     flexDirection: 'row',
-    gap: spacing.sm,
+    gap: 6,
   },
   subCard: {
     flex: 1,
-    backgroundColor: colors.neutral[800],
+    height: 62,
+    backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: borderRadius.xl,
-    padding: spacing.base,
-    gap: spacing.xs,
-  },
-  subCardLabel: {
-    ...typography.small,
-    color: colors.textTertiary,
-  },
-  subCardValueRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingHorizontal: 16,
+  },
+  subCardTexts: {
+    flex: 1,
+    gap: 6,
+    marginRight: 8,
+  },
+  subCardLabel: {
+    fontFamily: fontFamily.regular,
+    fontSize: 14,
+    lineHeight: 18,
+    color: colors.white[40],
   },
   subCardValue: {
-    ...typography.bodyLargeSemiBold,
-    color: colors.text,
-    flex: 1,
+    fontFamily: fontFamily.regular,
+    fontSize: 16,
+    lineHeight: 20,
+    color: colors.white[100],
   },
 
   // ── Bottom Actions ──
@@ -462,7 +504,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: 8,
     paddingHorizontal: spacing.xl,
   },
   addManuallyButton: {
@@ -471,17 +513,20 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     backgroundColor: colors.neutral[800],
     borderRadius: borderRadius.full,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingLeft: 12,
+    paddingRight: 14,
+    height: 60,
   },
   addManuallyText: {
-    ...typography.bodyMedium,
+    fontFamily: fontFamily.regular,
+    fontSize: 16,
+    lineHeight: 20,
     color: colors.text,
   },
   voiceButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     backgroundColor: colors.success[700],
     alignItems: 'center',
     justifyContent: 'center',

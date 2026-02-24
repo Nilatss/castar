@@ -31,7 +31,6 @@ import { SubscriptionManagementScreen } from '../../features/profile/screens/Sub
 /* ── Constants ── */
 const INACTIVE_COLOR = '#828187';
 const ACTIVE_COLOR = '#FFFFFF';
-const TAB_WIDTH = 80;
 const TAB_GAP = 12;
 const ICON_TEXT_GAP = 6;
 
@@ -201,7 +200,7 @@ const CustomTabBar = React.memo(({ state, navigation, descriptors }: BottomTabBa
               activeOpacity={0.7}
             >
               <IconComponent color={color} />
-              <Text style={[styles.tabLabel, { color }]}>{t(labelKey)}</Text>
+              <Text style={[styles.tabLabel, { color }]} numberOfLines={1} ellipsizeMode="tail">{t(labelKey)}</Text>
             </TouchableOpacity>
           );
         })}
@@ -247,11 +246,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: TAB_GAP,
+    paddingHorizontal: 24,
     paddingTop: 12,
     paddingBottom: 16,
   },
   tabButton: {
-    width: TAB_WIDTH,
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     gap: ICON_TEXT_GAP,
@@ -259,5 +259,6 @@ const styles = StyleSheet.create({
   tabLabel: {
     fontSize: 12,
     fontFamily: 'Inter_500Medium',
+    textAlign: 'center',
   },
 });

@@ -783,23 +783,28 @@ export const ProfileScreen = () => {
   }, []);
 
   const openLogoutPopup = useCallback(() => {
-    setShowLogoutPopup(true);
     logoutPopupOpacity.setValue(0);
     logoutPopupScale.setValue(0.94);
-    Animated.parallel([
-      Animated.timing(logoutPopupOpacity, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-      Animated.spring(logoutPopupScale, {
-        toValue: 1,
-        damping: 24,
-        stiffness: 110,
-        mass: 1,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    setShowLogoutPopup(true);
+    // Double rAF: 1st frame mounts Modal + applies initial values, 2nd frame starts animation
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        Animated.parallel([
+          Animated.timing(logoutPopupOpacity, {
+            toValue: 1,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+          Animated.spring(logoutPopupScale, {
+            toValue: 1,
+            damping: 24,
+            stiffness: 110,
+            mass: 1,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      });
+    });
   }, [logoutPopupOpacity, logoutPopupScale]);
 
   const closeLogoutPopup = useCallback(() => {
@@ -879,21 +884,25 @@ export const ProfileScreen = () => {
     }
     setActivePicker(type);
     setPickerModalVisible(true);
-    // Animate in immediately — native driver runs on UI thread, no rAF delay needed
-    Animated.parallel([
-      Animated.timing(overlayOpacity, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-      Animated.spring(sheetTranslateY, {
-        toValue: 0,
-        damping: 32,
-        stiffness: 150,
-        mass: 1,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    // Double rAF: 1st frame mounts Modal + applies initial values, 2nd frame starts animation
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        Animated.parallel([
+          Animated.timing(overlayOpacity, {
+            toValue: 1,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+          Animated.spring(sheetTranslateY, {
+            toValue: 0,
+            damping: 32,
+            stiffness: 150,
+            mass: 1,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      });
+    });
   }, [navigation, overlayOpacity, sheetTranslateY, topFadeOpacity, displayName, telegramUser, userId]);
 
   // Keep ref in sync so deep link handler always uses fresh openPicker
@@ -943,23 +952,27 @@ export const ProfileScreen = () => {
   }, [settingsDirty, settingsName, displayName, setDisplayNameAndContinue, closePicker]);
 
   const openDeletePopup = useCallback(() => {
-    setShowDeletePopup(true);
     deletePopupOpacity.setValue(0);
     deletePopupScale.setValue(0.94);
-    Animated.parallel([
-      Animated.timing(deletePopupOpacity, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-      Animated.spring(deletePopupScale, {
-        toValue: 1,
-        damping: 24,
-        stiffness: 110,
-        mass: 1,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    setShowDeletePopup(true);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        Animated.parallel([
+          Animated.timing(deletePopupOpacity, {
+            toValue: 1,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+          Animated.spring(deletePopupScale, {
+            toValue: 1,
+            damping: 24,
+            stiffness: 110,
+            mass: 1,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      });
+    });
   }, [deletePopupOpacity, deletePopupScale]);
 
   const closeDeletePopup = useCallback(() => {
@@ -2156,7 +2169,7 @@ const styles = StyleSheet.create({
   // === Currency + Language row ===
   selectorRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 6,
     marginBottom: 32,
   },
   selectorButton: {

@@ -39,6 +39,9 @@ const FLAG_EMOJIS: Record<string, string> = {
   az: '🇦🇿',
   by: '🇧🇾',
   ua: '🇺🇦',
+  pl: '🇵🇱',
+  ge: '🇬🇪',
+  cn: '🇨🇳',
 };
 
 // ============================
@@ -60,12 +63,15 @@ const COUNTRIES: CountryOption[] = [
   { code: 'az', country: 'Azərbaycan', flagKey: 'az' },
   { code: 'be', country: 'Беларуская', flagKey: 'by' },
   { code: 'uk', country: 'Українська', flagKey: 'ua' },
+  { code: 'pl', country: 'Polski', flagKey: 'pl' },
+  { code: 'ka', country: 'ქართული', flagKey: 'ge' },
+  { code: 'zh', country: '中文', flagKey: 'cn' },
 ];
 
 // Get flag emoji for the selected country (shown in top bar button)
 const getFlagEmoji = (country: string): string => {
   const found = COUNTRIES.find((c) => c.country === country);
-  return FLAG_EMOJIS[found?.flagKey ?? 'ru'];
+  return FLAG_EMOJIS[found?.flagKey ?? 'us'];
 };
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
@@ -79,7 +85,7 @@ export const OnboardingScreen = () => {
   // Derive initial selectedCountry from current i18n language so the flag matches
   const currentLangCountry = COUNTRIES.find((c) => c.code === i18n.language);
   const [selectedCountry, setSelectedCountry] = useState<string>(
-    currentLangCountry?.country ?? 'Русский',
+    currentLangCountry?.country ?? 'English',
   );
   const [scrolledDown, setScrolledDown] = useState(false);
 
@@ -137,21 +143,27 @@ export const OnboardingScreen = () => {
   const openPicker = useCallback(() => {
     setScrolledDown(false);
     topFadeOpacity.setValue(0);
+    sheetTranslateY.setValue(SCREEN_HEIGHT);
+    overlayOpacity.setValue(0);
     setShowLangPicker(true);
-    Animated.parallel([
-      Animated.timing(overlayOpacity, {
-        toValue: 1,
-        duration: 350,
-        useNativeDriver: true,
-      }),
-      Animated.spring(sheetTranslateY, {
-        toValue: 0,
-        damping: 28,
-        stiffness: 220,
-        mass: 0.9,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        Animated.parallel([
+          Animated.timing(overlayOpacity, {
+            toValue: 1,
+            duration: 350,
+            useNativeDriver: true,
+          }),
+          Animated.spring(sheetTranslateY, {
+            toValue: 0,
+            damping: 28,
+            stiffness: 220,
+            mass: 0.9,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      });
+    });
   }, [overlayOpacity, sheetTranslateY, topFadeOpacity]);
 
   const closePicker = useCallback(() => {

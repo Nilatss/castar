@@ -10,6 +10,7 @@ import { authMiddleware } from './middleware/auth';
 import { auth } from './routes/auth';
 import { transactions } from './routes/transactions';
 import { categories } from './routes/categories';
+import { accounts } from './routes/accounts';
 import { budgets } from './routes/budgets';
 import { recurrings } from './routes/recurrings';
 import { settings } from './routes/settings';
@@ -45,15 +46,25 @@ app.route('/auth', auth);
 app.route('/api/voice', voice);
 
 // ── Protected routes (JWT required) ──
+// Root + sub-paths both need middleware in Hono
+app.use('/transactions', authMiddleware);
 app.use('/transactions/*', authMiddleware);
+app.use('/categories', authMiddleware);
 app.use('/categories/*', authMiddleware);
+app.use('/accounts', authMiddleware);
+app.use('/accounts/*', authMiddleware);
+app.use('/budgets', authMiddleware);
 app.use('/budgets/*', authMiddleware);
+app.use('/recurrings', authMiddleware);
 app.use('/recurrings/*', authMiddleware);
+app.use('/settings', authMiddleware);
 app.use('/settings/*', authMiddleware);
+app.use('/sync', authMiddleware);
 app.use('/sync/*', authMiddleware);
 
 app.route('/transactions', transactions);
 app.route('/categories', categories);
+app.route('/accounts', accounts);
 app.route('/budgets', budgets);
 app.route('/recurrings', recurrings);
 app.route('/settings', settings);
