@@ -1,4 +1,4 @@
-export { db } from './connection';
+export { db, initEncryptedDb } from './connection';
 export { runMigrations } from './migrations';
 export { seedDefaults } from './seed';
 

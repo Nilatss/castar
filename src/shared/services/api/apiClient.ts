@@ -1,85 +1,179 @@
 /**
  * Castar — API Client
- * Currently a stub for future backend integration.
- * All data operations go through local SQLite for now.
+ *
+ * HTTP client for the Cloudflare Worker backend.
+ * - Auto-attaches JWT from authStore
+ * - Converts snake_case ↔ camelCase at the boundary
+ * - Parses `{ ok, data, error }` envelope
  */
 
-const BASE_URL = ''; // Will be set when backend is ready
+import { TELEGRAM_CONFIG } from '../../constants/config';
+import { useAuthStore } from '../../../features/auth/store/authStore';
 
-interface RequestConfig {
-  headers?: Record<string, string>;
-  params?: Record<string, string>;
+// ── Base URL ──
+
+const BASE_URL = TELEGRAM_CONFIG.workerUrl; // https://castar-auth.ivcswebofficial.workers.dev
+
+// ── snake_case ↔ camelCase converters ──
+
+/** Convert a single snake_case string to camelCase */
+function snakeToCamelStr(s: string): string {
+  return s.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
 }
 
-class ApiClient {
-  private baseUrl: string;
-  private token: string | null = null;
+/** Convert a single camelCase string to snake_case */
+function camelToSnakeStr(s: string): string {
+  return s.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
+}
 
-  constructor(baseUrl: string) {
-    this.baseUrl = baseUrl;
-  }
-
-  setToken(token: string | null) {
-    this.token = token;
-  }
-
-  private getHeaders(): Record<string, string> {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`;
+/** Deep-convert object keys from snake_case → camelCase */
+export function snakeToCamel<T>(obj: unknown): T {
+  if (obj === null || obj === undefined) return obj as T;
+  if (Array.isArray(obj)) return obj.map((item) => snakeToCamel(item)) as T;
+  if (typeof obj === 'object') {
+    const result: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+      result[snakeToCamelStr(key)] = snakeToCamel(value);
     }
-    return headers;
+    return result as T;
   }
+  return obj as T;
+}
 
-  async get<T>(endpoint: string, config?: RequestConfig): Promise<T> {
-    const url = new URL(endpoint, this.baseUrl);
-    if (config?.params) {
-      Object.entries(config.params).forEach(([key, value]) =>
-        url.searchParams.append(key, value)
-      );
+/** Deep-convert object keys from camelCase → snake_case */
+export function camelToSnake<T>(obj: unknown): T {
+  if (obj === null || obj === undefined) return obj as T;
+  if (Array.isArray(obj)) return obj.map((item) => camelToSnake(item)) as T;
+  if (typeof obj === 'object') {
+    const result: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+      result[camelToSnakeStr(key)] = camelToSnake(value);
     }
-
-    const response = await fetch(url.toString(), {
-      method: 'GET',
-      headers: { ...this.getHeaders(), ...config?.headers },
-    });
-
-    if (!response.ok) throw new Error(`GET ${endpoint} failed: ${response.status}`);
-    return response.json();
+    return result as T;
   }
+  return obj as T;
+}
 
-  async post<T>(endpoint: string, data: unknown): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      method: 'POST',
-      headers: this.getHeaders(),
-      body: JSON.stringify(data),
-    });
+// ── Error class ──
 
-    if (!response.ok) throw new Error(`POST ${endpoint} failed: ${response.status}`);
-    return response.json();
-  }
+export class ApiError extends Error {
+  status: number;
+  serverError?: string;
 
-  async put<T>(endpoint: string, data: unknown): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      method: 'PUT',
-      headers: this.getHeaders(),
-      body: JSON.stringify(data),
-    });
-
-    if (!response.ok) throw new Error(`PUT ${endpoint} failed: ${response.status}`);
-    return response.json();
-  }
-
-  async delete(endpoint: string): Promise<void> {
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      method: 'DELETE',
-      headers: this.getHeaders(),
-    });
-
-    if (!response.ok) throw new Error(`DELETE ${endpoint} failed: ${response.status}`);
+  constructor(status: number, message: string, serverError?: string) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.serverError = serverError;
   }
 }
 
-export const apiClient = new ApiClient(BASE_URL);
+// ── Backend envelope type ──
+
+interface ApiEnvelope<T = unknown> {
+  ok: boolean;
+  data?: T;
+  error?: string;
+  details?: unknown;
+  server_time?: number;
+}
+
+// ── Client ──
+
+function getAuthHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  // Get token from Zustand store (works outside React components)
+  const token = useAuthStore.getState().token;
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  return headers;
+}
+
+/**
+ * Make an API request and parse the `{ ok, data }` envelope.
+ * - Sends body keys in snake_case
+ * - Returns data with keys in camelCase
+ */
+async function request<T>(
+  method: string,
+  path: string,
+  body?: unknown,
+  params?: Record<string, string>,
+): Promise<T> {
+  let url = `${BASE_URL}${path}`;
+
+  if (params) {
+    const searchParams = new URLSearchParams();
+    for (const [key, value] of Object.entries(params)) {
+      if (value !== undefined && value !== null && value !== '') {
+        searchParams.append(key, value);
+      }
+    }
+    const qs = searchParams.toString();
+    if (qs) url += `?${qs}`;
+  }
+
+  const init: RequestInit = {
+    method,
+    headers: getAuthHeaders(),
+  };
+
+  if (body !== undefined && body !== null) {
+    // Convert camelCase → snake_case for backend
+    init.body = JSON.stringify(camelToSnake(body));
+  }
+
+  const response = await fetch(url, init);
+
+  // Handle non-JSON responses (e.g., network errors)
+  const contentType = response.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    if (!response.ok) {
+      throw new ApiError(response.status, `Server error: ${response.status}`);
+    }
+    // For 204 No Content or similar
+    return undefined as T;
+  }
+
+  const envelope: ApiEnvelope = await response.json();
+
+  if (!response.ok || !envelope.ok) {
+    throw new ApiError(
+      response.status,
+      envelope.error || `Request failed: ${response.status}`,
+      envelope.error,
+    );
+  }
+
+  // Convert snake_case → camelCase and return data
+  return snakeToCamel<T>(envelope.data);
+}
+
+// ── Public API ──
+
+export const apiClient = {
+  get<T>(path: string, params?: Record<string, string>): Promise<T> {
+    return request<T>('GET', path, undefined, params);
+  },
+
+  post<T>(path: string, data?: unknown): Promise<T> {
+    return request<T>('POST', path, data);
+  },
+
+  put<T>(path: string, data?: unknown): Promise<T> {
+    return request<T>('PUT', path, data);
+  },
+
+  patch<T>(path: string, data?: unknown): Promise<T> {
+    return request<T>('PATCH', path, data);
+  },
+
+  delete<T = void>(path: string): Promise<T> {
+    return request<T>('DELETE', path);
+  },
+};

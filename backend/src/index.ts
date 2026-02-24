@@ -1,5 +1,5 @@
 /**
- * CaStar — Backend API Entry Point
+ * Castar — Backend API Entry Point
  * Cloudflare Workers + Hono + D1
  */
 
@@ -20,8 +20,17 @@ import { voice } from './routes/voice';
 const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
 // ── CORS ──
+// Mobile apps (React Native fetch) don't send Origin headers, so CORS is irrelevant.
+// We only need CORS for the Telegram Login Widget HTML pages which are loaded
+// in a WebView (full page navigation, not XHR — CORS also irrelevant).
+// Restrict to no browser origins for security.
 app.use('*', cors({
-  origin: '*',
+  origin: (origin) => {
+    // Allow requests with no Origin header (mobile apps, server-to-server, curl)
+    if (!origin) return origin;
+    // Block all browser origins — this API is for mobile clients only
+    return '';
+  },
   allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization'],
   maxAge: 86400,
@@ -43,10 +52,11 @@ app.get('/health', (c) => c.json({ ok: true }));
 
 // ── Public routes (no auth required) ──
 app.route('/auth', auth);
-app.route('/api/voice', voice);
 
 // ── Protected routes (JWT required) ──
 // Root + sub-paths both need middleware in Hono
+app.use('/api/voice', authMiddleware);
+app.use('/api/voice/*', authMiddleware);
 app.use('/transactions', authMiddleware);
 app.use('/transactions/*', authMiddleware);
 app.use('/categories', authMiddleware);
@@ -62,6 +72,7 @@ app.use('/settings/*', authMiddleware);
 app.use('/sync', authMiddleware);
 app.use('/sync/*', authMiddleware);
 
+app.route('/api/voice', voice);
 app.route('/transactions', transactions);
 app.route('/categories', categories);
 app.route('/accounts', accounts);
@@ -75,7 +86,7 @@ app.notFound((c) => c.json({ ok: false, error: 'Not found' }, 404));
 
 // ── Error handler ──
 app.onError((err, c) => {
-  console.error('[CaStar API Error]', err.message);
+  console.error('[Castar API Error]', err.message);
   return c.json({ ok: false, error: 'Internal server error' }, 500);
 });
 

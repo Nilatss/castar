@@ -3,9 +3,12 @@ import { NavigationContainer } from '@react-navigation/native';
 import type { NavigationState } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import * as SecureStore from 'expo-secure-store';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { colors } from '../../shared/constants';
 import { useAuthStore } from '../../features/auth/store/authStore';
 import { useProfileStore } from '../../features/profile/store/profileStore';
+import { queryClient } from '../../shared/services/api/queryClient';
+import { initEncryptedDb } from '../../shared/services/database/connection';
 
 // Initialize i18n
 import '../../shared/i18n';
@@ -44,6 +47,9 @@ export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
   useEffect(() => {
     const init = async () => {
       try {
+        // Initialize encrypted SQLite DB FIRST — auth/settings may depend on it
+        await initEncryptedDb();
+
         const [, , savedNav] = await Promise.all([
           initializeAuth(),
           initializeSettings(),
@@ -77,13 +83,15 @@ export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
   }
 
   return (
-    <NavigationContainer
-      theme={navigationTheme}
-      initialState={initialState}
-      onStateChange={onStateChange}
-    >
-      <StatusBar style="light" translucent backgroundColor="transparent" />
-      {children}
-    </NavigationContainer>
+    <QueryClientProvider client={queryClient}>
+      <NavigationContainer
+        theme={navigationTheme}
+        initialState={initialState}
+        onStateChange={onStateChange}
+      >
+        <StatusBar style="light" translucent backgroundColor="transparent" />
+        {children}
+      </NavigationContainer>
+    </QueryClientProvider>
   );
 };

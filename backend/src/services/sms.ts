@@ -1,8 +1,9 @@
 /**
- * CaStar — SMS Service (Eskiz.uz)
+ * Castar — SMS Service (Eskiz.uz)
  * Sends 4-digit verification codes via SMS.
  *
- * TODO: Replace stub with real Eskiz.uz API call
+ * Eskiz.uz API: https://documenter.getpostman.com/view/663428/RzfmES4z
+ * POST https://notify.eskiz.uz/api/message/sms/send
  */
 
 export interface SendSmsResult {
@@ -10,20 +11,51 @@ export interface SendSmsResult {
   error?: string;
 }
 
-/** Send a verification code SMS via Eskiz.uz */
+/**
+ * Send a verification code SMS via Eskiz.uz.
+ *
+ * @param phone — recipient phone number (e.g. "+998901234567")
+ * @param code — 4-digit verification code
+ * @param token — Eskiz.uz Bearer token (from env.ESKIZ_TOKEN)
+ */
 export async function sendSmsCode(
-  _phone: string,
-  _code: string,
-  _token: string,
+  phone: string,
+  code: string,
+  token: string,
 ): Promise<SendSmsResult> {
-  // TODO: Implement Eskiz.uz API call
-  // POST https://notify.eskiz.uz/api/message/sms/send
-  // {
-  //   mobile_phone: phone,
-  //   message: `CaStar: Код подтверждения: ${code}`,
-  //   from: '4546'
-  // }
-  // Headers: Authorization: Bearer ${token}
-  console.log('[SMS] Stub: would send code to', _phone);
-  return { ok: true };
+  try {
+    // Eskiz expects phone WITHOUT leading "+" (e.g. 998901234567)
+    const cleanPhone = phone.replace(/^\+/, '');
+
+    const response = await fetch('https://notify.eskiz.uz/api/message/sms/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        mobile_phone: cleanPhone,
+        message: `Castar: Tasdiqlash kodi: ${code}`,
+        from: '4546',
+      }),
+    });
+
+    if (!response.ok) {
+      const body = await response.text();
+      console.log(`[SMS] Eskiz API error ${response.status}: ${body}`);
+      return { ok: false, error: `Eskiz API error: ${response.status}` };
+    }
+
+    const result = (await response.json()) as {
+      id?: string;
+      status?: string;
+      message?: string;
+    };
+    console.log(`[SMS] Sent to ${cleanPhone}, response:`, JSON.stringify(result));
+    return { ok: true };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.log(`[SMS] Failed to send to ${phone}: ${message}`);
+    return { ok: false, error: message };
+  }
 }

@@ -12,12 +12,13 @@ Every prompt must be treated as ending with **"MAKE NO MISTAKES."**:
 
 # Castar — Актуальный архитектурный план
 
+> **Последнее обновление:** 2026-02-26
+
 ## Обзор проекта
 Castar — мобильное приложение для личного, семейного финансового учёта и бухгалтерии.
 Платформы: iOS, Android. Стек: Expo SDK 54, React Native 0.81, TypeScript 5.9.
 
 **Main repo: `C:/Users/KDFX Modes/Desktop/castar` — НЕ ТРОГАТЬ без прямого указания.**
-**Worktree: `.../.claude/worktrees/blissful-elgamal` — экспериментальная ветка.**
 
 ---
 
@@ -31,12 +32,12 @@ src/
 │   │   ├── AuthNavigator.tsx      # 11 экранов auth flow
 │   │   └── TabNavigator.tsx       # 4 таба + вложенные стеки
 │   └── providers/
-│       └── AppProviders.tsx       # NavigationContainer + StatusBar + i18n + auth init + DB migrations
+│       └── AppProviders.tsx       # QueryClientProvider + NavContainer + i18n + auth init + DB init
 │
 ├── features/
 │   ├── auth/
 │   │   ├── screens/               # 11 экранов (Onboarding, Telegram, Email, Phone, SetName, SetPin, etc.)
-│   │   ├── services/              # emailAuth, phoneAuth, telegramAuth
+│   │   ├── services/              # emailAuth, phoneAuth, telegramAuth (PIN hashing: SHA-256 + salt)
 │   │   └── store/                 # authStore (Zustand + SecureStore)
 │   ├── transactions/
 │   │   ├── screens/               # Home, AddTransaction, TransactionDetail, Transactions
@@ -60,20 +61,20 @@ src/
 │   ├── constants/                 # colors, typography, spacing, config, defaultCategories, scaling
 │   ├── i18n/                      # uz, ru, en, be, uk, kk, de, az, pl, ka, zh (11 языков)
 │   ├── services/
-│   │   ├── api/apiClient.ts       # HTTP stub (ждёт бэкенд)
-│   │   ├── analytics/             # PostHog (posthog.ts)
-│   │   ├── currency/              # open.er-api.com + SecureStore кэш 24ч
-│   │   ├── database/              # ✅ Drizzle ORM
+│   │   ├── api/                   # ✅ apiClient + queryClient + RQ hooks (7 entity modules)
+│   │   ├── analytics/             # ✅ PostHog (posthog.ts)
+│   │   ├── currency/              # ✅ open.er-api.com + SecureStore кэш 24ч
+│   │   ├── database/              # ✅ Drizzle ORM (7 schema, 7 query modules, SQLCipher encryption)
 │   │   │   ├── schema/            # 7 таблиц (Drizzle schema definitions)
 │   │   │   ├── drizzle/           # auto-generated migrations (.sql + journal)
 │   │   │   ├── *Queries.ts        # 7 query modules
-│   │   │   ├── connection.ts      # drizzle(expoDb, { schema }) + rawDb
+│   │   │   ├── connection.ts      # async initEncryptedDb() + SQLCipher PRAGMA key
 │   │   │   ├── migrations.ts      # bridge from legacy + migrate()
 │   │   │   ├── seed.ts            # seedDefaults(userId)
-│   │   │   └── index.ts           # barrel: *Repository aliases
+│   │   │   └── index.ts           # barrel: *Repository aliases + initEncryptedDb
 │   │   ├── validation/            # ✅ Zod schemas
-│   │   ├── sync/syncService.ts    # Stub
-│   │   └── voice/                 # voiceParser + cloudRecognition + offlineRecognition + voiceService
+│   │   ├── sync/syncService.ts    # Stub (backend sync fully implemented)
+│   │   └── voice/                 # ✅ voiceParser + cloudRecognition + offlineRecognition + voiceService
 │   ├── components/
 │   │   ├── GlowImage.tsx          # GPU-accelerated glow backgrounds (PNG <Image>)
 │   │   └── svg/AuthSvgs.tsx       # Shared JSX SVG components for auth screens
@@ -81,10 +82,35 @@ src/
 │   └── utils/                     # formatCurrency, formatDate
 │
 └── assets/
-    ├── icons/
     └── images/
-        ├── glow.png            # 256×256 standard radial gradient (GPU-scaled)
-        └── glow-vivid.png      # 256×256 vivid radial gradient (GPU-scaled)
+        ├── glow.png            # 256x256 standard radial gradient (GPU-scaled)
+        └── glow-vivid.png      # 256x256 vivid radial gradient (GPU-scaled)
+
+backend/
+├── src/
+│   ├── index.ts            # Hono entry + CORS (blocks browser origins) + health + route mounting
+│   ├── types.ts            # Env (DB, JWT_SECRET, RESEND_API_KEY, ESKIZ_TOKEN, TELEGRAM_BOT_TOKEN, GOOGLE_CLOUD_STT_KEY)
+│   ├── middleware/auth.ts  # ✅ JWT verify middleware
+│   ├── services/
+│   │   ├── jwt.ts          # ✅ sign/verify (jose)
+│   │   ├── telegram.ts     # ✅ HMAC-SHA256 валидация + Login Widget HTML + Authorized callback HTML
+│   │   ├── email.ts        # ✅ Resend.com API (реальная отправка)
+│   │   └── sms.ts          # ✅ Eskiz.uz API (реальная отправка SMS)
+│   └── routes/
+│       ├── auth.ts         # ✅ 702 строк: Telegram, Email OTP (D1+Resend), Phone OTP (D1+Eskiz), upsertUser(), rate limiting, JWT refresh
+│       ├── voice.ts        # ✅ POST /api/voice/recognize (Google STT V2 proxy, JWT protected)
+│       ├── transactions.ts # ✅ Full CRUD + balance adjustment + summary
+│       ├── categories.ts   # ✅ Full CRUD + batch cleanup
+│       ├── accounts.ts     # ✅ Full CRUD + soft archive
+│       ├── budgets.ts      # ✅ Full CRUD + enriched GET (spent/remaining/%)
+│       ├── recurrings.ts   # ✅ Full CRUD + pause toggle
+│       ├── settings.ts     # ✅ GET/PUT upsert
+│       └── sync.ts         # ✅ Push/Pull/Full sync (bulk operations, 500 ops max)
+├── migrations/
+│   ├── 0001_initial.sql         # ✅ APPLIED (7 таблиц, 15 индексов)
+│   └── 0002_rate_limits.sql     # ✅ APPLIED (rate_limits таблица)
+├── wrangler.toml
+└── package.json
 ```
 
 ---
@@ -106,7 +132,7 @@ RootNavigator (conditional)
 │   └── SetPin             ✅ установка PIN-кода
 │
 ├── PinLock (if isOnboarded && !isPinVerified)
-│   └── PinLockScreen      ✅ верификация PIN при запуске
+│   └── PinLockScreen      ✅ верификация PIN при запуске (SHA-256 hash verification)
 │
 └── TabNavigator (if isOnboarded && isPinVerified) — 4 таба
     ├── HomeTab → Home, AddTransaction, TransactionDetail
@@ -117,10 +143,10 @@ RootNavigator (conditional)
 
 ---
 
-## 3. Auth Flow (полностью реализован на клиенте)
+## 3. Auth Flow
 
 ### Auth Services (src/features/auth/services/)
-- **telegramAuth.ts** — getTelegramAuthUrl(), parseAuthCallback(), persistAuth/Token/User/Pin, clearAuth, loadPersistedAuth, PIN management (persist, verify, lockout)
+- **telegramAuth.ts** — getTelegramAuthUrl(), parseAuthCallback(), PIN hashing (SHA-256+salt via expo-crypto), persistPin(), verifyPersistedPin(), hasPersistedPin(), clearAuth, loadPersistedAuth, lockout
 - **emailAuth.ts** — sendVerificationCode(email), verifyEmailCode(email, code)
 - **phoneAuth.ts** — sendPhoneVerificationCode(phone), verifyPhoneCode(phone, code)
 
@@ -129,7 +155,7 @@ RootNavigator (conditional)
 - `token`, `userId`, `telegramUser`, `displayName`, `hasPin`
 - `initializeAuth()` — восстановление сессии из SecureStore
 - `loginWithTelegram(token, user)`, `loginWithEmail(token, email)`, `loginWithPhone(token, phone)`
-- `setDisplayNameAndContinue(name)`, `setPinAndContinue(pin)`, `verifyPin(pin)`
+- `setDisplayNameAndContinue(name)`, `setPinAndContinue(pin)`, `verifyPin(pin)` — uses verifyPersistedPin (hash comparison)
 - `logout()` — сохраняет displayName для returning users
 
 ### Auth Flow
@@ -141,78 +167,37 @@ Onboarding → [Telegram | Email → EmailVerify | Phone → PhoneVerify]
 При returning user: Auth → (skip SetName/SetPin) → Main App
 ```
 
-### Backend endpoints
-- Worker URL: `https://castar-auth.ivcswebofficial.workers.dev`
-- `GET  /auth/telegram?bot=castar_bot` — ✅ Telegram Login Widget page
-- `GET  /auth/telegram/callback` — ✅ HMAC-SHA256 → JWT → deep link + HTML fallback
-- `POST /auth/email/send-code` — ✅ in-memory OTP + Resend.com + rate limit
-- `POST /auth/email/verify-code` — ✅ verify OTP → JWT
-- `POST /auth/phone/send-code` — ✅ in-memory OTP + console.log + rate limit
-- `POST /auth/phone/verify-code` — ✅ verify OTP → JWT
-- `POST /api/voice/recognize` — ✅ Google Cloud STT V2 proxy
+### Backend endpoints (полный список)
+Worker URL: `https://castar-auth.ivcswebofficial.workers.dev`
 
-### CRUD endpoints (protected, JWT required)
-- `GET    /categories` — List user categories (default + custom, ordered by sort_order)
-- `POST   /categories` — Create custom category (max 20 per user)
-- `PUT    /categories/:id` — Update
-- `DELETE /categories/:id` — Hard delete + nullify refs in transactions/budgets
+**Auth (public, no JWT):**
+- `GET  /auth/telegram?bot=castar_bot` — Telegram Login Widget page
+- `GET  /auth/telegram/callback` — HMAC-SHA256 → JWT → deep link + HTML fallback → upsertUser(telegram_id)
+- `POST /auth/email/send-code` — D1 OTP + Resend.com + rate limit 60s + per-IP rate limit
+- `POST /auth/email/verify-code` — verify OTP (D1) → JWT → upsertUser(email)
+- `POST /auth/phone/send-code` — D1 OTP + Eskiz.uz SMS + rate limit 60s + per-IP rate limit
+- `POST /auth/phone/verify-code` — verify OTP (D1) → JWT → upsertUser(phone)
+- `POST /auth/refresh` — JWT refresh (valid JWT → new 30d JWT)
 
-- `GET    /accounts` — List (?include_archived=1)
-- `POST   /accounts` — Create
-- `PUT    /accounts/:id` — Update
-- `DELETE /accounts/:id` — Soft archive (is_archived = 1)
+**Voice (protected, JWT required):**
+- `POST /api/voice/recognize` — Google Cloud STT V2 proxy
 
-- `GET    /transactions` — List (filters: type, category_id, date_from, date_to, limit max 200, offset)
-- `GET    /transactions/summary` — Aggregated income/expense/net for period
-- `POST   /transactions` — Create + auto adjust account balance
-- `GET    /transactions/:id` — Get single
-- `PUT    /transactions/:id` — Update + revert/reapply balance on amount/type change
-- `DELETE /transactions/:id` — Delete + revert balance
+**CRUD (protected, JWT required):**
+- `GET/POST /transactions`, `GET/PUT/DELETE /transactions/:id`, `GET /transactions/summary`
+- `GET/POST /categories`, `PUT/DELETE /categories/:id`
+- `GET/POST /accounts`, `PUT/DELETE /accounts/:id`
+- `GET/POST /budgets`, `PUT/DELETE /budgets/:id`
+- `GET/POST /recurrings`, `PUT/DELETE /recurrings/:id`, `PATCH /recurrings/:id/pause`
+- `GET/PUT /settings`
 
-- `GET    /budgets` — List active (?include_inactive=1), enriched: spent/remaining/percentage
-- `POST   /budgets` — Create
-- `PUT    /budgets/:id` — Update
-- `DELETE /budgets/:id` — Soft delete (is_active = 0)
-
-- `GET    /recurrings` — List all recurring rules
-- `POST   /recurrings` — Create
-- `PUT    /recurrings/:id` — Update
-- `PATCH  /recurrings/:id/pause` — Toggle is_active
-- `DELETE /recurrings/:id` — Hard delete
-
-- `GET    /settings` — User settings (defaults if no row)
-- `PUT    /settings` — Upsert (create user row if missing)
-
-### Backend architecture
-```
-backend/
-├── src/
-│   ├── index.ts            # Hono entry + CORS + health + route mounting + auth middleware
-│   ├── types.ts            # Env (DB, JWT_SECRET, RESEND_API_KEY, ESKIZ_TOKEN, etc.)
-│   ├── middleware/auth.ts  # JWT verify → userId in context
-│   ├── services/
-│   │   ├── jwt.ts          # sign/verify (jose, HS256, 30d)
-│   │   ├── telegram.ts     # HMAC-SHA256 validation + Login Widget + Authorized callback
-│   │   ├── email.ts        # Resend.com API
-│   │   └── sms.ts          # stub (console.log)
-│   └── routes/
-│       ├── auth.ts         # Telegram + Email OTP + Phone OTP
-│       ├── voice.ts        # Google STT V2 proxy
-│       ├── transactions.ts # ✅ Full CRUD + balance adjustment
-│       ├── categories.ts   # ✅ Full CRUD + batch cleanup
-│       ├── accounts.ts     # ✅ Full CRUD + soft archive
-│       ├── budgets.ts      # ✅ Full CRUD + enriched GET (spent/remaining/%)
-│       ├── recurrings.ts   # ✅ Full CRUD + pause toggle
-│       ├── settings.ts     # ✅ GET/PUT upsert
-│       └── sync.ts         # 🔲 501 stub
-├── migrations/0001_initial.sql  # ✅ APPLIED (7 tables, 15 indexes)
-├── wrangler.toml
-└── package.json
-```
+**Sync (protected, JWT required):**
+- `POST /sync/push` — bulk push (до 500 операций)
+- `POST /sync/pull` — pull changes since last_synced_at
+- `POST /sync/full` — push + pull в одном запросе
 
 ---
 
-## 4. Database Layer (Drizzle ORM + expo-sqlite)
+## 4. Database Layer (Drizzle ORM + expo-sqlite + SQLCipher)
 
 ### Schema (src/shared/services/database/schema/)
 7 таблиц: categories, accounts, transactions, budgets, recurrings, syncQueue, exchangeRates.
@@ -220,6 +205,12 @@ backend/
 - Booleans: `integer('...', { mode: 'boolean' })`
 - Enums: `text('...', { enum: [...] })`
 - Nullable поля: `string | null` (не `undefined`)
+
+### Encryption (SQLCipher)
+- `app.json` → `["expo-sqlite", { "useSQLCipher": true }]`
+- 256-bit AES encryption key → SecureStore (`castar_db_encryption_key`)
+- `PRAGMA key` applied before any other operations
+- Async init: `initEncryptedDb()` called in AppProviders before auth/settings
 
 ### Query Modules (src/shared/services/database/*Queries.ts)
 - `categoryQueries` — findByUser, findByType, countByUser, insert, update, delete
@@ -230,15 +221,9 @@ backend/
 - `syncQueueQueries` — enqueue, findPending, markSynced, recordFailure, pendingCount, clearAll
 - `exchangeRateQueries` — для будущей SQLite интеграции курсов валют
 
-### Barrel (index.ts)
-Query modules экспортируются как `categoryRepository`, `accountRepository`, etc. — backward compat со сторами.
-
-### Connection
-`export const db = drizzle(expoDb, { schema })` — singleton, WAL mode, foreign keys.
-
-### Migrations
-- Bridge: если есть старая `schema_migrations` → записать baseline в `__drizzle_migrations`
-- `migrate(db, migrations)` из `drizzle-orm/expo-sqlite/migrator`
+### Connection (async init)
+`initEncryptedDb()` → generates/loads key → `PRAGMA key` → WAL mode → foreign keys → `drizzle(expoDb, { schema })`
+Backward-compatible Proxy exports: `db` and `rawDb` forward to initialized instance.
 
 ---
 
@@ -271,7 +256,25 @@ Query modules экспортируются как `categoryRepository`, `account
 
 ---
 
-## 6. Дизайн-система
+## 6. React Query (Server State)
+
+- `@tanstack/react-query` v5.90
+- `apiClient.ts` — HTTP клиент с auto-JWT из authStore, snake↔camel конвертеры, ApiError, `{ ok, data }` envelope parsing
+- `queryClient.ts` — staleTime 5мин, gcTime 10мин, retry 2x (5xx only), query key factories
+- `types.ts` — Server types + Request DTOs + Sync types (все в camelCase)
+- **7 hook-модулей:**
+  - `useTransactions` — list(filters), detail(id), summary(period), create, update, delete
+  - `useCategories` — list, create, update, delete (invalidates transactions + budgets)
+  - `useAccounts` — list(includeArchived?), create, update, delete
+  - `useBudgets` — list (enriched), create, update, delete
+  - `useRecurrings` — list, create, update, pause(toggle), delete
+  - `useSettings` — current (staleTime 24ч), update (optimistic cache)
+  - `useSync` — push, pull, full (invalidates all entities)
+- `AppProviders.tsx` — обёрнут в `<QueryClientProvider>`
+
+---
+
+## 7. Дизайн-система
 
 ### Цвета (Dark Theme)
 - Background: `#101010`, Surface: `#1A1A1A`, Surface elevated: `#242424`
@@ -291,7 +294,7 @@ Query modules экспортируются как `categoryRepository`, `account
 
 ---
 
-## 7. Зависимости (реальный package.json)
+## 8. Зависимости (реальный package.json)
 
 ### Core
 - expo ~54.0.33, react 19.1.0, react-native 0.81.5, typescript ~5.9.2
@@ -299,11 +302,12 @@ Query modules экспортируются как `categoryRepository`, `account
 ### Navigation
 - @react-navigation/native, bottom-tabs, native-stack (**v7**)
 
-### State & Validation
-- zustand ^5.0.11, zod ^4.3.6
+### State & Data
+- zustand ^5.0.11, @tanstack/react-query ^5.90
+- zod ^4.3.6
 
 ### Database
-- drizzle-orm ^0.45.1, expo-sqlite ~16.0.10
+- drizzle-orm ^0.45.1, expo-sqlite ~16.0.10 (SQLCipher enabled)
 - drizzle-kit ^0.31.9 (dev), babel-plugin-inline-import ^3.0.0 (dev)
 
 ### i18n
@@ -315,7 +319,8 @@ Query modules экспортируются как `categoryRepository`, `account
 - expo-blur
 
 ### Auth & Security
-- expo-secure-store (JWT + PIN + user persistence)
+- expo-secure-store (JWT + PIN hash + user persistence + DB encryption key)
+- expo-crypto (SHA-256 PIN hashing + salt generation)
 - react-native-webview (Telegram OAuth)
 - expo-linking (deep link callback: castar://)
 
@@ -334,7 +339,35 @@ Query modules экспортируются как `categoryRepository`, `account
 
 ---
 
-## 8. Текущий статус
+## 9. Безопасность
+
+| Мера | Статус | Детали |
+|------|--------|--------|
+| PIN hashing | ✅ | SHA-256 + random salt (expo-crypto), stored in SecureStore |
+| SQLite encryption | ✅ | SQLCipher 256-bit AES, key in SecureStore |
+| JWT auth | ✅ | Bearer token, 30d expiry, jose HS256 |
+| JWT refresh | ✅ | `POST /auth/refresh` — new 30d token |
+| CORS | ✅ | Blocks all browser origins, allows mobile (no Origin header) |
+| Voice route | ✅ | JWT auth middleware (moved from public to protected) |
+| Per-IP rate limit | ✅ | D1 `rate_limits` table, 10 OTP sends / 15min per IP |
+| OTP storage | ✅ | D1 persistent (not in-memory), 5min expiry, 3 attempts, 60s cooldown |
+| OTP CSPRNG | ⏳ | TODO: replace Math.random() with crypto.getRandomValues() |
+| OTP console.log | ⏳ | TODO: remove in production |
+
+---
+
+## 10. Текущий статус
+
+### Прогресс по фазам
+| Фаза | Статус | Прогресс |
+|------|--------|----------|
+| 1. Фундамент | ✅ Завершена | 100% |
+| 1.5. Auth Flow | ✅ Завершена | 100% |
+| 2. UI экранов | 🟡 В процессе | ~20% (Home + Profile + Subscription готовы) |
+| 3. Локальная БД | ✅ Завершена | 100% |
+| 4. Backend | 🟡 В процессе | ~98% (остались: секреты Eskiz/STT + OTP hardening) |
+| 5. Продвинутые фичи | ⬜ Не начата | 0% |
+| 6. Кастомизация | ⬜ Не начата | 0% |
 
 ### DONE ✅
 
@@ -352,9 +385,10 @@ Query modules экспортируются как `categoryRepository`, `account
 - [x] Auth services: telegramAuth, emailAuth, phoneAuth
 - [x] Auth store: initializeAuth, 3 login метода, PIN verify, SecureStore persistence
 
-#### Фаза 2 (частично) — Profile UI + Subscription + Tasks + HomeScreen
+#### Фаза 2 (частично) — UI
 - [x] ProfileScreen — полный Figma UI (2500+ строк)
 - [x] SubscriptionManagementScreen — полный Figma UI, perf optimized
+- [x] HomeScreen — layout по Figma (дата i18n, приветствие, budget card, period pills, spent/remaining, action кнопки, GPU glow)
 - [x] TasksScreen — stub
 - [x] 4 таба (Home, Monitoring, Tasks, Profile) + кастомный таб-бар
 - [x] Currency picker (26 валют, live курсы, radio selection)
@@ -362,83 +396,51 @@ Query modules экспортируются как `categoryRepository`, `account
 - [x] Settings модалка (Name, Telegram, Phone, Email, Save, Delete account)
 - [x] OTP верификация телефона/email из настроек
 - [x] Персистентность: язык + валюта в SecureStore
-- [x] HomeScreen — layout по Figma (дата с i18n, приветствие, budget card, period pills с анимацией, spent/remaining, action кнопки)
-- [x] Tab bar: flex layout + ellipsis для длинных названий (вместо фиксированной ширины)
-- [x] Date i18n: все 11 date-fns локалей для перевода названия месяца
-- [x] Баг-фикс: язык сбрасывался на русский при logout → fallback English
-- [x] Баг-фикс: добавлены недостающие языки (pl, ka, zh) в OnboardingScreen
-- [x] Modal animation fix: double requestAnimationFrame для устранения visual "jump"
 
 #### Фаза 3 — Локальная БД (Drizzle ORM)
 - [x] expo-sqlite + Drizzle ORM (7 schema, 7 query modules)
+- [x] SQLCipher 256-bit AES encryption (ключ в SecureStore)
 - [x] Zustand сторы интегрированы с SQLite
 - [x] Zod validation schemas
 - [x] SyncQueue для будущей синхронизации
 
-#### Фаза 4 — Backend ✅
-- [x] Cloudflare Worker `castar-auth` задеплоен
-- [x] D1 база `castar-db` создана (WEUR) — **миграция ПРИМЕНЕНА** (7 таблиц, 15 индексов)
-- [x] JWT service + middleware (jose, 30 дней)
-- [x] Telegram auth — полный цикл (Login Widget → HMAC-SHA256 → JWT → deep link)
-- [x] Email OTP — Resend.com (реальная отправка)
-- [x] Phone OTP — console.log (Eskiz.uz ещё не подключён)
-- [x] Voice route — Google Cloud STT V2 proxy
-- [x] CRUD routes — полная реализация с Zod валидацией:
-  - `categories.ts` — GET, POST, PUT, DELETE (batch cleanup transactions + budgets)
-  - `accounts.ts` — GET (?include_archived), POST, PUT, DELETE (soft archive)
-  - `transactions.ts` — GET (filters), GET /summary, POST, GET/:id, PUT, DELETE + auto balance adjustment
-  - `budgets.ts` — GET (enriched: spent/remaining/%), POST, PUT, DELETE (soft)
-  - `recurrings.ts` — GET, POST, PUT, PATCH /:id/pause (toggle), DELETE
-  - `settings.ts` — GET (defaults if no row), PUT (upsert)
-- [x] Root-level auth middleware для всех protected routes
-- [x] Worker задеплоен с CRUD routes
+#### Фаза 4 — Backend
+- [x] Cloudflare Worker задеплоен
+- [x] D1 миграции ПРИМЕНЕНЫ (8 таблиц: users, otp_codes, categories, accounts, transactions, budgets, recurrings, rate_limits)
+- [x] JWT service + middleware + refresh endpoint
+- [x] Telegram auth — полный цикл
+- [x] Email OTP — D1 + Resend.com
+- [x] Phone OTP — D1 + Eskiz.uz
+- [x] User creation при регистрации (upsertUser)
+- [x] CRUD routes — полная реализация с Zod валидацией
+- [x] Sync endpoint — push/pull/full (390 строк)
+- [x] React Query — 7 hook-модулей + apiClient + queryClient
+- [x] Безопасность: PIN hash, CORS, voice auth, JWT refresh, SQLCipher, rate limiting
 
-#### Сервисы (клиент)
-- [x] Currency service (open.er-api.com + SecureStore кэш 24ч + fallback)
-- [x] Voice: voiceParser + cloudRecognition (Google STT) + offlineRecognition (VOSK) + voiceService
-- [x] PostHog analytics (EU instance, screen tracking)
-
-#### Performance Optimization ✅ (13 коммитов)
-- [x] Quick wins: `useShallow`, `React.memo`, `useCallback`/`useMemo` — меньше ре-рендеров
-- [x] SvgXml → JSX SVG: ProfileScreen (16 иконок), 11 auth screens — **0 SvgXml** в проекте
-- [x] Shared SVG: `src/shared/components/svg/AuthSvgs.tsx` + `scaling.ts` (`scale()` утилита)
-- [x] Lazy i18n: при старте грузится 1 язык, остальные 10 — `InteractionManager.runAfterInteractions`
-- [x] SVG RadialGradient → GPU PNG: pre-rendered 256×256 PNG через `sharp` → `<Image>` (GPU-scaled)
-  - `glow.png` (4.6KB) + `glow-vivid.png` (7.9KB) → `GlowCircle1`, `GlowCircle2` в `GlowImage.tsx`
-  - Заменены glows в SubscriptionManagement, Profile, AuthSvgs
-- [x] Modal animation: double `requestAnimationFrame` для mount → animate (устранение "jump" при открытии)
-- [x] Анимации модалок/попапов (финальные значения):
-  - Picker sheet: overlay 500ms, spring stiffness 150, damping 32, mass 1
-  - Popup (logout/delete): fade 500ms, scale 0.94→1, spring stiffness 110, damping 24, mass 1
-  - FadeIn полей: 200ms
-- [x] `experimentalBlurMethod="dimezisBlurView"` — обязателен для blur на Android (expo-blur)
-
-### Экраны — UI статус
-- [x] HomeScreen — layout готов (дата, приветствие, budget card, period pills, spent/remaining, кнопки)
-- [ ] AddTransaction, TransactionDetail, Transactions — stubs
-- [ ] Budgets, BudgetDetail, CreateBudget, FamilyBudget — stubs
-- [ ] Analytics — stub
-- [ ] Categories, CreateCategory — stubs
+#### Performance Optimization ✅
+- [x] useShallow, React.memo, useCallback/useMemo
+- [x] SvgXml → JSX SVG (0 SvgXml в проекте)
+- [x] Lazy i18n (1 язык при старте, 10 отложены)
+- [x] SVG RadialGradient → GPU PNG (glow.png + glow-vivid.png)
+- [x] Анимации модалок/попапов оптимизированы
+- [x] experimentalBlurMethod="dimezisBlurView" (Android)
 
 ### TODO 📋
 
-#### Фаза 2 (продолжение) — UI основных экранов
-- [ ] Home экран (карточка баланса, доход/расход, список транзакций)
-- [ ] AddTransaction экран (форма + voice input)
-- [ ] TransactionDetail экран
-- [ ] Budgets + BudgetDetail + CreateBudget
-- [ ] Analytics экран (графики) — нужен `react-native-gifted-charts`
-- [ ] Categories + CreateCategory
-- [ ] Shared UI компоненты
+#### Фаза 2 (продолжение) — UI экранов (ждёт дизайн)
+- [ ] AddTransactionScreen (калькулятор + voice input)
+- [ ] TransactionDetailScreen
+- [ ] TransactionsScreen (список с фильтрами)
+- [ ] BudgetsScreen + BudgetDetailScreen + CreateBudgetScreen
+- [ ] AnalyticsScreen (нужен react-native-gifted-charts)
+- [ ] CategoriesScreen + CreateCategoryScreen
+- [ ] Shared UI компоненты (Button, Input, Card, etc.)
 
-#### Фаза 4 (остаток) — Бэкенд
-- [ ] SMS через Eskiz.uz (заменить console.log → реальный API)
-- [ ] OTP хранение в D1 (заменить in-memory Map → persistent storage)
-- [ ] Sync endpoint (bulk operations для offline → online)
-- [ ] React Query (@tanstack/react-query) для серверных данных
-- [ ] apiClient.ts — заполнить baseUrl и методы (подключить к backend)
+#### Фаза 4 (остаток)
+- [ ] `wrangler secret put ESKIZ_TOKEN` (нужен реальный токен)
 - [ ] `wrangler secret put GOOGLE_CLOUD_STT_KEY`
-- [ ] `wrangler secret put ESKIZ_TOKEN`
+- [ ] OTP: Math.random() → crypto.getRandomValues()
+- [ ] OTP: убрать console.log кода
 
 #### Фаза 5 — Продвинутые фичи
 - [ ] Семейные бюджеты
@@ -446,11 +448,14 @@ Query modules экспортируются как `categoryRepository`, `account
 - [ ] Push-уведомления
 - [ ] Биометрия (expo-local-authentication)
 - [ ] Экспорт (CSV/PDF)
+
+#### Фаза 6 — Кастомизация
 - [ ] Тёмная/светлая тема
+- [ ] Смена иконки приложения
 
 ---
 
-## 9. Конфигурация
+## 11. Конфигурация
 
 - **App:** Castar (bundle: castar)
 - **Deep link:** castar://
@@ -462,6 +467,6 @@ Query modules экспортируются как `categoryRepository`, `account
 - **Языки (i18n):** uz, ru, en, be, uk, kk, de, az, pl, ka, zh — 11 языков, auto-detection, fallback: en
 - **Валюты:** UZS (default), USD, EUR, RUB, GBP, TRY, KZT, CNY, JPY, KRW, CHF, AED, INR, BRL, CAD, AUD, PLN, UAH, GEL, BYN, AZN, AMD, KGS, TJS, MDL, TMT — 26 валют (open.er-api.com, кэш 24ч)
 - **Resend.com:** from `Castar <onboarding@resend.dev>` (бесплатный план)
-- **Plugins:** expo-localization, expo-secure-store, expo-sqlite
+- **Plugins:** expo-localization, expo-secure-store, ["expo-sqlite", { "useSQLCipher": true }]
 
 > **ВАЖНО:** Название пишется **Castar** или **castar**. Никогда не писать "CaStar" (s с большой буквы).

@@ -32,7 +32,7 @@ import {
   persistFailedAttempts,
   persistLockoutUntil,
   clearLockoutData,
-  getPersistedPin,
+  verifyPersistedPin,
 } from '../services/telegramAuth';
 
 const PIN_LENGTH = 4;
@@ -301,8 +301,7 @@ export const PinLockScreen = () => {
 
     // Check PIN manually first (don't call verifyPin yet -- it sets isPinVerified
     // which unmounts this screen before the success animation can play)
-    const savedPin = await getPersistedPin();
-    const isCorrect = savedPin != null && enteredPin === savedPin;
+    const isCorrect = await verifyPersistedPin(enteredPin);
 
     if (isCorrect) {
       // Correct PIN -- clear lockout data, show success glow, THEN verify

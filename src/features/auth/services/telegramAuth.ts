@@ -8,6 +8,7 @@
  */
 
 import * as SecureStore from 'expo-secure-store';
+import * as Crypto from 'expo-crypto';
 import { TELEGRAM_CONFIG } from '../../../shared/constants/config';
 
 // ===================== Types =====================
@@ -31,6 +32,7 @@ const TOKEN_KEY = 'castar_auth_token';
 const USER_KEY = 'castar_auth_user';
 const DISPLAY_NAME_KEY = 'castar_display_name';
 const PIN_KEY = 'castar_pin';
+const PIN_SALT_KEY = 'castar_pin_salt';
 const LOCKOUT_UNTIL_KEY = 'castar_lockout_until';
 const FAILED_ATTEMPTS_KEY = 'castar_failed_attempts';
 
@@ -157,28 +159,81 @@ export async function clearPersistedDisplayName(): Promise<void> {
   await SecureStore.deleteItemAsync(DISPLAY_NAME_KEY);
 }
 
-// ===================== PIN Persistence =====================
+// ===================== PIN Persistence (SHA-256 + salt) =====================
 
 /**
- * Save PIN code to secure storage.
+ * Generate a random 16-byte hex salt.
+ */
+function generateSalt(): string {
+  return Crypto.getRandomValues(new Uint8Array(16))
+    .reduce((s, b) => s + b.toString(16).padStart(2, '0'), '');
+}
+
+/**
+ * Hash a PIN with a salt using SHA-256.
+ * Returns hex digest.
+ */
+async function hashPin(pin: string, salt: string): Promise<string> {
+  return Crypto.digestStringAsync(
+    Crypto.CryptoDigestAlgorithm.SHA256,
+    salt + pin,
+  );
+}
+
+/**
+ * Save PIN code to secure storage (hashed with SHA-256 + random salt).
+ * Stores the hash in PIN_KEY and the salt in PIN_SALT_KEY.
  */
 export async function persistPin(pin: string): Promise<void> {
-  await SecureStore.setItemAsync(PIN_KEY, pin);
+  const salt = generateSalt();
+  const hash = await hashPin(pin, salt);
+  await Promise.all([
+    SecureStore.setItemAsync(PIN_KEY, hash),
+    SecureStore.setItemAsync(PIN_SALT_KEY, salt),
+  ]);
 }
 
 /**
- * Read PIN code from secure storage.
- * Returns null if not set.
+ * Verify a PIN against the stored hash.
+ * Returns true if the PIN matches.
+ */
+export async function verifyPersistedPin(pin: string): Promise<boolean> {
+  const [storedHash, salt] = await Promise.all([
+    SecureStore.getItemAsync(PIN_KEY),
+    SecureStore.getItemAsync(PIN_SALT_KEY),
+  ]);
+  if (!storedHash || !salt) return false;
+  const hash = await hashPin(pin, salt);
+  return hash === storedHash;
+}
+
+/**
+ * Check if a PIN has been set (without revealing the value).
+ * Returns true if PIN hash exists in secure storage.
+ */
+export async function hasPersistedPin(): Promise<boolean> {
+  const stored = await SecureStore.getItemAsync(PIN_KEY);
+  return stored != null;
+}
+
+/**
+ * @deprecated Use verifyPersistedPin() instead.
+ * Kept for backward compatibility during migration.
+ * Returns a non-null sentinel if PIN exists (never the actual PIN).
  */
 export async function getPersistedPin(): Promise<string | null> {
-  return SecureStore.getItemAsync(PIN_KEY);
+  const stored = await SecureStore.getItemAsync(PIN_KEY);
+  return stored != null ? '****' : null;
 }
 
 /**
- * Remove PIN code from secure storage.
+ * Remove PIN code and salt from secure storage.
  */
 export async function clearPersistedPin(): Promise<void> {
-  await SecureStore.deleteItemAsync(PIN_KEY);
+  await Promise.all([
+    SecureStore.deleteItemAsync(PIN_KEY),
+    SecureStore.deleteItemAsync(PIN_SALT_KEY),
+  ]);
 }
 
 // ===================== PIN Lockout Persistence =====================

@@ -10,7 +10,8 @@ import {
   persistDisplayName,
   getPersistedDisplayName,
   persistPin,
-  getPersistedPin,
+  hasPersistedPin,
+  verifyPersistedPin,
 } from '../services/telegramAuth';
 
 interface AuthStore {
@@ -71,15 +72,15 @@ export const useAuthStore = create<AuthStore>((set) => ({
   initializeAuth: async () => {
     try {
       set({ isLoading: true });
-      const [persisted, displayName, pin] = await Promise.all([
+      const [persisted, displayName, pinExists] = await Promise.all([
         loadPersistedAuth(),
         getPersistedDisplayName(),
-        getPersistedPin(),
+        hasPersistedPin(),
       ]);
 
       if (persisted) {
         // Only mark as onboarded if user has completed both SetName AND SetPin
-        const hasCompletedSetup = !!displayName && !!pin;
+        const hasCompletedSetup = !!displayName && pinExists;
         set({
           isAuthenticated: true,
           isOnboarded: hasCompletedSetup,
@@ -87,11 +88,11 @@ export const useAuthStore = create<AuthStore>((set) => ({
           userId: persisted.user.id,
           telegramUser: persisted.user,
           displayName,
-          hasPin: !!pin,
+          hasPin: pinExists,
           isLoading: false,
         });
       } else {
-        set({ displayName, hasPin: !!pin, isLoading: false });
+        set({ displayName, hasPin: pinExists, isLoading: false });
       }
     } catch {
       set({ isLoading: false });
@@ -102,12 +103,12 @@ export const useAuthStore = create<AuthStore>((set) => ({
     await persistAuth(token, user);
 
     // Check if this is a returning user (has saved display name AND PIN)
-    const [savedName, savedPin] = await Promise.all([
+    const [savedName, pinExists] = await Promise.all([
       getPersistedDisplayName(),
-      getPersistedPin(),
+      hasPersistedPin(),
     ]);
 
-    if (savedName && savedPin) {
+    if (savedName && pinExists) {
       // Returning user — skip SetName & SetPin, go straight to Main
       set({
         isAuthenticated: true,
@@ -127,7 +128,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
         userId: user.id,
         telegramUser: user,
         displayName: savedName,
-        hasPin: !!savedPin,
+        hasPin: pinExists,
       });
     }
   },
@@ -136,12 +137,12 @@ export const useAuthStore = create<AuthStore>((set) => ({
     await persistEmailAuth(token, email);
 
     // Check if this is a returning user (has saved display name AND PIN)
-    const [savedName, savedPin] = await Promise.all([
+    const [savedName, pinExists] = await Promise.all([
       getPersistedDisplayName(),
-      getPersistedPin(),
+      hasPersistedPin(),
     ]);
 
-    if (savedName && savedPin) {
+    if (savedName && pinExists) {
       // Returning user — skip SetName & SetPin, go straight to Main
       set({
         isAuthenticated: true,
@@ -158,7 +159,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
         token,
         userId: email,
         displayName: savedName,
-        hasPin: !!savedPin,
+        hasPin: pinExists,
       });
     }
   },
@@ -167,12 +168,12 @@ export const useAuthStore = create<AuthStore>((set) => ({
     await persistPhoneAuth(token, phone);
 
     // Check if this is a returning user (has saved display name AND PIN)
-    const [savedName, savedPin] = await Promise.all([
+    const [savedName, pinExists] = await Promise.all([
       getPersistedDisplayName(),
-      getPersistedPin(),
+      hasPersistedPin(),
     ]);
 
-    if (savedName && savedPin) {
+    if (savedName && pinExists) {
       // Returning user — skip SetName & SetPin, go straight to Main
       set({
         isAuthenticated: true,
@@ -189,7 +190,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
         token,
         userId: phone,
         displayName: savedName,
-        hasPin: !!savedPin,
+        hasPin: pinExists,
       });
     }
   },
@@ -208,8 +209,8 @@ export const useAuthStore = create<AuthStore>((set) => ({
   },
 
   verifyPin: async (pin) => {
-    const savedPin = await getPersistedPin();
-    if (savedPin && pin === savedPin) {
+    const isCorrect = await verifyPersistedPin(pin);
+    if (isCorrect) {
       set({ isPinVerified: true });
       return true;
     }

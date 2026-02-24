@@ -9,38 +9,185 @@
  * POST /auth/phone/send-code   — Send 4-digit code via Eskiz.uz
  * POST /auth/phone/verify-code — Verify code, return JWT
  *
- * TODO: Email/Phone OTP (Resend + Eskiz) — needs D1 for code storage
  */
 
 import { Hono } from 'hono';
 import type { Env, Variables } from '../types';
 import { getTelegramWidgetHtml, validateTelegramAuth } from '../services/telegram';
-import { signJwt } from '../services/jwt';
+import { signJwt, verifyJwt } from '../services/jwt';
 import { sendEmailCode } from '../services/email';
+import { sendSmsCode } from '../services/sms';
 
 const auth = new Hono<{ Bindings: Env; Variables: Variables }>();
 
 // ============================================================
-// In-memory OTP store (Worker-scoped, resets on redeploy)
-// Key: "phone:+998..." or "email:user@..."
-// Value: { code, expiresAt, attempts, createdAt }
+// D1-backed OTP storage (persistent across Worker redeploys)
+// Table: otp_codes (id, identifier, code, type, attempts, expires_at, created_at)
 // ============================================================
-interface OtpEntry {
-  code: string;
-  expiresAt: number;   // Unix ms
-  attempts: number;
-  createdAt: number;   // Unix ms — for rate limiting
-}
-
-const otpStore = new Map<string, OtpEntry>();
 
 const OTP_EXPIRY_MS = 5 * 60 * 1000;    // 5 minutes
 const OTP_COOLDOWN_MS = 60 * 1000;       // 1 min between sends
 const OTP_MAX_ATTEMPTS = 3;
 
+// ============================================================
+// Per-IP Rate Limiting (D1-backed)
+// Table: rate_limits (ip, endpoint, request_count, window_start)
+// ============================================================
+
+const IP_RATE_WINDOW_MS = 15 * 60 * 1000; // 15-minute sliding window
+const IP_RATE_MAX_REQUESTS = 10;           // max 10 OTP sends per IP per window
+
+/**
+ * Get client IP from Cloudflare headers.
+ */
+function getClientIp(headers: Headers): string {
+  return headers.get('CF-Connecting-IP')
+    || headers.get('X-Forwarded-For')?.split(',')[0]?.trim()
+    || 'unknown';
+}
+
+/**
+ * Check and increment IP rate limit.
+ * Returns { allowed: true } or { allowed: false, retryAfter: seconds }.
+ */
+async function checkIpRateLimit(
+  db: D1Database,
+  ip: string,
+  endpoint: string,
+): Promise<{ allowed: boolean; retryAfter?: number }> {
+  const now = Date.now();
+  const windowCutoff = now - IP_RATE_WINDOW_MS;
+
+  // Cleanup old entries — fire and forget
+  db.prepare('DELETE FROM rate_limits WHERE window_start < ?')
+    .bind(windowCutoff).run().catch(() => {});
+
+  const row = await db.prepare(
+    'SELECT request_count, window_start FROM rate_limits WHERE ip = ? AND endpoint = ?',
+  ).bind(ip, endpoint).first<{ request_count: number; window_start: number }>();
+
+  if (!row || row.window_start < windowCutoff) {
+    // No entry or expired — start fresh window
+    await db.prepare(
+      'INSERT OR REPLACE INTO rate_limits (ip, endpoint, request_count, window_start) VALUES (?, ?, 1, ?)',
+    ).bind(ip, endpoint, now).run();
+    return { allowed: true };
+  }
+
+  if (row.request_count >= IP_RATE_MAX_REQUESTS) {
+    const retryAfter = Math.ceil((row.window_start + IP_RATE_WINDOW_MS - now) / 1000);
+    return { allowed: false, retryAfter: Math.max(retryAfter, 1) };
+  }
+
+  // Increment
+  await db.prepare(
+    'UPDATE rate_limits SET request_count = request_count + 1 WHERE ip = ? AND endpoint = ?',
+  ).bind(ip, endpoint).run();
+  return { allowed: true };
+}
+
 /** Generate a random 4-digit code */
 function generateCode(): string {
   return String(Math.floor(1000 + Math.random() * 9000));
+}
+
+/** Row shape returned from D1 otp_codes table */
+interface OtpRow {
+  id: string;
+  identifier: string;
+  code: string;
+  type: string;
+  attempts: number;
+  expires_at: number;
+  created_at: number;
+}
+
+/** Get existing OTP for identifier + type */
+async function getOtp(db: D1Database, identifier: string, type: string): Promise<OtpRow | null> {
+  return db
+    .prepare('SELECT * FROM otp_codes WHERE identifier = ? AND type = ?')
+    .bind(identifier, type)
+    .first<OtpRow>();
+}
+
+/** Upsert OTP: delete old entry (if any) + insert new */
+async function upsertOtp(
+  db: D1Database,
+  identifier: string,
+  type: string,
+  code: string,
+  expiresAt: number,
+): Promise<void> {
+  const id = crypto.randomUUID();
+  const now = Date.now();
+  await db.batch([
+    db.prepare('DELETE FROM otp_codes WHERE identifier = ? AND type = ?').bind(identifier, type),
+    db
+      .prepare(
+        'INSERT INTO otp_codes (id, identifier, code, type, attempts, expires_at, created_at) VALUES (?, ?, ?, ?, 0, ?, ?)',
+      )
+      .bind(id, identifier, code, type, expiresAt, now),
+  ]);
+}
+
+/** Increment attempts counter */
+async function incrementAttempts(db: D1Database, id: string): Promise<void> {
+  await db.prepare('UPDATE otp_codes SET attempts = attempts + 1 WHERE id = ?').bind(id).run();
+}
+
+/** Delete OTP entry */
+async function deleteOtp(db: D1Database, id: string): Promise<void> {
+  await db.prepare('DELETE FROM otp_codes WHERE id = ?').bind(id).run();
+}
+
+/** Clean up expired OTPs (housekeeping, fire-and-forget) */
+async function cleanupExpiredOtps(db: D1Database): Promise<void> {
+  await db.prepare('DELETE FROM otp_codes WHERE expires_at < ?').bind(Date.now()).run();
+}
+
+// ============================================================
+// D1 user upsert — create user row on first auth, update on re-auth
+// ============================================================
+
+/** Upsert user in D1 on successful authentication */
+async function upsertUser(
+  db: D1Database,
+  userId: string,
+  fields: { telegram_id?: string; email?: string; phone?: string; display_name?: string },
+): Promise<void> {
+  const now = Date.now();
+  const existing = await db.prepare('SELECT id FROM users WHERE id = ?').bind(userId).first();
+
+  if (existing) {
+    // Update: set auth-specific fields + updated_at
+    const sets: string[] = ['updated_at = ?'];
+    const values: (string | number | null)[] = [now];
+    if (fields.telegram_id !== undefined) { sets.push('telegram_id = ?'); values.push(fields.telegram_id); }
+    if (fields.email !== undefined) { sets.push('email = ?'); values.push(fields.email); }
+    if (fields.phone !== undefined) { sets.push('phone = ?'); values.push(fields.phone); }
+    if (fields.display_name !== undefined) { sets.push('display_name = ?'); values.push(fields.display_name); }
+    values.push(userId);
+    await db.prepare(`UPDATE users SET ${sets.join(', ')} WHERE id = ?`).bind(...values).run();
+  } else {
+    // Create new user row
+    await db
+      .prepare(
+        'INSERT INTO users (id, telegram_id, email, phone, display_name, tier, language, primary_currency, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      )
+      .bind(
+        userId,
+        fields.telegram_id ?? null,
+        fields.email ?? null,
+        fields.phone ?? null,
+        fields.display_name ?? null,
+        'free',
+        'en',
+        'UZS',
+        now,
+        now,
+      )
+      .run();
+  }
 }
 
 // Cache bot numeric ID (Worker-scoped, survives across requests until redeploy)
@@ -296,6 +443,13 @@ auth.get('/telegram/callback', async (c) => {
   // 5. Sign JWT (30 days expiry)
   const token = await signJwt(userId, c.env.JWT_SECRET);
 
+  // 5b. Upsert user row in D1 (create on first auth, update on re-auth)
+  const displayName = [telegramUser.first_name, telegramUser.last_name].filter(Boolean).join(' ') || undefined;
+  await upsertUser(c.env.DB, userId, {
+    telegram_id: telegramUser.id,
+    display_name: displayName,
+  }).catch((err) => console.log('[Telegram Callback] upsertUser error:', err));
+
   // 6. Build deep link
   const userJson = encodeURIComponent(JSON.stringify(telegramUser));
   const deepLink = `castar://auth/callback?token=${token}&user=${userJson}`;
@@ -432,6 +586,13 @@ auth.get('/telegram/callback', async (c) => {
 
 // POST /auth/email/send-code
 auth.post('/email/send-code', async (c) => {
+  // Per-IP rate limit
+  const ip = getClientIp(c.req.raw.headers);
+  const ipCheck = await checkIpRateLimit(c.env.DB, ip, 'email/send').catch(() => ({ allowed: true as const }));
+  if (!ipCheck.allowed) {
+    return c.json({ ok: false, error: 'Too many requests from this IP', retryAfter: ipCheck.retryAfter ?? 60 }, 429);
+  }
+
   const body = await c.req.json<{ email?: string }>();
   const email = body.email?.trim().toLowerCase();
 
@@ -439,22 +600,16 @@ auth.post('/email/send-code', async (c) => {
     return c.json({ ok: false, error: 'Email is required' }, 400);
   }
 
-  const key = `email:${email}`;
-  const existing = otpStore.get(key);
+  const existing = await getOtp(c.env.DB, email, 'email');
 
   // Rate limit: 1 code per 60 seconds
-  if (existing && Date.now() - existing.createdAt < OTP_COOLDOWN_MS) {
-    const retryAfter = Math.ceil((OTP_COOLDOWN_MS - (Date.now() - existing.createdAt)) / 1000);
+  if (existing && Date.now() - existing.created_at < OTP_COOLDOWN_MS) {
+    const retryAfter = Math.ceil((OTP_COOLDOWN_MS - (Date.now() - existing.created_at)) / 1000);
     return c.json({ ok: false, error: 'Too many requests', retryAfter }, 429);
   }
 
   const code = generateCode();
-  otpStore.set(key, {
-    code,
-    expiresAt: Date.now() + OTP_EXPIRY_MS,
-    attempts: 0,
-    createdAt: Date.now(),
-  });
+  await upsertOtp(c.env.DB, email, 'email', code, Date.now() + OTP_EXPIRY_MS);
 
   // Send via Resend.com + log to console as backup
   console.log(`[Email OTP] ${email} → code: ${code}`);
@@ -462,8 +617,11 @@ auth.post('/email/send-code', async (c) => {
   const emailResult = await sendEmailCode(email, code, c.env.RESEND_API_KEY);
   if (!emailResult.ok) {
     console.log(`[Email OTP] Failed to send email: ${emailResult.error}`);
-    // Don't fail — code is still in memory, visible in wrangler tail
+    // Don't fail — code is in D1, visible in wrangler tail
   }
+
+  // Housekeeping: clean up expired OTPs (fire and forget)
+  cleanupExpiredOtps(c.env.DB).catch(() => {});
 
   return c.json({ ok: true, expiresIn: 300 });
 });
@@ -478,37 +636,41 @@ auth.post('/email/verify-code', async (c) => {
     return c.json({ ok: false, error: 'Email and code are required' }, 400);
   }
 
-  const key = `email:${email}`;
-  const entry = otpStore.get(key);
+  const entry = await getOtp(c.env.DB, email, 'email');
 
   if (!entry) {
     return c.json({ ok: false, error: 'No code sent for this email' }, 400);
   }
 
   // Check expiry
-  if (Date.now() > entry.expiresAt) {
-    otpStore.delete(key);
+  if (Date.now() > entry.expires_at) {
+    await deleteOtp(c.env.DB, entry.id);
     return c.json({ ok: false, error: 'Code expired' }, 400);
   }
 
   // Check attempts
   if (entry.attempts >= OTP_MAX_ATTEMPTS) {
-    otpStore.delete(key);
+    await deleteOtp(c.env.DB, entry.id);
     return c.json({ ok: false, error: 'Too many attempts', attemptsLeft: 0 }, 400);
   }
 
-  entry.attempts++;
+  await incrementAttempts(c.env.DB, entry.id);
 
   if (entry.code !== code) {
-    const attemptsLeft = OTP_MAX_ATTEMPTS - entry.attempts;
+    const attemptsLeft = OTP_MAX_ATTEMPTS - entry.attempts - 1;
     console.log(`[Email OTP] ${email} → wrong code (${code}), ${attemptsLeft} attempts left`);
     return c.json({ ok: false, error: 'Invalid code', attemptsLeft }, 400);
   }
 
-  // Success — delete OTP, sign JWT
-  otpStore.delete(key);
+  // Success — delete OTP, sign JWT, upsert user
+  await deleteOtp(c.env.DB, entry.id);
   const userId = `email_${email.replace(/[^a-z0-9]/g, '_')}`;
   const token = await signJwt(userId, c.env.JWT_SECRET);
+
+  // Upsert user row in D1
+  await upsertUser(c.env.DB, userId, { email }).catch((err) =>
+    console.log(`[Email OTP] upsertUser error:`, err),
+  );
 
   console.log(`[Email OTP] ${email} → verified OK, userId: ${userId}`);
 
@@ -517,6 +679,13 @@ auth.post('/email/verify-code', async (c) => {
 
 // POST /auth/phone/send-code
 auth.post('/phone/send-code', async (c) => {
+  // Per-IP rate limit
+  const ip = getClientIp(c.req.raw.headers);
+  const ipCheck = await checkIpRateLimit(c.env.DB, ip, 'phone/send').catch(() => ({ allowed: true as const }));
+  if (!ipCheck.allowed) {
+    return c.json({ ok: false, error: 'Too many requests from this IP', retryAfter: ipCheck.retryAfter ?? 60 }, 429);
+  }
+
   const body = await c.req.json<{ phone?: string }>();
   const phone = body.phone?.trim();
 
@@ -524,25 +693,28 @@ auth.post('/phone/send-code', async (c) => {
     return c.json({ ok: false, error: 'Phone number is required' }, 400);
   }
 
-  const key = `phone:${phone}`;
-  const existing = otpStore.get(key);
+  const existing = await getOtp(c.env.DB, phone, 'phone');
 
   // Rate limit: 1 code per 60 seconds
-  if (existing && Date.now() - existing.createdAt < OTP_COOLDOWN_MS) {
-    const retryAfter = Math.ceil((OTP_COOLDOWN_MS - (Date.now() - existing.createdAt)) / 1000);
+  if (existing && Date.now() - existing.created_at < OTP_COOLDOWN_MS) {
+    const retryAfter = Math.ceil((OTP_COOLDOWN_MS - (Date.now() - existing.created_at)) / 1000);
     return c.json({ ok: false, error: 'Too many requests', retryAfter }, 429);
   }
 
   const code = generateCode();
-  otpStore.set(key, {
-    code,
-    expiresAt: Date.now() + OTP_EXPIRY_MS,
-    attempts: 0,
-    createdAt: Date.now(),
-  });
+  await upsertOtp(c.env.DB, phone, 'phone', code, Date.now() + OTP_EXPIRY_MS);
 
-  // TODO: Send via Eskiz.uz — for now just log to console
+  // Send via Eskiz.uz + log to console as backup
   console.log(`[Phone OTP] ${phone} → code: ${code}`);
+
+  const smsResult = await sendSmsCode(phone, code, c.env.ESKIZ_TOKEN);
+  if (!smsResult.ok) {
+    console.log(`[Phone OTP] Failed to send SMS: ${smsResult.error}`);
+    // Don't fail — code is in D1, visible in wrangler tail
+  }
+
+  // Housekeeping: clean up expired OTPs (fire and forget)
+  cleanupExpiredOtps(c.env.DB).catch(() => {});
 
   return c.json({ ok: true, expiresIn: 300 });
 });
@@ -557,41 +729,64 @@ auth.post('/phone/verify-code', async (c) => {
     return c.json({ ok: false, error: 'Phone and code are required' }, 400);
   }
 
-  const key = `phone:${phone}`;
-  const entry = otpStore.get(key);
+  const entry = await getOtp(c.env.DB, phone, 'phone');
 
   if (!entry) {
     return c.json({ ok: false, error: 'No code sent for this phone' }, 400);
   }
 
   // Check expiry
-  if (Date.now() > entry.expiresAt) {
-    otpStore.delete(key);
+  if (Date.now() > entry.expires_at) {
+    await deleteOtp(c.env.DB, entry.id);
     return c.json({ ok: false, error: 'Code expired' }, 400);
   }
 
   // Check attempts
   if (entry.attempts >= OTP_MAX_ATTEMPTS) {
-    otpStore.delete(key);
+    await deleteOtp(c.env.DB, entry.id);
     return c.json({ ok: false, error: 'Too many attempts', attemptsLeft: 0 }, 400);
   }
 
-  entry.attempts++;
+  await incrementAttempts(c.env.DB, entry.id);
 
   if (entry.code !== code) {
-    const attemptsLeft = OTP_MAX_ATTEMPTS - entry.attempts;
+    const attemptsLeft = OTP_MAX_ATTEMPTS - entry.attempts - 1;
     console.log(`[Phone OTP] ${phone} → wrong code (${code}), ${attemptsLeft} attempts left`);
     return c.json({ ok: false, error: 'Invalid code', attemptsLeft }, 400);
   }
 
-  // Success — delete OTP, sign JWT
-  otpStore.delete(key);
+  // Success — delete OTP, sign JWT, upsert user
+  await deleteOtp(c.env.DB, entry.id);
   const userId = `phone_${phone.replace(/\D/g, '')}`;
   const token = await signJwt(userId, c.env.JWT_SECRET);
+
+  // Upsert user row in D1
+  await upsertUser(c.env.DB, userId, { phone }).catch((err) =>
+    console.log(`[Phone OTP] upsertUser error:`, err),
+  );
 
   console.log(`[Phone OTP] ${phone} → verified OK, userId: ${userId}`);
 
   return c.json({ ok: true, token, phone });
+});
+
+// ─── POST /auth/refresh — Refresh JWT token ────────────────────────────────
+// Requires a valid (non-expired) Bearer token. Issues a fresh token with
+// a new 30-day expiry window. This extends the session without re-authentication.
+
+auth.post('/refresh', async (c) => {
+  const header = c.req.header('Authorization');
+  if (!header?.startsWith('Bearer ')) {
+    return c.json({ ok: false, error: 'Missing Authorization header' }, 401);
+  }
+
+  try {
+    const payload = await verifyJwt(header.slice(7), c.env.JWT_SECRET);
+    const newToken = await signJwt(payload.sub, c.env.JWT_SECRET);
+    return c.json({ ok: true, token: newToken });
+  } catch {
+    return c.json({ ok: false, error: 'Invalid or expired token' }, 401);
+  }
 });
 
 export { auth };
