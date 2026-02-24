@@ -97,6 +97,14 @@
     "spent": "Жұмсалған",
     "remaining": "Қалды",
     "addManually": "Қолмен қосу",
+    "dayShort": "К",
+    "streak": "күн қатарынан",
+    "tasksThisMonth": "ай тапсырмалары",
+    "streakLabel": "Стрик",
+    "tasksLabel": "Тапсырмалар",
+    "done": "Дайын",
+    "archive": "Мұрағат",
+    "inProgress": "Орындалуда",
     "balance": "Баланс",
     "income": "Кіріс",
     "expense": "Шығыс",
@@ -129,7 +137,10 @@
     "weekly": "Апта сайын",
     "monthly": "Ай сайын",
     "yearly": "Жыл сайын",
-    "noBudgets": "Бюджеттер әлі жоқ"
+    "noBudgets": "Бюджеттер әлі жоқ",
+    "editBudget": "Бюджетті өзгерту",
+    "amount": "Сома",
+    "budget": "Бюджет"
   },
   "analytics": {
     "title": "Талдау",

@@ -95,6 +95,14 @@
     "spent": "已支出",
     "remaining": "剩余",
     "addManually": "手动添加",
+    "dayShort": "天",
+    "streak": "天连续",
+    "tasksThisMonth": "本月任务",
+    "streakLabel": "连续",
+    "tasksLabel": "任务",
+    "done": "已完成",
+    "archive": "归档",
+    "inProgress": "进行中",
     "balance": "余额",
     "income": "收入",
     "expense": "支出",
@@ -127,7 +135,10 @@
     "weekly": "\u6bcf\u5468",
     "monthly": "\u6bcf\u6708",
     "yearly": "\u6bcf\u5e74",
-    "noBudgets": "\u8fd8\u6ca1\u6709\u9884\u7b97"
+    "noBudgets": "\u8fd8\u6ca1\u6709\u9884\u7b97",
+    "editBudget": "\u7f16\u8f91\u9884\u7b97",
+    "amount": "\u91d1\u989d",
+    "budget": "\u9884\u7b97"
   },
   "analytics": {
     "title": "\u5206\u6790",

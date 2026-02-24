@@ -97,6 +97,14 @@
     "spent": "Ausgegeben",
     "remaining": "Verbleibend",
     "addManually": "Manuell hinzufügen",
+    "dayShort": "T",
+    "streak": "Tage in Folge",
+    "tasksThisMonth": "Aufgaben diesen Monat",
+    "streakLabel": "Streak",
+    "tasksLabel": "Aufgaben",
+    "done": "Erledigt",
+    "archive": "Archiv",
+    "inProgress": "In Bearbeitung",
     "balance": "Saldo",
     "income": "Einnahmen",
     "expense": "Ausgaben",
@@ -129,7 +137,10 @@
     "weekly": "Wöchentlich",
     "monthly": "Monatlich",
     "yearly": "Jährlich",
-    "noBudgets": "Noch keine Budgets"
+    "noBudgets": "Noch keine Budgets",
+    "editBudget": "Budget bearbeiten",
+    "amount": "Betrag",
+    "budget": "Budget"
   },
   "analytics": {
     "title": "Analytik",

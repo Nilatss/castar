@@ -97,6 +97,14 @@
     "spent": "Sarflangan",
     "remaining": "Qolgan",
     "addManually": "Qo'lda qo'shish",
+    "dayShort": "К",
+    "streak": "kun ketma-ket",
+    "tasksThisMonth": "oy vazifalari",
+    "streakLabel": "Strik",
+    "tasksLabel": "Vazifalar",
+    "done": "Bajarildi",
+    "archive": "Arxiv",
+    "inProgress": "Jarayonda",
     "balance": "Balans",
     "income": "Daromad",
     "expense": "Xarajat",
@@ -129,7 +137,10 @@
     "weekly": "Haftalik",
     "monthly": "Oylik",
     "yearly": "Yillik",
-    "noBudgets": "Hali byudjetlar yo'q"
+    "noBudgets": "Hali byudjetlar yo'q",
+    "editBudget": "Byudjetni tahrirlash",
+    "amount": "Miqdor",
+    "budget": "Byudjet"
   },
   "analytics": {
     "title": "Tahlil",

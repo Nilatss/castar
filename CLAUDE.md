@@ -12,7 +12,7 @@ Every prompt must be treated as ending with **"MAKE NO MISTAKES."**:
 
 # Castar — Актуальный архитектурный план
 
-> **Последнее обновление:** 2026-02-26
+> **Последнее обновление:** 2026-02-27
 
 ## Обзор проекта
 Castar — мобильное приложение для личного, семейного финансового учёта и бухгалтерии.
@@ -37,7 +37,7 @@ src/
 ├── features/
 │   ├── auth/
 │   │   ├── screens/               # 11 экранов (Onboarding, Telegram, Email, Phone, SetName, SetPin, etc.)
-│   │   ├── services/              # emailAuth, phoneAuth, telegramAuth (PIN hashing: SHA-256 + salt via Web Crypto)
+│   │   ├── services/              # emailAuth, phoneAuth, telegramAuth (PIN hashing: pure JS SHA-256 + salt)
 │   │   └── store/                 # authStore (Zustand + SecureStore)
 │   ├── transactions/
 │   │   ├── screens/               # Home, AddTransaction, TransactionDetail, Transactions
@@ -146,7 +146,7 @@ RootNavigator (conditional)
 ## 3. Auth Flow
 
 ### Auth Services (src/features/auth/services/)
-- **telegramAuth.ts** — getTelegramAuthUrl(), parseAuthCallback(), PIN hashing (SHA-256+salt via expo-crypto), persistPin(), verifyPersistedPin(), hasPersistedPin(), clearAuth, loadPersistedAuth, lockout
+- **telegramAuth.ts** — getTelegramAuthUrl(), parseAuthCallback(), PIN hashing (pure JS SHA-256 + salt, no native modules), persistPin(), verifyPersistedPin(), hasPersistedPin(), clearAuth, loadPersistedAuth, lockout
 - **emailAuth.ts** — sendVerificationCode(email), verifyEmailCode(email, code)
 - **phoneAuth.ts** — sendPhoneVerificationCode(phone), verifyPhoneCode(phone, code)
 
@@ -156,6 +156,7 @@ RootNavigator (conditional)
 - `initializeAuth()` — восстановление сессии из SecureStore
 - `loginWithTelegram(token, user)`, `loginWithEmail(token, email)`, `loginWithPhone(token, phone)`
 - `setDisplayNameAndContinue(name)`, `setPinAndContinue(pin)`, `verifyPin(pin)` — uses verifyPersistedPin (hash comparison)
+- `setPinVerified()` — synchronous, marks PIN as verified this session (used by PinLockScreen after successful local verify)
 - `logout()` — сохраняет displayName для returning users
 
 ### Auth Flow
@@ -226,6 +227,20 @@ Worker URL: `https://castar-auth.ivcswebofficial.workers.dev`
 `initDb()` → WAL mode → foreign keys → `drizzle(expoDb, { schema })`
 `initEncryptedDb()` kept as backward-compatible alias for `initDb()`.
 Backward-compatible Proxy exports: `db` and `rawDb` forward to initialized instance.
+`reopenDb()` — force re-open on NativeDatabase deallocation (dev builds / hot reload).
+`withDbRetry(fn)` — auto-retry on "deallocated" errors.
+
+### Data Persistence (app restart)
+AppProviders startup sequence:
+1. `initEncryptedDb()` — open SQLite file
+2. `runMigrations()` — create tables if missing
+3. `initializeAuth()` + `initializeSettings()` — restore auth/settings from SecureStore
+4. **Load SQLite → Zustand stores** (if userId available):
+   - `budgetQueries.findByUser(userId)` → `useBudgetStore.setBudgets()`
+   - `transactionQueries.findByUser(userId)` → `useTransactionStore.setTransactions()`
+   - `categoryQueries.findByUser(userId)` → `useCategoryStore.setCategories()`
+
+All user data (budgets, transactions, categories) persists across app restarts via SQLite.
 
 ---
 
@@ -322,7 +337,8 @@ Backward-compatible Proxy exports: `db` and `rawDb` forward to initialized insta
 
 ### Auth & Security
 - expo-secure-store (JWT + PIN hash + user persistence)
-- Web Crypto API (SHA-256 PIN hashing + salt generation — built into Hermes)
+- Pure JS SHA-256 (FIPS 180-4 implementation in telegramAuth.ts — no native crypto modules needed)
+- crypto.getRandomValues (salt generation — built into Hermes since RN 0.73, Math.random fallback)
 - react-native-webview (Telegram OAuth)
 - expo-linking (deep link callback: castar://)
 
@@ -345,7 +361,7 @@ Backward-compatible Proxy exports: `db` and `rawDb` forward to initialized insta
 
 | Мера | Статус | Детали |
 |------|--------|--------|
-| PIN hashing | ✅ | SHA-256 + random salt (Web Crypto API), stored in SecureStore |
+| PIN hashing | ✅ | Pure JS SHA-256 (FIPS 180-4) + random salt, stored in SecureStore. No native crypto modules needed. |
 | SQLite encryption | ⏳ | SQLCipher deferred — will be enabled with custom native build (expo prebuild / EAS Build) |
 | JWT auth | ✅ | Bearer token, 30d expiry, jose HS256 |
 | JWT refresh | ✅ | `POST /auth/refresh` — new 30d token |
@@ -405,6 +421,10 @@ Backward-compatible Proxy exports: `db` and `rawDb` forward to initialized insta
 - [x] Zustand сторы интегрированы с SQLite
 - [x] Zod validation schemas
 - [x] SyncQueue для будущей синхронизации
+- [x] Migrations run on app start (AppProviders → runMigrations())
+- [x] Data persistence: SQLite → Zustand stores loaded on app start (budgets, transactions, categories)
+- [x] reopenDb() + withDbRetry() for NativeDatabase deallocation recovery
+- [x] Budget auto-conversion on profile currency change (convertCurrency → update DB + store)
 
 #### Фаза 4 — Backend
 - [x] Cloudflare Worker задеплоен
@@ -426,6 +446,17 @@ Backward-compatible Proxy exports: `db` and `rawDb` forward to initialized insta
 - [x] SVG RadialGradient → GPU PNG (glow.png + glow-vivid.png)
 - [x] Анимации модалок/попапов оптимизированы
 - [x] experimentalBlurMethod="dimezisBlurView" (Android)
+
+#### Bug Fixes (2026-02-27) ✅
+- [x] PIN SetPinScreen: не переходил после подтверждения — ReferenceError из-за crypto.subtle/TextEncoder
+  - Решение: заменён Web Crypto API → pure JS SHA-256 (FIPS 180-4), 0 нативных зависимостей
+  - hashPin() теперь синхронный, salt через crypto.getRandomValues с Math.random fallback
+- [x] PIN PinLockScreen: не переходил после верификации — redundant async verifyPin()
+  - Решение: добавлен синхронный setPinVerified() в authStore, PinLockScreen использует его напрямую
+- [x] GlowImage tintColor: не работал на New Architecture (Fabric)
+  - Решение: tintColor перенесён из style prop в Image component prop
+- [x] SetPinScreen confirm phase: ненадёжные animation callbacks
+  - Решение: заменён showSuccessState(callback) → setTimeout(800ms) + await setPinAndContinue(pin)
 
 ### TODO 📋
 

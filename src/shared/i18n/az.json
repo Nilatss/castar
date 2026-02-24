@@ -97,6 +97,14 @@
     "spent": "Xərclənib",
     "remaining": "Qalıb",
     "addManually": "Əl ilə əlavə et",
+    "dayShort": "G",
+    "streak": "gün ardıcıl",
+    "tasksThisMonth": "bu ay tapşırıqlar",
+    "streakLabel": "Strik",
+    "tasksLabel": "Tapşırıqlar",
+    "done": "Hazır",
+    "archive": "Arxiv",
+    "inProgress": "Davam edir",
     "balance": "Balans",
     "income": "Gəlir",
     "expense": "Xərc",
@@ -129,7 +137,10 @@
     "weekly": "Həftəlik",
     "monthly": "Aylıq",
     "yearly": "İllik",
-    "noBudgets": "Hələ büdcə yoxdur"
+    "noBudgets": "Hələ büdcə yoxdur",
+    "editBudget": "Büdcəni redaktə et",
+    "amount": "Məbləğ",
+    "budget": "Büdcə"
   },
   "analytics": {
     "title": "Analitika",

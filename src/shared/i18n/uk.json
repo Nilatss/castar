@@ -97,6 +97,14 @@
     "spent": "Витрачено",
     "remaining": "Залишилось",
     "addManually": "Додати вручну",
+    "dayShort": "Д",
+    "streak": "днів поспіль",
+    "tasksThisMonth": "завдань за місяць",
+    "streakLabel": "Стрік",
+    "tasksLabel": "Завдання",
+    "done": "Готово",
+    "archive": "Архів",
+    "inProgress": "В процесі",
     "balance": "Баланс",
     "income": "Дохід",
     "expense": "Витрата",
@@ -129,7 +137,10 @@
     "weekly": "Щотижня",
     "monthly": "Щомісяця",
     "yearly": "Щороку",
-    "noBudgets": "Бюджетів поки немає"
+    "noBudgets": "Бюджетів поки немає",
+    "editBudget": "Редагувати бюджет",
+    "amount": "Сума",
+    "budget": "Бюджет"
   },
   "analytics": {
     "title": "Аналітика",

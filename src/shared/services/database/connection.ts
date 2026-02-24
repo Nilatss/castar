@@ -53,6 +53,40 @@ export function getRawDb(): ReturnType<typeof openDatabaseSync> {
   return _rawDb;
 }
 
+/**
+ * Force re-open the database.
+ * Used to recover from "NativeDatabase has already been deallocated" errors
+ * (common in dev builds with hot reload / New Architecture / Hermes GC).
+ */
+export function reopenDb(): void {
+  _db = null;
+  _rawDb = null;
+
+  const expoDb = openDatabaseSync('castar.db');
+
+  expoDb.execSync('PRAGMA journal_mode = WAL');
+  expoDb.execSync('PRAGMA foreign_keys = ON');
+
+  _rawDb = expoDb;
+  _db = drizzle(expoDb, { schema });
+}
+
+/**
+ * Execute a DB operation with automatic retry on NativeDatabase deallocation.
+ * If the native handle was GC'd, re-opens the database and retries once.
+ */
+export function withDbRetry<T>(fn: () => T): T {
+  try {
+    return fn();
+  } catch (e: any) {
+    if (e?.message?.includes('deallocated')) {
+      reopenDb();
+      return fn();
+    }
+    throw e;
+  }
+}
+
 // Backward compatibility — Proxy-based lazy getters so existing code
 // using `import { db, rawDb }` keeps working without changes.
 // All property accesses are forwarded to the initialized instance.

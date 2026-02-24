@@ -7,8 +7,15 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { colors } from '../../shared/constants';
 import { useAuthStore } from '../../features/auth/store/authStore';
 import { useProfileStore } from '../../features/profile/store/profileStore';
+import { useBudgetStore } from '../../features/budget/store/budgetStore';
+import { useTransactionStore } from '../../features/transactions/store/transactionStore';
+import { useCategoryStore } from '../../features/categories/store/categoryStore';
 import { queryClient } from '../../shared/services/api/queryClient';
 import { initEncryptedDb } from '../../shared/services/database/connection';
+import { runMigrations } from '../../shared/services/database/migrations';
+import * as budgetQueries from '../../shared/services/database/budgetQueries';
+import * as transactionQueries from '../../shared/services/database/transactionQueries';
+import * as categoryQueries from '../../shared/services/database/categoryQueries';
 
 // Initialize i18n
 import '../../shared/i18n';
@@ -50,6 +57,9 @@ export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
         // Initialize encrypted SQLite DB FIRST — auth/settings may depend on it
         await initEncryptedDb();
 
+        // Create tables if they don't exist yet
+        runMigrations();
+
         const [, , savedNav] = await Promise.all([
           initializeAuth(),
           initializeSettings(),
@@ -57,6 +67,18 @@ export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
         ]);
         if (savedNav) {
           setInitialState(JSON.parse(savedNav));
+        }
+
+        // Load persisted data from SQLite into Zustand stores
+        const userId = useAuthStore.getState().userId;
+        if (userId) {
+          try {
+            useBudgetStore.getState().setBudgets(budgetQueries.findByUser(userId));
+            useTransactionStore.getState().setTransactions(transactionQueries.findByUser(userId));
+            useCategoryStore.getState().setCategories(categoryQueries.findByUser(userId));
+          } catch {
+            // DB read failed — stores stay empty, user can still create new data
+          }
         }
       } catch {
         // Ignore errors — start fresh

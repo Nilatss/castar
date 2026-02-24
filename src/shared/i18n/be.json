@@ -97,6 +97,14 @@
     "spent": "Выдаткавана",
     "remaining": "Засталося",
     "addManually": "Дадаць уручную",
+    "dayShort": "Д",
+    "streak": "дзён запар",
+    "tasksThisMonth": "задач за месяц",
+    "streakLabel": "Стрык",
+    "tasksLabel": "Задачы",
+    "done": "Гатова",
+    "archive": "Архіў",
+    "inProgress": "У працэсе",
     "balance": "Баланс",
     "income": "Даход",
     "expense": "Выдатак",
@@ -129,7 +137,10 @@
     "weekly": "Штотыдзень",
     "monthly": "Штомесяц",
     "yearly": "Штогод",
-    "noBudgets": "Бюджэтаў пакуль няма"
+    "noBudgets": "Бюджэтаў пакуль няма",
+    "editBudget": "Рэдагаваць бюджэт",
+    "amount": "Сума",
+    "budget": "Бюджэт"
   },
   "analytics": {
     "title": "Аналітыка",

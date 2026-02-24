@@ -97,6 +97,14 @@
     "spent": "Потрачено",
     "remaining": "Осталось",
     "addManually": "Добавить вручную",
+    "dayShort": "Д",
+    "streak": "дней подряд",
+    "tasksThisMonth": "задач за месяц",
+    "streakLabel": "Стрик",
+    "tasksLabel": "Задачи",
+    "done": "Готово",
+    "archive": "Архив",
+    "inProgress": "В процессе",
     "balance": "Баланс",
     "income": "Доход",
     "expense": "Расход",
@@ -129,7 +137,10 @@
     "weekly": "Еженедельно",
     "monthly": "Ежемесячно",
     "yearly": "Ежегодно",
-    "noBudgets": "Бюджетов пока нет"
+    "noBudgets": "Бюджетов пока нет",
+    "editBudget": "Редактировать бюджет",
+    "amount": "Сумма",
+    "budget": "Бюджет"
   },
   "analytics": {
     "title": "Аналитика",
