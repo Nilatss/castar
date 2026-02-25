@@ -49,6 +49,9 @@ interface AuthStore {
   /** Verify PIN against saved PIN (called from PinLockScreen) */
   verifyPin: (pin: string) => Promise<boolean>;
 
+  /** Mark PIN as verified this session (no re-verification — for use after external verify) */
+  setPinVerified: () => void;
+
   setOnboarded: (value: boolean) => void;
   setAuthenticated: (token: string, userId: string) => void;
 
@@ -216,6 +219,8 @@ export const useAuthStore = create<AuthStore>((set) => ({
     }
     return false;
   },
+
+  setPinVerified: () => set({ isPinVerified: true }),
 
   setOnboarded: (value) => set({ isOnboarded: value }),
 

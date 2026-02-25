@@ -339,16 +339,31 @@ export const SetPinScreen = () => {
       return;
     }
 
-    // PINs match — show success then save and proceed
-    showSuccessState(async () => {
-      setIsSaving(true);
+    // PINs match — show success glow and save PIN in parallel.
+    // Don't rely on animation callbacks (useNativeDriver callbacks can be
+    // unreliable on some builds). Instead, use a direct setTimeout for
+    // the save/navigate action as a guaranteed path.
+    setSuccess(true);
+    setIsSaving(true);
+    Animated.timing(successOpacity, {
+      toValue: 1,
+      duration: 400,
+      useNativeDriver: true,
+    }).start();
+
+    // Save PIN and navigate after visual feedback (800ms)
+    setTimeout(async () => {
       try {
         await setPinAndContinue(pin);
-      } catch {
+      } catch (e) {
+        // If persist fails, show error and let user retry
+        console.error('[SetPin] setPinAndContinue failed:', e);
         setIsSaving(false);
+        setSuccess(false);
+        successOpacity.setValue(0);
       }
-    });
-  }, [pin, shakeAnim, errorOpacity, setPinAndContinue, showSuccessState, resetDotAnims]);
+    }, 800);
+  }, [pin, shakeAnim, errorOpacity, successOpacity, setPinAndContinue, resetDotAnims]);
 
   // Handle digit press — uses refs for pin/confirmPin to avoid re-creating callback
   const pinRef = useRef(pin);

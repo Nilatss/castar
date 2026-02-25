@@ -12,7 +12,7 @@ Every prompt must be treated as ending with **"MAKE NO MISTAKES."**:
 
 # Castar — Актуальный архитектурный план
 
-> **Последнее обновление:** 2026-02-27
+> **Последнее обновление:** 2026-02-28
 
 ## Обзор проекта
 Castar — мобильное приложение для личного, семейного финансового учёта и бухгалтерии.
@@ -72,6 +72,7 @@ src/
 │   │   │   ├── migrations.ts      # bridge from legacy + migrate()
 │   │   │   ├── seed.ts            # seedDefaults(userId)
 │   │   │   └── index.ts           # barrel: *Repository aliases + initDb
+│   │   ├── biometric.ts           # ✅ Safe wrapper for expo-local-authentication (Expo Go fallback)
 │   │   ├── validation/            # ✅ Zod schemas
 │   │   ├── sync/syncService.ts    # Stub (backend sync fully implemented)
 │   │   └── voice/                 # ✅ voiceParser + cloudRecognition + offlineRecognition + voiceService
@@ -132,7 +133,7 @@ RootNavigator (conditional)
 │   └── SetPin             ✅ установка PIN-кода
 │
 ├── PinLock (if isOnboarded && !isPinVerified)
-│   └── PinLockScreen      ✅ верификация PIN при запуске (SHA-256 hash verification)
+│   └── PinLockScreen      ✅ верификация PIN при запуске (SHA-256 hash) + биометрия (опционально)
 │
 └── TabNavigator (if isOnboarded && isPinVerified) — 4 таба
     ├── HomeTab → Home, AddTransaction, TransactionDetail
@@ -268,8 +269,8 @@ All user data (budgets, transactions, categories) persists across app restarts v
 
 ### profileStore
 - `user`, `settings` (theme, notifications, biometricLock)
-- `updateUser()`, `updateSettings()`, `setDefaultCurrency()`, `setLanguage()`
-- `language`, `currency`, `initializeSettings()` — персистентность через SecureStore
+- `updateUser()`, `updateSettings()`, `setDefaultCurrency()`, `setLanguage()`, `setBiometricLock()`
+- `language`, `currency`, `initializeSettings()` — персистентность через SecureStore (вкл. biometric)
 
 ---
 
@@ -337,6 +338,7 @@ All user data (budgets, transactions, categories) persists across app restarts v
 
 ### Auth & Security
 - expo-secure-store (JWT + PIN hash + user persistence)
+- expo-local-authentication (biometric unlock — fingerprint / Face ID)
 - Pure JS SHA-256 (FIPS 180-4 implementation in telegramAuth.ts — no native crypto modules needed)
 - crypto.getRandomValues (salt generation — built into Hermes since RN 0.73, Math.random fallback)
 - react-native-webview (Telegram OAuth)
@@ -369,6 +371,7 @@ All user data (budgets, transactions, categories) persists across app restarts v
 | Voice route | ✅ | JWT auth middleware (moved from public to protected) |
 | Per-IP rate limit | ✅ | D1 `rate_limits` table, 10 OTP sends / 15min per IP |
 | OTP storage | ✅ | D1 persistent (not in-memory), 5min expiry, 3 attempts, 60s cooldown |
+| Biometric unlock | ✅ | expo-local-authentication + safe wrapper (Expo Go fallback), toggle in Profile, auto-prompt on PinLock |
 | OTP CSPRNG | ⏳ | TODO: replace Math.random() with crypto.getRandomValues() |
 | OTP console.log | ⏳ | TODO: remove in production |
 
@@ -384,7 +387,7 @@ All user data (budgets, transactions, categories) persists across app restarts v
 | 2. UI экранов | 🟡 В процессе | ~20% (Home + Profile + Subscription готовы) |
 | 3. Локальная БД | ✅ Завершена | 100% |
 | 4. Backend | 🟡 В процессе | ~98% (остались: секреты Eskiz/STT + OTP hardening) |
-| 5. Продвинутые фичи | ⬜ Не начата | 0% |
+| 5. Продвинутые фичи | 🟡 В процессе | ~10% (биометрия готова) |
 | 6. Кастомизация | ⬜ Не начата | 0% |
 
 ### DONE ✅
@@ -447,6 +450,14 @@ All user data (budgets, transactions, categories) persists across app restarts v
 - [x] Анимации модалок/попапов оптимизированы
 - [x] experimentalBlurMethod="dimezisBlurView" (Android)
 
+#### Биометрия (2026-02-28) ✅
+- [x] expo-local-authentication + app.json plugin (faceIDPermission)
+- [x] Safe wrapper `biometric.ts` — lazy require, Expo Go fallback (все функции → false/fail)
+- [x] profileStore: `setBiometricLock()` + SecureStore persistence (`castar_biometric_lock`)
+- [x] PinLockScreen: системный промпт на mount (300ms delay) + shield-кнопка на keypad + fallback на PIN
+- [x] ProfileScreen: тоггл биометрии (IOSSwitch) с проверкой hardware/enrollment + auth для подтверждения
+- [x] i18n: 6 ключей (biometricPrompt, usePin, biometricLock, biometricLockSubtitle, biometricNotAvailable, biometricNotEnrolled) × 11 языков
+
 #### Bug Fixes (2026-02-27) ✅
 - [x] PIN SetPinScreen: не переходил после подтверждения — ReferenceError из-за crypto.subtle/TextEncoder
   - Решение: заменён Web Crypto API → pure JS SHA-256 (FIPS 180-4), 0 нативных зависимостей
@@ -476,10 +487,10 @@ All user data (budgets, transactions, categories) persists across app restarts v
 - [ ] OTP: убрать console.log кода
 
 #### Фаза 5 — Продвинутые фичи
+- [x] Биометрия (expo-local-authentication) ✅
 - [ ] Семейные бюджеты
 - [ ] Повторяющиеся транзакции
 - [ ] Push-уведомления
-- [ ] Биометрия (expo-local-authentication)
 - [ ] Экспорт (CSV/PDF)
 
 #### Фаза 6 — Кастомизация
@@ -500,6 +511,6 @@ All user data (budgets, transactions, categories) persists across app restarts v
 - **Языки (i18n):** uz, ru, en, be, uk, kk, de, az, pl, ka, zh — 11 языков, auto-detection, fallback: en
 - **Валюты:** UZS (default), USD, EUR, RUB, GBP, TRY, KZT, CNY, JPY, KRW, CHF, AED, INR, BRL, CAD, AUD, PLN, UAH, GEL, BYN, AZN, AMD, KGS, TJS, MDL, TMT — 26 валют (open.er-api.com, кэш 24ч)
 - **Resend.com:** from `Castar <onboarding@resend.dev>` (бесплатный план)
-- **Plugins:** expo-localization, expo-secure-store, expo-sqlite
+- **Plugins:** expo-localization, expo-secure-store, expo-sqlite, expo-asset, expo-local-authentication
 
 > **ВАЖНО:** Название пишется **Castar** или **castar**. Никогда не писать "CaStar" (s с большой буквы).

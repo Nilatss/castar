@@ -28,7 +28,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Modal,
   TextInput,
   LayoutChangeEvent,
   Animated as RNAnimated,
@@ -37,6 +36,7 @@ import {
   Keyboard,
   Platform,
   KeyboardAvoidingView,
+  Modal,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import Animated, {
@@ -65,10 +65,11 @@ import { useAuthStore } from '../../auth/store/authStore';
 import { useProfileStore } from '../../profile/store/profileStore';
 import { useBudgetStore } from '../../budget/store/budgetStore';
 import { useTransactionStore } from '../store/transactionStore';
-import { formatCurrency } from '../../../shared/utils/formatCurrency';
+import { formatCurrency, formatAmount, getCurrencySymbol } from '../../../shared/utils/formatCurrency';
 import * as budgetQueries from '../../../shared/services/database/budgetQueries';
 import { convertCurrency } from '../../../shared/services/currency/currencyService';
 import * as Haptics from 'expo-haptics';
+import { useTabBarVisibility } from '../../../core/navigation/tabBarVisibility';
 
 // Pure JS UUID v4 fallback (crypto.getRandomValues may be unavailable in old dev builds)
 const generateUUID = (): string => {
@@ -269,7 +270,7 @@ export const HomeScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
 
   // ── State ──
-  const [selectedPeriod, setSelectedPeriod] = useState<PeriodFilter>('7D');
+  const [selectedPeriod, setSelectedPeriod] = useState<PeriodFilter>('1D');
   const [pillWidth, setPillWidth] = useState(0);
 
   // ── Animated period indicator ──
@@ -291,6 +292,9 @@ export const HomeScreen = () => {
     const w = e.nativeEvent.layout.width;
     if (w > 0 && w !== pillWidth) setPillWidth(w);
   }, [pillWidth]);
+
+  // ── Tab bar visibility (hide during modals — no unmount, just opacity) ──
+  const setTabBarHidden = useTabBarVisibility((s) => s.setHidden);
 
   // ── Store data ──
   const { displayName, userId } = useAuthStore(useShallow((s) => ({ displayName: s.displayName, userId: s.userId })));
@@ -386,6 +390,7 @@ export const HomeScreen = () => {
   const [showBudgetModal, setShowBudgetModal] = useState(false);
   const [budgetAmountInput, setBudgetAmountInput] = useState('');
   const [isSavingBudget, setIsSavingBudget] = useState(false);
+  const [budgetFieldFocused, setBudgetFieldFocused] = useState(false);
 
   // ── Budget modal animation values (same pattern as ProfileScreen picker) ──
   const budgetOverlayOpacity = useRef(new RNAnimated.Value(0)).current;
@@ -433,36 +438,36 @@ export const HomeScreen = () => {
     navigation.navigate('AddTransaction');
   }, [navigation]);
 
+  // Budget open/close animations
+  const startBudgetAnimation = useCallback(() => {
+    RNAnimated.parallel([
+      RNAnimated.timing(budgetOverlayOpacity, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+      RNAnimated.spring(budgetSheetTranslateY, {
+        toValue: 0,
+        damping: 28,
+        stiffness: 220,
+        mass: 1,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [budgetOverlayOpacity, budgetSheetTranslateY]);
+
   const handleBudgetCardPress = useCallback(() => {
     setBudgetAmountInput(activeBudget ? formatAmountWithDots(String(activeBudget.amount)) : '');
-    // Reset animation values before mounting
     budgetSheetTranslateY.setValue(SCREEN_HEIGHT);
     budgetOverlayOpacity.setValue(0);
+    setBudgetFieldFocused(false);
+    setTabBarHidden(true);
     setShowBudgetModal(true);
-    // Focus input quickly after Modal mounts (100ms = mount + 1 frame)
-    setTimeout(() => { budgetInputRef.current?.focus(); }, 100);
-    // Double rAF: 1st frame mounts Modal + applies initial values, 2nd frame starts animation
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        RNAnimated.parallel([
-          RNAnimated.timing(budgetOverlayOpacity, {
-            toValue: 1,
-            duration: 500,
-            useNativeDriver: true,
-          }),
-          RNAnimated.spring(budgetSheetTranslateY, {
-            toValue: 0,
-            damping: 32,
-            stiffness: 150,
-            mass: 1,
-            useNativeDriver: true,
-          }),
-        ]).start();
-      });
-    });
-  }, [activeBudget, budgetOverlayOpacity, budgetSheetTranslateY, formatAmountWithDots]);
+    // Animation deferred to onShow callback (Modal pattern from ProfileScreen)
+  }, [activeBudget, budgetOverlayOpacity, budgetSheetTranslateY, formatAmountWithDots, setTabBarHidden]);
 
   const handleCloseBudgetModal = useCallback(() => {
+    Keyboard.dismiss();
     RNAnimated.parallel([
       RNAnimated.timing(budgetOverlayOpacity, {
         toValue: 0,
@@ -476,8 +481,9 @@ export const HomeScreen = () => {
       }),
     ]).start(() => {
       setShowBudgetModal(false);
+      setTabBarHidden(false);
     });
-  }, [budgetOverlayOpacity, budgetSheetTranslateY]);
+  }, [budgetOverlayOpacity, budgetSheetTranslateY, setTabBarHidden]);
 
   const handleSaveBudget = useCallback(async () => {
     const num = parseFloat(budgetAmountInput.replace(/\./g, ''));
@@ -624,20 +630,38 @@ export const HomeScreen = () => {
             <TouchableOpacity style={styles.subCard} activeOpacity={0.7}>
               <View style={styles.subCardTexts}>
                 <Text style={styles.subCardLabel}>{t('home.spent')}</Text>
-                <Text style={styles.subCardValue}>
-                  -{formatCurrency(spent, currency)}
-                </Text>
+                <View style={styles.subCardValueRow}>
+                  <Text
+                    style={styles.subCardValueSpent}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    -{formatAmount(spent, currency)}
+                  </Text>
+                  <Text style={styles.subCardSymbolSpent}>
+                    {getCurrencySymbol(currency)}
+                  </Text>
+                </View>
               </View>
               <ChevronRightIcon size={24} />
             </TouchableOpacity>
 
-            {/* Remaining */}
+            {/* Credited */}
             <TouchableOpacity style={styles.subCard} activeOpacity={0.7}>
               <View style={styles.subCardTexts}>
                 <Text style={styles.subCardLabel}>{t('home.remaining')}</Text>
-                <Text style={styles.subCardValue}>
-                  {formatCurrency(remaining >= 0 ? remaining : 0, currency)}
-                </Text>
+                <View style={styles.subCardValueRow}>
+                  <Text
+                    style={styles.subCardValueCredited}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    +{formatAmount(remaining >= 0 ? remaining : 0, currency)}
+                  </Text>
+                  <Text style={styles.subCardSymbolCredited}>
+                    {getCurrencySymbol(currency)}
+                  </Text>
+                </View>
               </View>
               <ChevronRightIcon size={24} />
             </TouchableOpacity>
@@ -720,7 +744,7 @@ export const HomeScreen = () => {
       </View>
 
       {/* ── Budget Amount Modal (same pattern as ProfileScreen picker) ── */}
-      <Modal visible={showBudgetModal} transparent animationType="none" statusBarTranslucent>
+      <Modal visible={showBudgetModal} transparent animationType="none" statusBarTranslucent onShow={startBudgetAnimation}>
         <View style={styles.budgetOverlayRoot} pointerEvents="auto">
         {/* Animated blur + tint backdrop */}
         <RNAnimated.View style={[StyleSheet.absoluteFill, { opacity: budgetOverlayOpacity }]} pointerEvents="none">
@@ -740,14 +764,14 @@ export const HomeScreen = () => {
           onPress={handleCloseBudgetModal}
         />
 
-        {/* Animated Sheet — slides up from bottom (1:1 ProfileScreen modalSheet) */}
+        {/* Animated Sheet — slides up from bottom */}
         <RNAnimated.View
           style={[
             styles.budgetModalSheet,
             { paddingBottom: insets.bottom + 24, transform: [{ translateY: budgetSheetTranslateY }] },
           ]}
         >
-          {/* Header: icon + title + close (1:1 ProfileScreen modalHeader) */}
+          {/* Header: icon + title + close */}
           <View style={styles.budgetModalHeader}>
             <View style={styles.budgetModalHeaderLeft}>
               <BudgetIcon />
@@ -765,8 +789,8 @@ export const HomeScreen = () => {
             </TouchableOpacity>
           </View>
 
-          {/* Field: 1:1 settingsField from ProfileScreen */}
-          <View style={styles.budgetSettingsField}>
+          {/* Field */}
+          <View style={[styles.budgetSettingsField, budgetFieldFocused && styles.budgetSettingsFieldFocused]}>
             <View style={styles.budgetSettingsFieldTexts}>
               <Text style={styles.budgetSettingsLabel}>{t('budget.budget')}</Text>
               <TextInput
@@ -774,6 +798,8 @@ export const HomeScreen = () => {
                 style={styles.budgetSettingsInput}
                 value={budgetAmountInput}
                 onChangeText={(text) => setBudgetAmountInput(formatAmountWithDots(text))}
+                onFocus={() => setBudgetFieldFocused(true)}
+                onBlur={() => setBudgetFieldFocused(false)}
                 keyboardType="number-pad"
                 placeholder="0"
                 placeholderTextColor={colors.white[20]}
@@ -785,7 +811,7 @@ export const HomeScreen = () => {
           {/* Spacer pushes buttons to bottom */}
           <View style={{ flex: 1 }} />
 
-          {/* Buttons: Back + Save — Reanimated translateY above keyboard (1:1 ProfileScreen) */}
+          {/* Buttons: Back + Save */}
           <Animated.View style={[styles.budgetEditButtons, budgetBtnAnimStyle]}>
             <TouchableOpacity
               style={styles.budgetCancelBtn}
@@ -989,11 +1015,35 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     color: colors.white[40],
   },
-  subCardValue: {
+  subCardValueRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
+  subCardValueSpent: {
     fontFamily: fontFamily.regular,
     fontSize: 16,
     lineHeight: 20,
-    color: colors.white[100],
+    color: '#FF5151',
+    flexShrink: 1,
+  },
+  subCardSymbolSpent: {
+    fontFamily: fontFamily.regular,
+    fontSize: 16,
+    lineHeight: 20,
+    color: '#FF5151',
+  },
+  subCardValueCredited: {
+    fontFamily: fontFamily.regular,
+    fontSize: 16,
+    lineHeight: 20,
+    color: '#3BD57C',
+    flexShrink: 1,
+  },
+  subCardSymbolCredited: {
+    fontFamily: fontFamily.regular,
+    fontSize: 16,
+    lineHeight: 20,
+    color: '#3BD57C',
   },
 
   // ── Info Cards (Streak + Tasks) ──
@@ -1119,7 +1169,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
 
-  // ── Budget Modal (1:1 ProfileScreen picker overlay + settingsField) ──
+  // ── Budget Modal (1:1 ProfileScreen picker overlay) ──
   budgetOverlayRoot: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 100,
@@ -1168,6 +1218,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  budgetSettingsFieldFocused: {
     borderColor: 'rgba(255,255,255,0.2)',
   },
   budgetSettingsFieldTexts: {

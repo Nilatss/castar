@@ -32,6 +32,7 @@ export type HomeStackParamList = {
   Home: undefined;
   TransactionDetail: { transactionId: string };
   AddTransaction: { type?: 'income' | 'expense' } | undefined;
+  CreateBudget: { budgetId?: string } | undefined;
 };
 
 export type BudgetStackParamList = {

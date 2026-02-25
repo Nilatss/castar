@@ -40,6 +40,7 @@ import Reanimated, {
   withSpring,
 } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
+import * as Biometric from '../../../shared/services/biometric';
 import WebView from 'react-native-webview';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -67,6 +68,7 @@ import { sendPhoneVerificationCode, verifyPhoneCode } from '../../auth/services/
 import { useAuthStore } from '../../auth/store/authStore';
 import { useProfileStore } from '../store/profileStore';
 import { getRatesFromUSD } from '../../../shared/services/currency/currencyService';
+import { useTabBarVisibility } from '../../../core/navigation/tabBarVisibility';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -153,6 +155,30 @@ const SubscriptionIcon = React.memo(() => (
   </Svg>
 ));
 SubscriptionIcon.displayName = 'SubscriptionIcon';
+
+const BiometricIcon = React.memo(() => (
+  <Svg width={36} height={36} viewBox="0 0 36 36" fill="none">
+    <Path d="M0 8C0 3.58172 3.58172 0 8 0H28C32.4183 0 36 3.58172 36 8V28C36 32.4183 32.4183 36 28 36H8C3.58172 36 0 32.4183 0 28V8Z" fill="white" fillOpacity={0.1} />
+    <Path fillRule="evenodd" clipRule="evenodd" d="M10.5 16.6805C10.5 14.0159 10.5 12.6836 10.8146 12.2353C11.1292 11.7871 12.3819 11.3583 14.8874 10.5007L15.3648 10.3373C16.6708 9.89019 17.3238 9.66666 18 9.66666C18.6762 9.66666 19.3292 9.89019 20.6352 10.3373L21.1126 10.5007C23.6181 11.3583 24.8708 11.7871 25.1854 12.2353C25.5 12.6836 25.5 14.0159 25.5 16.6805V17.9928C25.5 22.6912 21.9675 24.9712 19.7512 25.9394C19.15 26.202 18.8494 26.3333 18 26.3333C17.1506 26.3333 16.85 26.202 16.2488 25.9394C14.0325 24.9712 10.5 22.6912 10.5 17.9928V16.6805ZM19.6667 15.5C19.6667 16.4205 18.9205 17.1667 18 17.1667C17.0795 17.1667 16.3333 16.4205 16.3333 15.5C16.3333 14.5795 17.0795 13.8333 18 13.8333C18.9205 13.8333 19.6667 14.5795 19.6667 15.5ZM18 22.1667C21.3333 22.1667 21.3333 21.4205 21.3333 20.5C21.3333 19.5795 19.8409 18.8333 18 18.8333C16.1591 18.8333 14.6667 19.5795 14.6667 20.5C14.6667 21.4205 14.6667 22.1667 18 22.1667Z" fill="white" />
+  </Svg>
+));
+BiometricIcon.displayName = 'BiometricIcon';
+
+const ThemeIcon = React.memo(() => (
+  <Svg width={36} height={36} viewBox="0 0 36 36" fill="none">
+    <Path d="M0 8C0 3.58172 3.58172 0 8 0H28C32.4183 0 36 3.58172 36 8V28C36 32.4183 32.4183 36 28 36H8C3.58172 36 0 32.4183 0 28V8Z" fill="white" fillOpacity={0.1} />
+    <Path d="M17.9998 26.3334C22.6022 26.3334 26.3332 22.6024 26.3332 18C26.3332 17.6144 25.7553 17.5507 25.5559 17.8807C24.6073 19.4505 22.8845 20.5 20.9165 20.5C17.925 20.5 15.4998 18.0749 15.4998 15.0834C15.4998 13.1154 16.5493 11.3926 18.1191 10.444C18.4491 10.2446 18.3854 9.66669 17.9998 9.66669C13.3975 9.66669 9.6665 13.3976 9.6665 18C9.6665 22.6024 13.3975 26.3334 17.9998 26.3334Z" fill="white" />
+  </Svg>
+));
+ThemeIcon.displayName = 'ThemeIcon';
+
+const AppIconChangeIcon = React.memo(() => (
+  <Svg width={36} height={36} viewBox="0 0 36 36" fill="none">
+    <Path d="M0 8C0 3.58172 3.58172 0 8 0H28C32.4183 0 36 3.58172 36 8V28C36 32.4183 32.4183 36 28 36H8C3.58172 36 0 32.4183 0 28V8Z" fill="white" fillOpacity={0.1} />
+    <Path fillRule="evenodd" clipRule="evenodd" d="M18.0432 9.66669H17.9572C16.557 9.66668 15.4479 9.66667 14.58 9.7854C13.6867 9.90759 12.9637 10.165 12.3935 10.7452C11.8233 11.3253 11.5703 12.0609 11.4502 12.9698C11.3335 13.8529 11.3335 14.9813 11.3335 16.4059V19.5941C11.3335 21.0188 11.3335 22.1472 11.4502 23.0303C11.5703 23.9391 11.8233 24.6747 12.3935 25.2549C12.9637 25.835 13.6867 26.0925 14.58 26.2146C15.4479 26.3334 16.557 26.3334 17.9571 26.3334H18.0431C19.4433 26.3334 20.5524 26.3334 21.4204 26.2146C22.3136 26.0925 23.0367 25.835 23.6068 25.2549C24.177 24.6747 24.4301 23.9391 24.5502 23.0303C24.6668 22.1472 24.6668 21.0188 24.6668 19.5942V16.4059C24.6668 14.9813 24.6668 13.8529 24.5502 12.9698C24.4301 12.0609 24.177 11.3253 23.6068 10.7452C23.0367 10.165 22.3136 9.90759 21.4204 9.7854C20.5524 9.66667 19.4433 9.66668 18.0432 9.66669ZM15.143 23.4264C15.143 23.1053 15.3989 22.845 15.7144 22.845H20.2859C20.6015 22.845 20.8573 23.1053 20.8573 23.4264C20.8573 23.7475 20.6015 24.0078 20.2859 24.0078H15.7144C15.3989 24.0078 15.143 23.7475 15.143 23.4264Z" fill="white" />
+  </Svg>
+));
+AppIconChangeIcon.displayName = 'AppIconChangeIcon';
 
 const EditPencilIcon = React.memo(() => (
   <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
@@ -582,6 +608,9 @@ export const ProfileScreen = () => {
   const selectedCurrency = useProfileStore((s) => s.currency);
   const storeSetLanguage = useProfileStore((s) => s.setLanguage);
   const storeSetCurrency = useProfileStore((s) => s.setDefaultCurrency);
+  const biometricLock = useProfileStore((s) => s.settings.biometricLock);
+  const setBiometricLock = useProfileStore((s) => s.setBiometricLock);
+  const setTabBarHidden = useTabBarVisibility((s) => s.setHidden);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [showLogoutPopup, setShowLogoutPopup] = useState(false);
   const logoutPopupOpacity = useRef(new Animated.Value(0)).current;
@@ -782,30 +811,31 @@ export const ProfileScreen = () => {
     return () => { cancelled = true; };
   }, []);
 
+  // Animation starts AFTER Modal is fully mounted (onShow) to prevent "jump" effect
+  const startLogoutAnimation = useCallback(() => {
+    Animated.parallel([
+      Animated.timing(logoutPopupOpacity, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+      Animated.spring(logoutPopupScale, {
+        toValue: 1,
+        damping: 24,
+        stiffness: 180,
+        mass: 1,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [logoutPopupOpacity, logoutPopupScale]);
+
   const openLogoutPopup = useCallback(() => {
     logoutPopupOpacity.setValue(0);
     logoutPopupScale.setValue(0.94);
+    setTabBarHidden(true);
     setShowLogoutPopup(true);
-    // Double rAF: 1st frame mounts Modal + applies initial values, 2nd frame starts animation
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        Animated.parallel([
-          Animated.timing(logoutPopupOpacity, {
-            toValue: 1,
-            duration: 500,
-            useNativeDriver: true,
-          }),
-          Animated.spring(logoutPopupScale, {
-            toValue: 1,
-            damping: 24,
-            stiffness: 110,
-            mass: 1,
-            useNativeDriver: true,
-          }),
-        ]).start();
-      });
-    });
-  }, [logoutPopupOpacity, logoutPopupScale]);
+    // Animation deferred to onShow callback
+  }, [logoutPopupOpacity, logoutPopupScale, setTabBarHidden]);
 
   const closeLogoutPopup = useCallback(() => {
     Animated.parallel([
@@ -821,18 +851,55 @@ export const ProfileScreen = () => {
       }),
     ]).start(() => {
       setShowLogoutPopup(false);
+      setTabBarHidden(false);
     });
-  }, [logoutPopupOpacity, logoutPopupScale]);
+  }, [logoutPopupOpacity, logoutPopupScale, setTabBarHidden]);
 
   const confirmLogout = useCallback(async () => {
     setIsLoggingOut(true);
     try {
+      setTabBarHidden(false);
       await logout();
     } catch {
       setIsLoggingOut(false);
       setShowLogoutPopup(false);
+      setTabBarHidden(false);
     }
-  }, [logout]);
+  }, [logout, setTabBarHidden]);
+
+  // Biometric lock toggle handler
+  const handleBiometricToggle = useCallback(async (newValue: boolean) => {
+    if (!newValue) {
+      // Turning off — no verification needed
+      setBiometricLock(false);
+      return;
+    }
+    // Turning on — verify hardware + enrollment + authenticate to confirm
+    try {
+      const hasHardware = await Biometric.hasHardwareAsync();
+      if (!hasHardware) {
+        Alert.alert(t('profile.biometricLock'), t('profile.biometricNotAvailable'));
+        return;
+      }
+      const isEnrolled = await Biometric.isEnrolledAsync();
+      if (!isEnrolled) {
+        Alert.alert(t('profile.biometricLock'), t('profile.biometricNotEnrolled'));
+        return;
+      }
+      // Confirm identity with biometric before enabling
+      const result = await Biometric.authenticateAsync({
+        promptMessage: t('auth.biometricPrompt'),
+        cancelLabel: t('common.cancel'),
+        disableDeviceFallback: true,
+      });
+      if (result.success) {
+        setBiometricLock(true);
+      }
+      // If cancelled/failed — don't enable
+    } catch {
+      // Biometric error — don't enable
+    }
+  }, [t, setBiometricLock]);
 
   // Language picker scroll handler
   const handlePickerScroll = useCallback((e: any) => {
@@ -883,27 +950,28 @@ export const ProfileScreen = () => {
       setVerifyError(false);
     }
     setActivePicker(type);
+    setTabBarHidden(true);
     setPickerModalVisible(true);
-    // Double rAF: 1st frame mounts Modal + applies initial values, 2nd frame starts animation
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        Animated.parallel([
-          Animated.timing(overlayOpacity, {
-            toValue: 1,
-            duration: 500,
-            useNativeDriver: true,
-          }),
-          Animated.spring(sheetTranslateY, {
-            toValue: 0,
-            damping: 32,
-            stiffness: 150,
-            mass: 1,
-            useNativeDriver: true,
-          }),
-        ]).start();
-      });
-    });
-  }, [navigation, overlayOpacity, sheetTranslateY, topFadeOpacity, displayName, telegramUser, userId]);
+    // Animation deferred to onShow callback
+  }, [navigation, overlayOpacity, sheetTranslateY, topFadeOpacity, displayName, telegramUser, userId, setTabBarHidden]);
+
+  // Animation starts AFTER Modal is fully mounted (onShow) to prevent "jump" effect
+  const startPickerAnimation = useCallback(() => {
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+      Animated.spring(sheetTranslateY, {
+        toValue: 0,
+        damping: 28,
+        stiffness: 220,
+        mass: 1,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [overlayOpacity, sheetTranslateY]);
 
   // Keep ref in sync so deep link handler always uses fresh openPicker
   useEffect(() => { openPickerRef.current = openPicker; }, [openPicker]);
@@ -923,8 +991,9 @@ export const ProfileScreen = () => {
     ]).start(() => {
       setPickerModalVisible(false);
       setActivePicker(null);
+      setTabBarHidden(false);
     });
-  }, [overlayOpacity, sheetTranslateY]);
+  }, [overlayOpacity, sheetTranslateY, setTabBarHidden]);
 
   const changeLanguage = useCallback((country: CountryOption) => {
     storeSetLanguage(country.code);
@@ -951,29 +1020,31 @@ export const ProfileScreen = () => {
     }
   }, [settingsDirty, settingsName, displayName, setDisplayNameAndContinue, closePicker]);
 
+  // Animation starts AFTER Modal is fully mounted (onShow) to prevent "jump" effect
+  const startDeleteAnimation = useCallback(() => {
+    Animated.parallel([
+      Animated.timing(deletePopupOpacity, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+      Animated.spring(deletePopupScale, {
+        toValue: 1,
+        damping: 24,
+        stiffness: 180,
+        mass: 1,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [deletePopupOpacity, deletePopupScale]);
+
   const openDeletePopup = useCallback(() => {
     deletePopupOpacity.setValue(0);
     deletePopupScale.setValue(0.94);
+    setTabBarHidden(true);
     setShowDeletePopup(true);
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        Animated.parallel([
-          Animated.timing(deletePopupOpacity, {
-            toValue: 1,
-            duration: 500,
-            useNativeDriver: true,
-          }),
-          Animated.spring(deletePopupScale, {
-            toValue: 1,
-            damping: 24,
-            stiffness: 110,
-            mass: 1,
-            useNativeDriver: true,
-          }),
-        ]).start();
-      });
-    });
-  }, [deletePopupOpacity, deletePopupScale]);
+    // Animation deferred to onShow callback
+  }, [deletePopupOpacity, deletePopupScale, setTabBarHidden]);
 
   const closeDeletePopup = useCallback(() => {
     Animated.parallel([
@@ -987,19 +1058,24 @@ export const ProfileScreen = () => {
         duration: 350,
         useNativeDriver: true,
       }),
-    ]).start(() => setShowDeletePopup(false));
-  }, [deletePopupOpacity, deletePopupScale]);
+    ]).start(() => {
+      setShowDeletePopup(false);
+      setTabBarHidden(false);
+    });
+  }, [deletePopupOpacity, deletePopupScale, setTabBarHidden]);
 
   const confirmDeleteAccount = useCallback(async () => {
     setIsDeleting(true);
     try {
       // TODO: call backend delete endpoint
+      setTabBarHidden(false);
       await logout();
     } catch {
       setIsDeleting(false);
       setShowDeletePopup(false);
+      setTabBarHidden(false);
     }
-  }, [logout]);
+  }, [logout, setTabBarHidden]);
 
   // Settings field editing mode (animations handled by reanimated entering/exiting)
   const startEditing = useCallback((field: 'name' | 'telegram' | 'phone' | 'email') => {
@@ -1302,8 +1378,47 @@ export const ProfileScreen = () => {
             </TouchableOpacity>
           </View>
 
-          {/* ── Section 3: Other sections (32px gap from above) ── */}
+          {/* ── Section 3: Customization ── */}
           <Text style={styles.sectionHeader}>
+            {t('profile.customization')}
+          </Text>
+
+          {/* Application theme button */}
+          <TouchableOpacity
+            style={styles.sectionButton}
+            activeOpacity={0.7}
+          >
+            <ThemeIcon />
+            <View style={styles.sectionButtonTexts}>
+              <Text style={styles.sectionButtonTitle}>
+                {t('profile.applicationTheme')}
+              </Text>
+              <Text style={styles.sectionButtonSubtitle}>
+                {t('profile.themeDark')}
+              </Text>
+            </View>
+            <AltArrowRight />
+          </TouchableOpacity>
+
+          {/* Change app icon button */}
+          <TouchableOpacity
+            style={[styles.sectionButton, { marginTop: 6 }]}
+            activeOpacity={0.7}
+          >
+            <AppIconChangeIcon />
+            <View style={styles.sectionButtonTexts}>
+              <Text style={styles.sectionButtonTitle}>
+                {t('profile.appIcon')}
+              </Text>
+              <Text style={styles.sectionButtonSubtitle}>
+                {t('profile.iconDefault')}
+              </Text>
+            </View>
+            <AltArrowRight />
+          </TouchableOpacity>
+
+          {/* ── Section 4: Other sections (32px gap from above) ── */}
+          <Text style={[styles.sectionHeader, { marginTop: 24 }]}>
             {t('profile.otherSections')}
           </Text>
 
@@ -1325,6 +1440,27 @@ export const ProfileScreen = () => {
             <IOSSwitch
               value={notificationsEnabled}
               onValueChange={setNotificationsEnabled}
+            />
+          </TouchableOpacity>
+
+          {/* Biometric lock button */}
+          <TouchableOpacity
+            style={[styles.sectionButton, { marginTop: 6 }]}
+            activeOpacity={0.7}
+            onPress={() => handleBiometricToggle(!biometricLock)}
+          >
+            <BiometricIcon />
+            <View style={styles.sectionButtonTexts}>
+              <Text style={styles.sectionButtonTitle} numberOfLines={1} ellipsizeMode="tail">
+                {t('profile.biometricLock')}
+              </Text>
+              <Text style={styles.sectionButtonSubtitle} numberOfLines={1} ellipsizeMode="tail">
+                {t('profile.biometricLockSubtitle')}
+              </Text>
+            </View>
+            <IOSSwitch
+              value={biometricLock}
+              onValueChange={handleBiometricToggle}
             />
           </TouchableOpacity>
 
@@ -1350,8 +1486,8 @@ export const ProfileScreen = () => {
 
       </ScrollView>
 
-      {/* ══ Picker Overlay (Modal renders above tab bar) ══ */}
-      <Modal visible={pickerModalVisible} transparent animationType="none" statusBarTranslucent>
+      {/* ══ Picker Overlay ══ */}
+      <Modal visible={pickerModalVisible} transparent animationType="none" statusBarTranslucent onShow={startPickerAnimation}>
         <View style={styles.overlayRoot} pointerEvents="auto">
         {/* Animated blur + tint backdrop — pointerEvents="none" at every level so nothing steals touches */}
         <Animated.View style={[StyleSheet.absoluteFill, { opacity: overlayOpacity }]} pointerEvents="none">
@@ -1906,8 +2042,8 @@ export const ProfileScreen = () => {
         </View>
       </Modal>
 
-      {/* ── Logout Confirmation Popup (Modal renders above tab bar) ── */}
-      <Modal visible={showLogoutPopup} transparent animationType="none" statusBarTranslucent>
+      {/* ── Logout Confirmation Popup ── */}
+      <Modal visible={showLogoutPopup} transparent animationType="none" statusBarTranslucent onShow={startLogoutAnimation}>
         <View style={styles.logoutOverlay}>
           <Animated.View style={[StyleSheet.absoluteFill, { opacity: logoutPopupOpacity }]} pointerEvents="none">
             <BlurView
@@ -1966,7 +2102,7 @@ export const ProfileScreen = () => {
       </Modal>
 
       {/* ── Delete Account Confirmation Popup ── */}
-      <Modal visible={showDeletePopup} transparent animationType="none" statusBarTranslucent>
+      <Modal visible={showDeletePopup} transparent animationType="none" statusBarTranslucent onShow={startDeleteAnimation}>
         <View style={styles.logoutOverlay}>
           <Animated.View style={[StyleSheet.absoluteFill, { opacity: deletePopupOpacity }]} pointerEvents="none">
             <BlurView
@@ -2206,7 +2342,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 18,
     color: colors.white[40],
-    marginBottom: 12,
+    marginBottom: 8,
   },
 
   // === Section buttons (notifications, subscription) — separate ===
@@ -2221,7 +2357,9 @@ const styles = StyleSheet.create({
   },
   sectionButtonTexts: {
     flex: 1,
+    flexShrink: 1,
     gap: 2,
+    overflow: 'hidden',
   },
   sectionButtonTitle: {
     fontFamily: fontFamily.regular,

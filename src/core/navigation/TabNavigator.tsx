@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import React, { useRef, useEffect } from 'react';
+import { View, TouchableOpacity, Text, StyleSheet, Animated } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path, Circle, Ellipse } from 'react-native-svg';
 import { colors } from '../../shared/constants';
+import { useTabBarVisibility } from './tabBarVisibility';
 import type {
   MainTabParamList,
   HomeStackParamList,
@@ -27,6 +28,7 @@ import { SettingsScreen } from '../../features/profile/screens/SettingsScreen';
 import { CategoriesScreen } from '../../features/categories/screens/CategoriesScreen';
 import { CreateCategoryScreen } from '../../features/categories/screens/CreateCategoryScreen';
 import { SubscriptionManagementScreen } from '../../features/profile/screens/SubscriptionManagementScreen';
+import { CreateBudgetScreen } from '../../features/budget/screens/CreateBudgetScreen';
 
 /* ── Constants ── */
 const INACTIVE_COLOR = '#828187';
@@ -100,6 +102,7 @@ const HomeStackNavigator = () => (
     <HomeStack.Screen name="Home" component={HomeScreen} />
     <HomeStack.Screen name="AddTransaction" component={AddTransactionScreen} />
     <HomeStack.Screen name="TransactionDetail" component={TransactionDetailScreen} />
+    <HomeStack.Screen name="CreateBudget" component={CreateBudgetScreen} />
   </HomeStack.Navigator>
 );
 
@@ -147,19 +150,49 @@ const TAB_CONFIG: Record<
 };
 
 /* ── Custom Tab Bar ── */
+/*
+ * Key performance principle: the tab bar is ALWAYS mounted.
+ * Instead of `return null` / `display: 'none'` (which unmounts the component
+ * and causes layout recalculation + jank on re-mount), we use Animated opacity
+ * with useNativeDriver (runs on native thread) + pointerEvents to prevent
+ * interaction when hidden.
+ */
 const CustomTabBar = React.memo(({ state, navigation, descriptors }: BottomTabBarProps) => {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
-  // Hide tab bar when a screen sets tabBarStyle: { display: 'none' }
+  // Imperative hiding from modals (HomeScreen budget, ProfileScreen pickers)
+  const modalHidden = useTabBarVisibility((s) => s.hidden);
+
+  // Route-based hiding (e.g., SubscriptionManagement)
   const focusedRoute = state.routes[state.index];
   const focusedOptions = descriptors[focusedRoute.key].options;
-  if ((focusedOptions.tabBarStyle as { display?: string } | undefined)?.display === 'none') {
-    return null;
-  }
+  const routeHidden = (focusedOptions.tabBarStyle as { display?: string } | undefined)?.display === 'none';
+
+  const shouldHide = modalHidden || routeHidden;
+
+  // Animated opacity — runs on native thread, zero React re-renders for the animation
+  const opacityAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (shouldHide) {
+      // Instant hide — tab bar must disappear BEFORE modal overlay renders
+      opacityAnim.setValue(0);
+    } else {
+      // Smooth show — fade in when modal closes
+      Animated.timing(opacityAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [shouldHide, opacityAnim]);
 
   return (
-    <View style={[styles.tabBar, { paddingBottom: insets.bottom }]}>
+    <Animated.View
+      style={[styles.tabBar, { paddingBottom: insets.bottom, opacity: opacityAnim }]}
+      pointerEvents={shouldHide ? 'none' : 'auto'}
+    >
       <View style={styles.tabContainer}>
         {state.routes.map((route, index) => {
           const isFocused = state.index === index;
@@ -205,7 +238,7 @@ const CustomTabBar = React.memo(({ state, navigation, descriptors }: BottomTabBa
           );
         })}
       </View>
-    </View>
+    </Animated.View>
   );
 });
 CustomTabBar.displayName = 'CustomTabBar';

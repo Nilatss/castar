@@ -22,10 +22,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import Svg, { Path } from 'react-native-svg';
 
+import * as Biometric from '../../../shared/services/biometric';
+
 import { colors, fontFamily, grid } from '../../../shared/constants';
 import { scale, GLOW_RENDER_SIZE, GLOW2_RENDER_SIZE } from '../../../shared/constants/scaling';
 import { LogoIcon, GlowCircle1, GlowCircle2 } from '../../../shared/components/svg/AuthSvgs';
 import { useAuthStore } from '../store/authStore';
+import { useProfileStore } from '../../profile/store/profileStore';
 import {
   getLockoutUntil,
   getFailedAttempts,
@@ -56,6 +59,15 @@ const SUCCESS_GREEN = '#11DA65';
 // Error color
 const ERROR_RED = '#FF2626';
 
+// Shield-person icon for biometric button on keypad -- 32x32
+const FingerprintIcon = React.memo(() => (
+  <Svg width={32} height={32} viewBox="0 0 36 36" fill="none">
+    <Path d="M0 8C0 3.58172 3.58172 0 8 0H28C32.4183 0 36 3.58172 36 8V28C36 32.4183 32.4183 36 28 36H8C3.58172 36 0 32.4183 0 28V8Z" fill="white" fillOpacity={0.1} />
+    <Path fillRule="evenodd" clipRule="evenodd" d="M10.5 16.6805C10.5 14.0159 10.5 12.6836 10.8146 12.2353C11.1292 11.7871 12.3819 11.3583 14.8874 10.5007L15.3648 10.3373C16.6708 9.89019 17.3238 9.66666 18 9.66666C18.6762 9.66666 19.3292 9.89019 20.6352 10.3373L21.1126 10.5007C23.6181 11.3583 24.8708 11.7871 25.1854 12.2353C25.5 12.6836 25.5 14.0159 25.5 16.6805V17.9928C25.5 22.6912 21.9675 24.9712 19.7512 25.9394C19.15 26.202 18.8494 26.3333 18 26.3333C17.1506 26.3333 16.85 26.202 16.2488 25.9394C14.0325 24.9712 10.5 22.6912 10.5 17.9928V16.6805ZM19.6667 15.5C19.6667 16.4205 18.9205 17.1667 18 17.1667C17.0795 17.1667 16.3333 16.4205 16.3333 15.5C16.3333 14.5795 17.0795 13.8333 18 13.8333C18.9205 13.8333 19.6667 14.5795 19.6667 15.5ZM18 22.1667C21.3333 22.1667 21.3333 21.4205 21.3333 20.5C21.3333 19.5795 19.8409 18.8333 18 18.8333C16.1591 18.8333 14.6667 19.5795 14.6667 20.5C14.6667 21.4205 14.6667 22.1667 18 22.1667Z" fill="white" />
+  </Svg>
+));
+FingerprintIcon.displayName = 'FingerprintIcon';
+
 // Delete/backspace icon for keypad -- 32x32 round arrow left (different from shared DeleteKeyIcon)
 const RoundDeleteIcon = React.memo(() => (
   <Svg width={32} height={32} viewBox="0 0 32 32" fill="none">
@@ -79,16 +91,20 @@ const Keypad = React.memo(({
   onDigit,
   onDelete,
   deleteOpacity,
+  onBiometric,
+  biometricEnabled,
 }: {
   onDigit: (d: string) => void;
   onDelete: () => void;
   deleteOpacity: Animated.Value;
+  onBiometric?: () => void;
+  biometricEnabled?: boolean;
 }) => {
   const rows = [
     ['1', '2', '3'],
     ['4', '5', '6'],
     ['7', '8', '9'],
-    ['delete', '0', ''],
+    ['delete', '0', 'biometric'],
   ];
 
   return (
@@ -96,7 +112,19 @@ const Keypad = React.memo(({
       {rows.map((row, rowIndex) => (
         <View key={rowIndex} style={styles.keypadRow}>
           {row.map((key, colIndex) => {
-            if (key === '') {
+            if (key === 'biometric') {
+              if (biometricEnabled && onBiometric) {
+                return (
+                  <TouchableOpacity
+                    key={colIndex}
+                    style={styles.keypadCell}
+                    onPress={onBiometric}
+                    activeOpacity={0.6}
+                  >
+                    <FingerprintIcon />
+                  </TouchableOpacity>
+                );
+              }
               return <View key={colIndex} style={styles.keypadCell} />;
             }
             if (key === 'delete') {
@@ -133,13 +161,16 @@ const Keypad = React.memo(({
 export const PinLockScreen = () => {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const verifyPin = useAuthStore((s) => s.verifyPin);
+  const setPinVerified = useAuthStore((s) => s.setPinVerified);
+  const biometricLock = useProfileStore((s) => s.settings.biometricLock);
 
   // PIN state
   const [pin, setPin] = useState('');
   const [error, setError] = useState(false);
   const [success, setSuccess] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
+  // Whether device supports biometric + user has it enabled
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
 
   // Lockout state
   const [isLockedOut, setIsLockedOut] = useState(false);
@@ -230,6 +261,50 @@ export const PinLockScreen = () => {
     };
   }, [startLockoutTimer]);
 
+  // ── Biometric authentication ──
+  const triggerBiometric = useCallback(async () => {
+    try {
+      const result = await Biometric.authenticateAsync({
+        promptMessage: t('auth.biometricPrompt'),
+        cancelLabel: t('auth.usePin'),
+        disableDeviceFallback: true,
+      });
+      if (result.success) {
+        // Clear any lockout data on biometric success
+        failedAttemptsRef.current = 0;
+        clearLockoutData();
+        showSuccessState(() => {
+          setPinVerified();
+        });
+      }
+      // If not success (user cancelled or failed) — do nothing, PIN keypad is shown
+    } catch {
+      // Biometric error — silently fall back to PIN
+    }
+  }, [t, setPinVerified, showSuccessState]);
+
+  // Check biometric availability + auto-trigger on mount
+  useEffect(() => {
+    if (!biometricLock) return;
+
+    (async () => {
+      const [hasHardware, isEnrolled] = await Promise.all([
+        Biometric.hasHardwareAsync(),
+        Biometric.isEnrolledAsync(),
+      ]);
+      const available = hasHardware && isEnrolled;
+      setBiometricAvailable(available);
+
+      // Auto-trigger biometric prompt if available and not locked out
+      if (available) {
+        // Small delay to let the screen render first
+        setTimeout(() => {
+          triggerBiometric();
+        }, 300);
+      }
+    })();
+  }, [biometricLock, triggerBiometric]);
+
   // Fade in content on mount
   useEffect(() => {
     Animated.timing(screenContentOpacity, {
@@ -304,13 +379,13 @@ export const PinLockScreen = () => {
     const isCorrect = await verifyPersistedPin(enteredPin);
 
     if (isCorrect) {
-      // Correct PIN -- clear lockout data, show success glow, THEN verify
+      // Correct PIN -- clear lockout data, show success glow, THEN navigate
       failedAttemptsRef.current = 0;
       clearLockoutData();
       setErrorGlowMounted(false);
       showSuccessState(() => {
-        // Now trigger the state change that unmounts this screen
-        verifyPin(enteredPin);
+        // Directly mark PIN as verified (no redundant async re-verification)
+        setPinVerified();
       });
     } else {
       // Wrong PIN -- increment attempts
@@ -385,7 +460,7 @@ export const PinLockScreen = () => {
         });
       }
     }
-  }, [verifyPin, shakeAnim, errorOpacity, showSuccessState, resetDotAnims, startLockoutTimer]);
+  }, [setPinVerified, shakeAnim, errorOpacity, showSuccessState, resetDotAnims, startLockoutTimer]);
 
   // Refs for stable callbacks (avoid re-creating callbacks on state changes)
   const pinRef = useRef(pin);
@@ -606,7 +681,13 @@ export const PinLockScreen = () => {
         {/* Keypad -- hidden during lockout */}
         {!isLockedOut && (
           <View style={[styles.keypadFixed, { paddingBottom: insets.bottom + 24 }]}>
-            <Keypad onDigit={handleDigitPress} onDelete={handleDelete} deleteOpacity={deleteOpacity} />
+            <Keypad
+              onDigit={handleDigitPress}
+              onDelete={handleDelete}
+              deleteOpacity={deleteOpacity}
+              onBiometric={triggerBiometric}
+              biometricEnabled={biometricLock && biometricAvailable}
+            />
           </View>
         )}
       </Animated.View>

@@ -38,3 +38,26 @@ export function formatCurrency(
 
   return `${formatted}${currencySymbols[currency] || currency}`;
 }
+
+/**
+ * Format only the numeric part (no currency symbol).
+ * E.g. 500000 → "500 000" (locale-dependent grouping).
+ */
+export function formatAmount(
+  amount: number,
+  currency: Currency = 'UZS'
+): string {
+  const locale = currencyLocales[currency] || 'en-US';
+  return new Intl.NumberFormat(locale, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(amount);
+}
+
+/**
+ * Return the display symbol for a currency code.
+ * E.g. 'USD' → '$', 'UZS' → "so'm", 'GBP' → 'GBP'.
+ */
+export function getCurrencySymbol(currency: Currency = 'UZS'): string {
+  return currencySymbols[currency] || currency;
+}

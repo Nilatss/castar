@@ -31,10 +31,10 @@ interface GlowProps {
 export const GlowCircle1 = React.memo(({ color, vivid = false }: GlowProps) => (
   <Image
     source={vivid ? glowVivid : glowStd}
+    tintColor={color && color !== '#FFF' ? color : undefined}
     style={{
       width: scale(GLOW_RENDER_SIZE),
       height: scale(GLOW_RENDER_SIZE),
-      tintColor: color && color !== '#FFF' ? color : undefined,
     }}
   />
 ));
@@ -44,10 +44,10 @@ GlowCircle1.displayName = 'GlowCircle1';
 export const GlowCircle2 = React.memo(({ color, vivid = false }: GlowProps) => (
   <Image
     source={vivid ? glowVivid : glowStd}
+    tintColor={color && color !== '#FFF' ? color : undefined}
     style={{
       width: scale(GLOW2_RENDER_SIZE),
       height: scale(GLOW2_RENDER_SIZE),
-      tintColor: color && color !== '#FFF' ? color : undefined,
     }}
   />
 ));
